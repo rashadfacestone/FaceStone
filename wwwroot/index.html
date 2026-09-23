@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>FaceStone Messenger — Real-Time Live Chat</title>
+  <meta name="description" content="Instant real-time messaging for FaceStone engineering teams, contractors, and operations desk. Powered by ASP.NET Core & SignalR.">
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="assets/logo.png">
+
+  <!-- Core Messaging Stylesheet -->
+  <link rel="stylesheet" href="css/chat-app.css">
+</head>
+<body>
+
+  <!-- ========================================================================
+       Main Two-Panel Messaging Container
+       ======================================================================== -->
+  <div class="chat-app-root" id="chat-app-root">
+
+    <!-- --------------------------------------------------------------------
+         1. Left Sidebar: Conversations & User Directory
+         -------------------------------------------------------------------- -->
+    <aside class="sidebar-panel" id="sidebar-panel" aria-label="Conversations Sidebar">
+      <!-- Sidebar Top Header -->
+      <header class="sidebar-header">
+        <div class="user-profile-summary" id="user-profile-summary" title="Your Account">
+          <div class="user-avatar-wrap">
+            <div class="user-avatar-circle" id="current-user-avatar">FS</div>
+            <div class="online-status-badge"></div>
+          </div>
+          <div class="user-details">
+            <span class="user-full-name" id="current-user-name">Loading...</span>
+            <span class="user-role-label" id="current-user-role">Connecting</span>
+          </div>
+        </div>
+
+        <div class="sidebar-header-actions">
+          <div class="connection-status-pill" id="connection-status-pill" title="SignalR Live Connection">
+            <span class="connection-dot"></span>
+            <span>Connecting...</span>
+          </div>
+          <button type="button" class="icon-btn" id="user-logout-btn" title="Sign Out of Messenger" aria-label="Sign Out">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- Search Input Box -->
+      <div class="sidebar-search-box">
+        <div class="search-input-wrap">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input type="text" class="search-input-field" id="search-conversations-input" placeholder="Search conversations..." autocomplete="off">
+          <button type="button" class="search-clear-btn" id="search-clear-btn" aria-label="Clear Search">✕</button>
+        </div>
+      </div>
+
+      <!-- Conversations Stream -->
+      <div class="conversations-list" id="conversations-list-container" role="list" aria-label="Conversation Threads">
+        <!-- Rendered dynamically by chat-app.js -->
+      </div>
+    </aside>
+
+    <!-- --------------------------------------------------------------------
+         2. Right Panel: Main Chat Conversation View
+         -------------------------------------------------------------------- -->
+    <main class="chat-pane" id="chat-pane" aria-label="Active Conversation">
+      
+      <!-- Zero Selection Empty View -->
+      <div class="chat-empty-view" id="chat-empty-view">
+        <div class="empty-view-icon-circle">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <h2 class="empty-view-title">FaceStone Messenger</h2>
+        <p class="empty-view-desc">
+          Select a conversation from the left to start live messaging with the operations team and engineering colleagues.
+        </p>
+      </div>
+
+      <!-- Active Chat View (Hidden when no chat selected) -->
+      <div id="chat-active-view" style="display: none; flex-direction: column; width: 100%; height: 100%;">
+        <!-- Active Chat Header -->
+        <header class="chat-header">
+          <div class="chat-header-left">
+            <button type="button" class="mobile-back-btn" id="mobile-back-btn" aria-label="Back to conversations">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            </button>
+            <div class="conv-avatar-wrap" style="width: 40px; height: 40px;">
+              <div class="conv-avatar-img" id="chat-recipient-avatar">FS</div>
+            </div>
+            <div class="chat-recipient-info">
+              <span class="chat-recipient-name" id="chat-recipient-name">Recipient Name</span>
+              <span class="chat-recipient-status online" id="chat-recipient-status">
+                <span style="width: 7px; height: 7px; border-radius: 50%; background: var(--status-online); display: inline-block;"></span>
+                <span>Online</span>
+              </span>
+            </div>
+          </div>
+
+          <div class="chat-header-actions">
+            <a href="/docs" target="_blank" class="icon-btn" title="Open API Documentation" aria-label="API Documentation">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            </a>
+          </div>
+        </header>
+
+        <!-- Messages Stream Box -->
+        <div class="messages-stream-box" id="messages-stream-box" role="log" aria-live="polite">
+          <!-- Rendered dynamically by chat-app.js -->
+        </div>
+
+        <!-- Jump to Bottom Floating Button -->
+        <button type="button" class="jump-bottom-btn" id="jump-bottom-btn" aria-label="Jump to latest message">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+          <span>New messages</span>
+        </button>
+
+        <!-- Bottom Input Bar -->
+        <footer class="chat-bottom-bar">
+          <button type="button" class="icon-btn" id="chat-attach-btn" title="Attach Document or Image" aria-label="Attach File">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+          </button>
+          <input type="file" id="chat-file-input" style="display: none;">
+
+          <div class="chat-input-wrapper">
+            <div class="selected-file-preview-strip" id="file-preview-strip">
+              <span id="file-name-preview">document.pdf</span>
+              <button type="button" id="file-remove-btn" style="color: inherit; font-weight: bold; cursor: pointer;">✕</button>
+            </div>
+            <textarea class="msg-textarea" id="chat-msg-textarea" rows="1" placeholder="Type a message..." aria-label="Message input"></textarea>
+          </div>
+
+          <button type="button" class="send-msg-btn" id="send-msg-btn" title="Send Message" aria-label="Send Message">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </footer>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ========================================================================
+       3. Clean, Bright Authentication Modal
+       ======================================================================== -->
+  <div class="auth-overlay-backdrop" id="auth-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
+    <div class="auth-card-modal">
+      <div class="auth-modal-header">
+        <div class="auth-brand-logo-icon">FS</div>
+        <h1 class="auth-modal-title" id="auth-modal-title">FaceStone Messenger</h1>
+        <p class="auth-modal-subtitle">Real-Time Messaging with Operations Desk & Teams</p>
+      </div>
+
+      <div class="auth-tabs-bar" role="tablist">
+        <button type="button" class="auth-tab-btn active" id="auth-tab-login" role="tab" aria-selected="true">Sign In</button>
+        <button type="button" class="auth-tab-btn" id="auth-tab-register" role="tab" aria-selected="false">Create Account</button>
+      </div>
+
+      <div class="auth-modal-body">
+        <!-- Sign In Form -->
+        <div id="auth-view-login">
+          <form id="auth-login-form">
+            <div class="auth-form-field">
+              <label class="auth-field-label" for="login-id-input">Email, Phone, or Username</label>
+              <input type="text" class="auth-text-input" id="login-id-input" required placeholder="alex@facestone.com or alex_wright">
+            </div>
+
+            <div class="auth-form-field">
+              <label class="auth-field-label" for="login-pwd-input">Password</label>
+              <input type="password" class="auth-text-input" id="login-pwd-input" required placeholder="••••••••">
+            </div>
+
+            <button type="submit" class="auth-btn-primary">Sign In</button>
+          </form>
+
+          <!-- Quick 1-Click Demo Accounts in Database -->
+          <div class="auth-demo-accounts-pillbox">
+            <strong style="color: var(--text-main); display: block; margin-bottom: 0.35rem;">Test Database Accounts:</strong>
+            <div>Employee View: <span class="demo-account-chip" onclick="fillDemoAccount('alex@facestone.com', 'Password123!')">alex@facestone.com (Password123!)</span></div>
+            <div>Accountant View: <span class="demo-account-chip" onclick="fillDemoAccount('sarah@facestone.com', 'SecretPass123!')">sarah@facestone.com (SecretPass123!)</span></div>
+          </div>
+        </div>
+
+        <!-- Create Account Form -->
+        <div id="auth-view-register" style="display: none;">
+          <form id="auth-register-form">
+            <div class="auth-form-field">
+              <label class="auth-field-label" for="reg-name-input">Full Legal Name</label>
+              <input type="text" class="auth-text-input" id="reg-name-input" required placeholder="Eng. Tarek Mahmoud">
+            </div>
+
+            <div class="auth-form-field">
+              <label class="auth-field-label" for="reg-user-input">Username</label>
+              <input type="text" class="auth-text-input" id="reg-user-input" required placeholder="tarek_stone">
+            </div>
+
+            <div class="auth-form-field">
+              <label class="auth-field-label" for="reg-email-input">Email Address</label>
+              <input type="email" class="auth-text-input" id="reg-email-input" required placeholder="tarek@firm.com">
+            </div>
+
+            <div class="auth-form-field">
+              <label class="auth-field-label" for="reg-phone-input">Phone Number</label>
+              <input type="tel" class="auth-text-input" id="reg-phone-input" required placeholder="+20 10 9988 7766">
+            </div>
+
+            <div class="auth-form-field">
+              <label class="auth-field-label" for="reg-pwd-input">Password</label>
+              <input type="password" class="auth-text-input" id="reg-pwd-input" required minlength="6" placeholder="At least 6 characters">
+            </div>
+
+            <button type="submit" class="auth-btn-primary">Register Account</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Image Lightbox Preview Modal -->
+  <div class="chat-lightbox-backdrop" id="chat-lightbox-backdrop" role="dialog" aria-modal="true" style="display: none;">
+    <div class="lightbox-toolbar">
+      <span class="lightbox-filename" id="lightbox-filename">Image Preview</span>
+      <div class="lightbox-buttons">
+        <button type="button" class="lightbox-btn" id="lightbox-download-btn" title="Download Image">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download
+        </button>
+        <button type="button" class="lightbox-btn-close" id="lightbox-close-btn" title="Close Preview">✕</button>
+      </div>
+    </div>
+    <div class="lightbox-image-wrap" id="lightbox-image-wrap">
+      <img id="lightbox-img-el" src="" alt="Preview" class="lightbox-img" />
+    </div>
+  </div>
+
+  <!-- Toast Alerts Container -->
+  <div class="chat-toast-container" id="chat-toast-container" aria-live="polite"></div>
+
+  <!-- Real-Time Client Libraries & Application Modules -->
+  <script src="js/signalr.min.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/realtime.js"></script>
+  <script src="js/chat-state.js"></script>
+  <script src="js/chat-app.js"></script>
+</body>
+</html>

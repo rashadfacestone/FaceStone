@@ -1,0 +1,209 @@
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using FaceStone.Web.Data;
+using FaceStone.Web.Hubs;
+using FaceStone.Web.Services;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// 1. Add Database Context with SQL Server (Active)
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
+    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+
+builder.Services.AddDbContext<FaceStoneDbContext>(options =>
+    options.UseSqlServer(connectionString));
+
+// 2. Add API Controllers with JSON configurations
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+        options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
+    });
+
+// 3. Add API Explorer and Swagger / OpenAPI Documentation
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "FaceStone REST API",
+        Version = "v1",
+        Description = "Official RESTful Web API for FaceStone (FACESTONE - FULL CONCRETE SOLUTIONS). Supports authentication, user management, and real-time chat with attachments.",
+        Contact = new OpenApiContact
+        {
+            Name = "FaceStone Engineering",
+            Email = "support@facestone.com"
+        }
+    });
+
+    // Configure Swagger Bearer JWT Authentication
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Please enter your JWT Bearer token into the field below.\r\n\r\nExample: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+    });
+
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
+
+// 4. Configure JWT Bearer Authentication & SignalR WebSocket Token Extraction
+var jwtKey = builder.Configuration["Jwt:Key"] 
+    ?? "FaceStone_Secret_Key_For_Jwt_Authentication_2026_Concrete_Solutions_SuperSecureKey!";
+var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "FaceStoneApi";
+var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "FaceStoneClients";
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.RequireHttpsMetadata = false;
+    options.SaveToken = true;
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+        ValidateIssuer = true,
+        ValidIssuer = jwtIssuer,
+        ValidateAudience = true,
+        ValidAudience = jwtAudience,
+        ValidateLifetime = true,
+        ClockSkew = TimeSpan.Zero
+    };
+
+    // Enable JWT authentication for SignalR WebSockets and Secure Attachments via query string
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var accessToken = context.Request.Query["access_token"].FirstOrDefault()
+                              ?? context.Request.Query["token"].FirstOrDefault();
+            var path = context.HttpContext.Request.Path;
+            if (!string.IsNullOrEmpty(accessToken) && 
+                (path.StartsWithSegments("/chatHub") || path.StartsWithSegments("/api/chat/attachments")))
+            {
+                context.Token = accessToken;
+            }
+            return Task.CompletedTask;
+        }
+    };
+});
+
+builder.Services.AddAuthorization();
+
+// 5. Add SignalR for Real-Time WebSockets
+builder.Services.AddSignalR(options =>
+{
+    options.EnableDetailedErrors = true;
+    options.KeepAliveInterval = TimeSpan.FromSeconds(15);
+    options.ClientTimeoutInterval = TimeSpan.FromSeconds(60);
+    options.HandshakeTimeout = TimeSpan.FromSeconds(15);
+    options.MaximumReceiveMessageSize = 1024 * 1024; // 1 MB
+});
+
+// 6. Configure CORS Policy (Localhost & MonsterASP Production)
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.SetIsOriginAllowed(origin =>
+        {
+            if (string.IsNullOrEmpty(origin)) return false;
+            if (Uri.TryCreate(origin, UriKind.Absolute, out var uri))
+            {
+                // Allow localhost for dev (any port)
+                if (uri.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase) ||
+                    uri.Host.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase))
+                    return true;
+
+                // Allow production MonsterASP domain
+                if (uri.Host.EndsWith("runasp.net", StringComparison.OrdinalIgnoreCase) ||
+                    uri.Host.EndsWith("facestone-eg.com", StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+            return false;
+        })
+        .AllowAnyMethod()
+        .AllowAnyHeader()
+        .AllowCredentials();
+    });
+});
+
+// 7. Dependency Injection Services
+builder.Services.AddScoped<IAuthService, AuthService>();
+
+var app = builder.Build();
+
+// 8. Configure HTTP Request Pipeline
+if (app.Environment.IsDevelopment() || true)
+{
+    app.UseSwagger();
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "FaceStone API v1");
+        options.RoutePrefix = "swagger";
+        options.DocumentTitle = "FaceStone API Documentation";
+    });
+}
+
+// Ensure database schema is ready and seeded with initial demo accounts
+var startupLogger = app.Services.GetRequiredService<ILogger<Program>>();
+await DbInitializer.InitializeAsync(app.Services, startupLogger);
+
+// Ensure chat uploads directory exists on host
+var uploadsDir = Path.Combine(app.Environment.ContentRootPath, "uploads", "chat");
+if (!Directory.Exists(uploadsDir)) Directory.CreateDirectory(uploadsDir);
+
+app.UseCors("AllowAll");
+
+// Serve default files (index.html) and static uploads/assets
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
+app.UseRouting();
+
+app.UseAuthentication();
+app.UseAuthorization();
+
+// Health Check Endpoint for deployment verification
+app.MapGet("/health", (IWebHostEnvironment env) => Results.Ok(new
+{
+    status = "Healthy",
+    service = "FaceStone Real-Time Messaging API",
+    environment = env.EnvironmentName,
+    timestamp = DateTime.UtcNow
+}));
+
+// Route /docs to Swagger UI documentation
+app.MapGet("/docs", () => Results.Redirect("/swagger"));
+
+// Map SignalR Real-Time Hub
+app.MapHub<ChatHub>("/chatHub");
+
+// Map RESTful API Controllers
+app.MapControllers();
+
+app.Run();

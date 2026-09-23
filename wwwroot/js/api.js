@@ -1,0 +1,272 @@
+/* ==========================================================================
+   FACESTONE REAL-TIME CHAT — API SERVICE LAYER
+   Production Client for ASP.NET Core Web API Backend
+   Multi-Tab Isolated Authentication & Idempotent Messaging
+   ========================================================================== */
+
+const API_BASE_URL = window.location.origin;
+const JWT_STORAGE_KEY = 'facestone_chat_jwt';
+const USER_STORAGE_KEY = 'facestone_chat_user';
+
+class ChatApi {
+  /**
+   * Retrieves active token, strictly scoped to tab-isolated sessionStorage
+   * to ensure simultaneous multi-account browsing across separate browser tabs.
+   */
+  static getToken() {
+    return sessionStorage.getItem(JWT_STORAGE_KEY);
+  }
+
+  static setToken(token) {
+    if (token) {
+      sessionStorage.setItem(JWT_STORAGE_KEY, token);
+    } else {
+      sessionStorage.removeItem(JWT_STORAGE_KEY);
+    }
+  }
+
+  static getCurrentUser() {
+    try {
+      const raw = sessionStorage.getItem(USER_STORAGE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  static setCurrentUser(user) {
+    if (user) {
+      sessionStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
+    } else {
+      sessionStorage.removeItem(USER_STORAGE_KEY);
+    }
+  }
+
+  static clearSession() {
+    sessionStorage.removeItem(JWT_STORAGE_KEY);
+    sessionStorage.removeItem(USER_STORAGE_KEY);
+    window.dispatchEvent(new CustomEvent('chat:session:expired'));
+  }
+
+  static isAuthenticated() {
+    return !!this.getToken();
+  }
+
+  /**
+   * Internal fetch wrapper with secure Bearer authentication
+   */
+  static async request(endpoint, options = {}) {
+    const url = `${API_BASE_URL}${endpoint}`;
+    const token = this.getToken();
+
+    const headers = {
+      ...(options.headers || {})
+    };
+
+    if (!(options.body instanceof FormData) && !headers['Content-Type']) {
+      headers['Content-Type'] = 'application/json';
+    }
+
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    try {
+      const response = await fetch(url, {
+        ...options,
+        headers
+      });
+
+      if (response.status === 401) {
+        this.clearSession();
+        return {
+          success: false,
+          status: 401,
+          message: 'Session expired. Please sign in again.'
+        };
+      }
+
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        return {
+          success: false,
+          status: response.status,
+          message: data?.message || data?.errors?.[0] || `Request failed (${response.status})`,
+          errors: data?.errors || []
+        };
+      }
+
+      return data;
+    } catch (err) {
+      return {
+        success: false,
+        message: 'Could not connect to server. Please verify your connection.',
+        errors: [err.message]
+      };
+    }
+  }
+
+  /* ------------------------------------------------------------------------
+     Authentication Endpoints (/api/auth)
+     ------------------------------------------------------------------------ */
+  static async login(identifier, password) {
+    const res = await this.request('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ identifier, password })
+    });
+
+    if (res.success && res.data) {
+      this.setToken(res.data.token);
+      this.setCurrentUser(res.data.user);
+    }
+    return res;
+  }
+
+  static async register(userData) {
+    const res = await this.request('/api/auth/register', {
+      method: 'POST',
+      body: JSON.stringify(userData)
+    });
+
+    if (res.success && res.data) {
+      this.setToken(res.data.token);
+      this.setCurrentUser(res.data.user);
+    }
+    return res;
+  }
+
+  static async getProfile() {
+    const res = await this.request('/api/auth/me', {
+      method: 'GET'
+    });
+
+    if (res.success && res.data) {
+      this.setCurrentUser(res.data);
+    }
+    return res;
+  }
+
+  static async detectIdentifier(identifier) {
+    return await this.request('/api/auth/detect-identifier', {
+      method: 'POST',
+      body: JSON.stringify({ identifier })
+    });
+  }
+
+  /* ------------------------------------------------------------------------
+     Chat Endpoints (/api/chat)
+     ------------------------------------------------------------------------ */
+  static async sendMessage(messageText, attachmentFile = null, targetEmployeeId = null, clientMessageId = null) {
+    const formData = new FormData();
+    if (messageText) formData.append('Message', messageText);
+    if (attachmentFile) formData.append('Attachment', attachmentFile);
+    if (targetEmployeeId && targetEmployeeId !== 'desk') {
+      formData.append('TargetEmployeeId', targetEmployeeId);
+    }
+    if (clientMessageId) {
+      formData.append('ClientMessageId', clientMessageId);
+    }
+
+    return await this.request('/api/chat/send', {
+      method: 'POST',
+      body: formData
+    });
+  }
+
+  static async getChatHistory() {
+    return await this.request('/api/chat/history', {
+      method: 'GET'
+    });
+  }
+
+  static async getConversations() {
+    return await this.request('/api/chat/conversations', {
+      method: 'GET'
+    });
+  }
+
+  static async getConversationMessages(employeeId) {
+    return await this.request(`/api/chat/conversations/${employeeId}`, {
+      method: 'GET'
+    });
+  }
+
+  static async pollChat(activeEmployeeId = null, afterIsoDate = null) {
+    const params = new URLSearchParams();
+    if (activeEmployeeId && activeEmployeeId !== 'desk') {
+      params.append('activeEmployeeId', activeEmployeeId);
+    }
+    if (afterIsoDate) {
+      params.append('after', afterIsoDate);
+    }
+    const qs = params.toString() ? `?${params.toString()}` : '';
+
+    return await this.request(`/api/chat/poll${qs}`, {
+      method: 'GET'
+    });
+  }
+
+  /* ------------------------------------------------------------------------
+     Attachment Endpoints (/api/chat/attachments)
+     ------------------------------------------------------------------------ */
+  static getAttachmentUrl(attachmentId, download = false) {
+    if (!attachmentId) return '';
+    const token = this.getToken();
+    const base = `${API_BASE_URL}/api/chat/attachments/${attachmentId}${download ? '/download' : ''}`;
+    return token ? `${base}?token=${encodeURIComponent(token)}` : base;
+  }
+
+  static async fetchAttachmentBlob(attachmentId) {
+    const token = this.getToken();
+    const url = `${API_BASE_URL}/api/chat/attachments/${attachmentId}`;
+    const headers = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const res = await fetch(url, { headers });
+    if (!res.ok) {
+      throw new Error(`Failed to load attachment (${res.status})`);
+    }
+    return await res.blob();
+  }
+
+  static async downloadAttachment(attachmentId, fileName) {
+    try {
+      const blob = await this.fetchAttachmentBlob(attachmentId);
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = fileName || 'attachment';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 15000);
+    } catch (err) {
+      console.warn('Authenticated blob download failed, falling back to direct token URL:', err);
+      const directUrl = this.getAttachmentUrl(attachmentId, true);
+      const a = document.createElement('a');
+      a.href = directUrl;
+      a.download = fileName || 'attachment';
+      a.target = '_blank';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+  }
+
+  /* ------------------------------------------------------------------------
+     Users Endpoints (/api/users)
+     ------------------------------------------------------------------------ */
+  static async getUsers(role = null, search = null) {
+    const params = new URLSearchParams();
+    if (role) params.append('role', role);
+    if (search) params.append('search', search);
+    const qs = params.toString() ? `?${params.toString()}` : '';
+
+    return await this.request(`/api/users${qs}`, {
+      method: 'GET'
+    });
+  }
+}
+
+window.ChatApi = ChatApi;

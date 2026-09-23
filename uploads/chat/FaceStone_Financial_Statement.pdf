@@ -1,0 +1,75 @@
+%PDF-1.4
+1 0 obj
+<<
+  /Type /Catalog
+  /Pages 2 0 R
+>>
+endobj
+2 0 obj
+<<
+  /Type /Pages
+  /Kids [3 0 R]
+  /Count 1
+>>
+endobj
+3 0 obj
+<<
+  /Type /Page
+  /Parent 2 0 R
+  /MediaBox [0 0 612 792]
+  /Resources <<
+    /Font <<
+      /F1 4 0 R
+    >>
+  >>
+  /Contents 5 0 R
+>>
+endobj
+4 0 obj
+<<
+  /Type /Font
+  /Subtype /Type1
+  /BaseFont /Helvetica-Bold
+>>
+endobj
+5 0 obj
+<<
+  /Length 350
+>>
+stream
+BT
+/F1 20 Tf
+50 720 Td
+(FACESTONE - STATEMENT OF ACCOUNT & SETTLEMENT) Tj
+/F1 12 Tf
+0 -30 Td
+(Financial Period: Q3 2026 | Financial Controller: Nour El-Din) Tj
+0 -25 Td
+(Account Ledger: Active Construction & Precast Orders) Tj
+0 -30 Td
+(Previous Balance ................................... .00) Tj
+0 -20 Td
+(Current Invoice Incurred ........................... ,150.00) Tj
+0 -20 Td
+(Confirmed Wire Transfer Received ................... ,150.00) Tj
+0 -30 Td
+(CLOSING BALANCE: .00 (FULLY SETTLED & VERIFIED)) Tj
+ET
+endstream
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000262 00000 n 
+0000000345 00000 n 
+trailer
+<<
+  /Size 6
+  /Root 1 0 R
+>>
+startxref
+748
+%%EOF

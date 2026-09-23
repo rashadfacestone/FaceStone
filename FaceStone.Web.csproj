@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>FaceStone.Web</RootNamespace>
+    <AssemblyName>FaceStone.Web</AssemblyName>
+    <ProjectGuid>{9FDCA4DF-723E-44A1-A396-D1F85ADE9AA5}</ProjectGuid>
+    <!-- Completely exclude dynamic runtime uploads and scratch test files from build/publish -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);uploads\**;wwwroot\uploads\**;App_Data\**;scratch\**</DefaultItemExcludes>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.8" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.8" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.8">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Remove="uploads\**;wwwroot\uploads\**;App_Data\**;scratch\**" />
+    <None Remove="uploads\**;wwwroot\uploads\**;App_Data\**;scratch\**" />
+    <Compile Remove="uploads\**;wwwroot\uploads\**;App_Data\**;scratch\**" />
+    <Watch Remove="uploads\**;wwwroot\uploads\**;App_Data\**;scratch\**" />
+  </ItemGroup>
+
+</Project>
