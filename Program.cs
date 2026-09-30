@@ -112,7 +112,36 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("TransportationAccess", policy =>
+        policy.RequireAssertion(ctx =>
+        {
+            var role = ctx.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+            return FaceStone.Web.Models.AppRoles.HasTransportationAccess(role);
+        }));
+
+    options.AddPolicy("StorageAccess", policy =>
+        policy.RequireAssertion(ctx =>
+        {
+            var role = ctx.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+            return FaceStone.Web.Models.AppRoles.HasStorageAccess(role);
+        }));
+
+    options.AddPolicy("ManagementAccess", policy =>
+        policy.RequireAssertion(ctx =>
+        {
+            var role = ctx.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+            return FaceStone.Web.Models.AppRoles.HasManagementAccess(role);
+        }));
+
+    options.AddPolicy("FinanceAccess", policy =>
+        policy.RequireAssertion(ctx =>
+        {
+            var role = ctx.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+            return FaceStone.Web.Models.AppRoles.HasFinanceAccess(role);
+        }));
+});
 
 // 5. Add SignalR for Real-Time WebSockets
 builder.Services.AddSignalR(options =>
@@ -181,7 +210,41 @@ app.UseCors("AllowAll");
 
 // Serve default files (index.html) and static uploads/assets
 app.UseDefaultFiles();
-app.UseStaticFiles();
+app.UseStaticFiles(new StaticFileOptions
+{
+    OnPrepareResponse = ctx =>
+    {
+        ctx.Context.Response.Headers["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0";
+        ctx.Context.Response.Headers["Pragma"] = "no-cache";
+        ctx.Context.Response.Headers["Expires"] = "-1";
+        ctx.Context.Response.Headers.Remove("ETag");
+        ctx.Context.Response.Headers.Remove("Last-Modified");
+    }
+});
+
+// Timing and performance monitoring middleware for API and SignalR endpoints
+app.Use(async (context, next) =>
+{
+    var path = context.Request.Path.Value ?? "";
+    if (path.StartsWith("/api/", StringComparison.OrdinalIgnoreCase) || path.StartsWith("/chatHub", StringComparison.OrdinalIgnoreCase))
+    {
+        var method = context.Request.Method;
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        var logger = context.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger("FaceStone.ApiTiming");
+        
+        logger.LogInformation("[API] {Method} {Path} START", method, path);
+        
+        await next();
+        
+        sw.Stop();
+        logger.LogInformation("[API] {Method} {Path} END duration={Duration}ms status={StatusCode}",
+            method, path, sw.ElapsedMilliseconds, context.Response.StatusCode);
+    }
+    else
+    {
+        await next();
+    }
+});
 
 app.UseRouting();
 
@@ -206,4 +269,18 @@ app.MapHub<ChatHub>("/chatHub");
 // Map RESTful API Controllers
 app.MapControllers();
 
+// SPA Fallback for client-side routing (/departments, /finance, /transportation, /storage)
+app.MapFallbackToFile("index.html", new StaticFileOptions
+{
+    OnPrepareResponse = ctx =>
+    {
+        ctx.Context.Response.Headers["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0";
+        ctx.Context.Response.Headers["Pragma"] = "no-cache";
+        ctx.Context.Response.Headers["Expires"] = "-1";
+        ctx.Context.Response.Headers.Remove("ETag");
+        ctx.Context.Response.Headers.Remove("Last-Modified");
+    }
+});
+
 app.Run();
+// FaceStone Portal - Storage Department ready.

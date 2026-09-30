@@ -1,47 +1,1704 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>FaceStone Messenger — Real-Time Live Chat</title>
-  <meta name="description" content="Instant real-time messaging for FaceStone engineering teams, contractors, and operations desk. Powered by ASP.NET Core & SignalR.">
+  <title>فيس ستون — المنظومة المتكاملة لإدارة العمليات والمالية</title>
+  <meta name="description" content="منظومة فيس ستون المتكاملة لإدارة العمليات الميدانية، المحاجر، النقل، المستودعات، والمالية.">
   
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  
+  <!-- Base URL for SPA Routing -->
+  <base href="/">
+
   <!-- Favicon -->
-  <link rel="icon" type="image/png" href="assets/logo.png">
+  <link rel="icon" type="image/png" href="/assets/logo.png">
 
   <!-- Core Messaging Stylesheet -->
-  <link rel="stylesheet" href="css/chat-app.css">
+  <link rel="stylesheet" href="/css/chat-app.css?v=20260929_pro">
+  <!-- Finance Department Stylesheet -->
+  <link rel="stylesheet" href="/css/finance.css?v=20260929_pro">
 </head>
 <body>
 
   <!-- ========================================================================
-       Main Two-Panel Messaging Container
+       Department Selection Screen (لوحة التحكم الرئيسية)
        ======================================================================== -->
-  <div class="chat-app-root" id="chat-app-root">
+  <div class="dept-selection-root" id="dept-selection-root" dir="rtl" style="display: none;">
+    <div class="dept-selection-container">
+      
+      <!-- Top Brand Header -->
+      <header class="dept-selection-header">
+        <div class="dept-brand">
+          <div class="dept-brand-logo">FS</div>
+          <div>
+            <h1 class="dept-brand-title">بوابة فيس ستون الموحدة</h1>
+            <p class="dept-brand-subtitle">فيس ستون — إدارة العمليات الصناعية والمحاجر واللوجستيات والمالية</p>
+          </div>
+        </div>
+
+        <div class="dept-user-badge">
+          <div class="dept-user-avatar" id="dept-user-avatar">FS</div>
+          <div class="dept-user-info">
+            <span class="dept-user-name" id="dept-user-name">جاري التحميل...</span>
+            <span class="dept-user-role" id="dept-user-role">الصلاحية</span>
+          </div>
+          <button type="button" class="dept-signout-btn" id="dept-logout-btn" title="تسجيل الخروج">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            <span>تسجيل الخروج</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Main Department Choice Section -->
+      <div class="dept-selection-content">
+        <div class="dept-selection-intro">
+          <h2 class="dept-prompt-heading">لوحة التحكم واختيار الأقسام</h2>
+          <p class="dept-prompt-sub">اختر القسم المطلوب لمتابعة السجلات، الحركات، والعمليات اليومية.</p>
+        </div>
+
+        <div class="dept-cards-grid" id="dept-cards-grid">
+          
+          <!-- FINANCE CARD -->
+          <div class="dept-card dept-card-finance" id="card-dept-finance">
+            <div class="dept-card-top">
+              <div class="dept-card-icon-wrap finance-icon">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M7 15h0M2 10h20M12 15h6"/></svg>
+              </div>
+              <span class="dept-card-badge active">مساحة عمل مفعلة</span>
+            </div>
+            <div class="dept-card-body">
+              <h3 class="dept-card-title">قسم المالية</h3>
+              <p class="dept-card-tagline">الحسابات والبيانات المالية وأوامر الشراء</p>
+              <p class="dept-card-desc">
+                متابعة أوامر الشراء، الإحصائيات المالية، سجلات التوريد، الفواتير، ومحادثات الاستفسارات مع فريق المالية.
+              </p>
+            </div>
+            <div class="dept-card-footer">
+              <button type="button" class="btn-enter-dept btn-enter-finance" id="btn-enter-finance">
+                <span>دخول قسم المالية</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- TRANSPORTATION CARD -->
+          <div class="dept-card dept-card-transportation" id="card-dept-transportation" style="display: none;">
+            <div class="dept-card-top">
+              <div class="dept-card-icon-wrap trans-icon">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="3" width="15" height="13" rx="1"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+              </div>
+              <span class="dept-card-badge restricted">وصول مصرح به</span>
+            </div>
+            <div class="dept-card-body">
+              <h3 class="dept-card-title">قسم النقل واللوجستيات</h3>
+              <p class="dept-card-tagline">حركة الأسطول وموازين البسكول</p>
+              <p class="dept-card-desc">
+                تسجيل حركات النقل، أوزان السيارات، موازين الدخول والخروج، واحتساب الأوزان الصافية وأذونات الشحن.
+              </p>
+            </div>
+            <div class="dept-card-footer">
+              <button type="button" class="btn-enter-dept btn-enter-trans" id="btn-enter-transportation">
+                <span>دخول قسم النقل</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- STORAGE CARD -->
+          <div class="dept-card dept-card-storage" id="card-dept-storage" style="display: none;">
+            <div class="dept-card-top">
+              <div class="dept-card-icon-wrap storage-icon">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+              </div>
+              <span class="dept-card-badge restricted">وصول مصرح به</span>
+            </div>
+            <div class="dept-card-body">
+              <h3 class="dept-card-title">قسم المستودعات والتخزين</h3>
+              <p class="dept-card-tagline">أرصدة الخامات وساحات التخزين</p>
+              <p class="dept-card-desc">
+                متابعة أرصدة الساحات، حركات الإضافة والصرف والتحويل بين المستودعات، وتوثيق أذونات الاستلام والتسليم.
+              </p>
+            </div>
+            <div class="dept-card-footer">
+              <button type="button" class="btn-enter-dept btn-enter-storage" id="btn-enter-storage">
+                <span>دخول قسم المستودعات</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- MANAGEMENT CARD -->
+          <div class="dept-card dept-card-management" id="card-dept-management" style="display: none;">
+            <div class="dept-card-top">
+              <div class="dept-card-icon-wrap management-icon">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/><path d="M7 10h2v3H7zM11 7h2v6h-2zM15 10h2v3h-2z"/></svg>
+              </div>
+              <span class="dept-card-badge restricted">وصول مصرح به</span>
+            </div>
+            <div class="dept-card-body">
+              <h3 class="dept-card-title">إدارة المصنع ومراقبة الجودة</h3>
+              <p class="dept-card-tagline">مراقبة الإنتاج والفحص الفني</p>
+              <p class="dept-card-desc">
+                فحص جودة الشحنات، اعتماد التوريدات، تصنيف الخامات المستلمة، وحصر نسب الهالك والمرفوضات.
+              </p>
+            </div>
+            <div class="dept-card-footer">
+              <button type="button" class="btn-enter-dept btn-enter-management" id="btn-enter-management">
+                <span>دخول قسم الإدارة</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+      
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       Empty Transportation Department Page (Coming Soon Placeholder)
+       ======================================================================== -->
+  <!-- ========================================================================
+       Transportation Department Page (Management / Transaction Entry) - Arabic RTL
+       ======================================================================== -->
+  <div class="transportation-page-root" id="transportation-page-root" dir="rtl" style="display: none;">
+    <!-- Top Header -->
+    <header class="trans-page-header">
+      <div class="trans-brand">
+        <div class="dept-brand-logo trans-brand-logo">FS</div>
+        <div>
+          <span class="trans-title">فيس ستون للنقل واللوجستيات</span>
+          <span class="trans-tag">إدارة أسطول النقل وحركات المصنع</span>
+        </div>
+      </div>
+
+      <div class="trans-header-actions">
+        <div class="trans-user-pill">
+          <div class="trans-user-avatar" id="trans-user-avatar">FS</div>
+          <div class="trans-user-meta">
+            <span class="trans-user-name" id="trans-user-name">مستخدم مصرح له</span>
+            <span class="trans-user-role" id="trans-user-role">إدارة النقل</span>
+          </div>
+        </div>
+        <button type="button" class="btn-back-departments" id="trans-back-to-departments-btn" title="العودة إلى شاشة اختيار الأقسام">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          <span>العودة إلى الأقسام</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="trans-main-container">
+      <div class="trans-dashboard-wrapper">
+        
+        <!-- Header Banner Card -->
+        <div class="trans-header-card">
+          <div class="trans-header-icon-box">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+          </div>
+          <div class="trans-header-text">
+            <div class="trans-badge-row">
+              <span class="trans-role-badge">صلاحية: المدير التنفيذي / الدعم الفني / مدير النقل</span>
+              <span class="trans-live-badge"><span class="live-dot-pulse"></span> متصل بقاعدة البيانات SQL Server</span>
+            </div>
+            <h1 class="trans-heading">تسجيل حركة نقل جديدة</h1>
+            <p class="trans-subheading">تسجيل حركات سيارات المصنع، أذونات الشحن، موازين البسكول، وبيانات استلام الشحنات.</p>
+          </div>
+        </div>
+
+        <!-- Global Alert Box -->
+        <div class="trans-alert-banner" id="trans-form-alert" style="display: none;">
+          <div class="trans-alert-icon" id="trans-alert-icon">✓</div>
+          <div class="trans-alert-content">
+            <div class="trans-alert-title" id="trans-alert-title">نجاح</div>
+            <div class="trans-alert-desc" id="trans-alert-desc">تم حفظ الحركة بنجاح.</div>
+          </div>
+          <button type="button" class="trans-alert-close" id="trans-alert-close" aria-label="إغلاق التنبيه">✕</button>
+        </div>
+
+        <!-- Main Form Container -->
+        <form class="trans-form-card" id="trans-entry-form" novalidate>
+
+          <!-- 1. Transaction Information Section -->
+          <div class="trans-form-section">
+            <div class="trans-section-header">
+              <div class="trans-section-num">1</div>
+              <div>
+                <h2 class="trans-section-title">بيانات الحركة</h2>
+                <p class="trans-section-desc">البيانات الأساسية وتاريخ تسجيل حركة النقل.</p>
+              </div>
+            </div>
+
+            <div class="trans-grid-2">
+              <!-- Field A: Transaction Number -->
+              <div class="trans-form-group" id="group-trans-number">
+                <label class="trans-label" for="trans-number-input">
+                  رقم الحركة <span class="trans-req">*</span>
+                </label>
+                <div class="trans-input-wrap">
+                  <span class="trans-input-prefix">#</span>
+                  <input type="number" id="trans-number-input" class="trans-input" placeholder="مثال: 1001" step="1" min="1" required autocomplete="off" />
+                </div>
+                <span class="trans-field-hint">رقم صحيح فريد لتعريف حركة النقل.</span>
+                <span class="trans-field-error" id="trans-number-error"></span>
+              </div>
+
+              <!-- Field B: Transaction Date -->
+              <div class="trans-form-group" id="group-trans-date">
+                <label class="trans-label" for="trans-date-input">
+                  التاريخ <span class="trans-req">*</span>
+                </label>
+                <div class="trans-input-wrap">
+                  <input type="datetime-local" id="trans-date-input" class="trans-input" required />
+                </div>
+                <span class="trans-field-hint">تاريخ وتوقيت تسجيل الحركة.</span>
+                <span class="trans-field-error" id="trans-date-error"></span>
+              </div>
+
+              <!-- Field F: PO Number -->
+              <div class="trans-form-group" id="group-trans-po">
+                <label class="trans-label" for="trans-po-input">
+                  رقم أمر الشراء (PO) <span class="trans-req">*</span>
+                </label>
+                <div class="trans-input-wrap">
+                  <input type="text" id="trans-po-input" class="trans-input" placeholder="مثال: PO-2026-9402" required autocomplete="off" />
+                </div>
+                <span class="trans-field-hint">رقم أمر التوريد أو عقد الشراء.</span>
+                <span class="trans-field-error" id="trans-po-error"></span>
+              </div>
+
+              <!-- Field 6: Transaction Status -->
+              <div class="trans-form-group" id="group-trans-status">
+                <label class="trans-label" for="trans-status-select">
+                  حالة النقلة <span class="trans-req">*</span>
+                </label>
+                <div class="trans-input-wrap">
+                  <select id="trans-status-select" class="trans-input trans-select" required>
+                    <option value="" disabled selected>-- اختر حالة النقلة --</option>
+                  </select>
+                </div>
+                <span class="trans-field-hint">المرحلة التشغيلية الحالية للنقلة.</span>
+                <span class="trans-field-error" id="trans-status-error"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. Vehicle & Driver Section -->
+          <div class="trans-form-section">
+            <div class="trans-section-header">
+              <div class="trans-section-num">2</div>
+              <div>
+                <h2 class="trans-section-title">بيانات السيارة والسائق</h2>
+                <p class="trans-section-desc">بيانات وسيلة النقل، السائق، وخط السير اللوجستي.</p>
+              </div>
+            </div>
+
+            <div class="trans-grid-2">
+              <!-- Field C: Car Number -->
+              <div class="trans-form-group" id="group-trans-car">
+                <label class="trans-label" for="trans-car-input">
+                  رقم السيارة <span class="trans-req">*</span>
+                </label>
+                <div class="trans-input-wrap">
+                  <input type="text" id="trans-car-input" class="trans-input" placeholder="مثال: ن ق د 5821" required autocomplete="off" />
+                </div>
+                <span class="trans-field-hint">رقم لوحة الشاحنة أو السيارة.</span>
+                <span class="trans-field-error" id="trans-car-error"></span>
+              </div>
+
+              <!-- Field D: Driver's Name -->
+              <div class="trans-form-group" id="group-trans-driver">
+                <label class="trans-label" for="trans-driver-input">
+                  اسم السائق <span class="trans-req">*</span>
+                </label>
+                <div class="trans-input-wrap">
+                  <input type="text" id="trans-driver-input" class="trans-input" placeholder="مثال: مصطفى حسن محمود" required autocomplete="off" />
+                </div>
+                <span class="trans-field-hint">الاسم الكامل لسائق الشاحنة.</span>
+                <span class="trans-field-error" id="trans-driver-error"></span>
+              </div>
+
+              <!-- Field E: Source -->
+              <div class="trans-form-group" id="group-trans-source">
+                <label class="trans-label" for="trans-source-input">
+                  المورد / المصدر <span class="trans-req">*</span>
+                </label>
+                <div class="trans-input-wrap">
+                  <input type="text" id="trans-source-input" class="trans-input" placeholder="مثال: محجر السويس / القطاع 3" required autocomplete="off" />
+                </div>
+                <span class="trans-field-hint">مكان التحميل أو جهة التوريد الأصلية.</span>
+                <span class="trans-field-error" id="trans-source-error"></span>
+              </div>
+
+              <!-- Field 5: Destination -->
+              <div class="trans-form-group" id="group-trans-destination">
+                <label class="trans-label" for="trans-destination-select">
+                  الوجهة <span class="trans-req">*</span>
+                </label>
+                <div class="trans-input-wrap">
+                  <select id="trans-destination-select" class="trans-input trans-select" required>
+                    <option value="" disabled selected>-- اختر الوجهة --</option>
+                  </select>
+                </div>
+                <span class="trans-field-hint">الموقع أو قطاع المصنع المستهدف للتسليم.</span>
+                <span class="trans-field-error" id="trans-destination-error"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. Material & Weight Information Section -->
+          <div class="trans-form-section">
+            <div class="trans-section-header">
+              <div class="trans-section-num">3</div>
+              <div>
+                <h2 class="trans-section-title">بيانات الخامة وأوزان البسكول</h2>
+                <p class="trans-section-desc">مواصفات الشحنة وحسابات الوزن الصافي والمتوقع آلياً.</p>
+              </div>
+            </div>
+
+            <!-- Material Type Select -->
+            <div class="trans-form-group" id="group-trans-material" style="margin-bottom: 1.25rem;">
+              <label class="trans-label" for="trans-material-select">
+                نوع الخامة <span class="trans-req">*</span>
+              </label>
+              <div class="trans-input-wrap">
+                <select id="trans-material-select" class="trans-input trans-select" required>
+                  <option value="" disabled selected>-- اختر نوع الخامة --</option>
+                </select>
+              </div>
+              <span class="trans-field-hint">رتبة الخرسانة أو مادة البناء الموردة.</span>
+              <span class="trans-field-error" id="trans-material-error"></span>
+            </div>
+
+            <!-- 3 Numeric Weight Inputs -->
+            <div class="trans-grid-3">
+              <!-- Field H: Weight Before Loading -->
+              <div class="trans-form-group" id="group-trans-weight-before">
+                <label class="trans-label" for="trans-weight-before-input">
+                  الوزن قبل التحميل <span class="trans-req">*</span>
+                </label>
+                <div class="trans-input-wrap">
+                  <input type="number" id="trans-weight-before-input" class="trans-input trans-num-input" placeholder="0.000" step="0.001" min="0.001" required />
+                  <span class="trans-unit-suffix">طن</span>
+                </div>
+                <span class="trans-field-hint">وزن الشاحنة الفارغة قبل التحميل (فارغ).</span>
+                <span class="trans-field-error" id="trans-weight-before-error"></span>
+              </div>
+
+              <!-- Field I: Weight When Entering Factory -->
+              <div class="trans-form-group" id="group-trans-weight-enter">
+                <label class="trans-label" for="trans-weight-enter-input">
+                  وزن دخول المصنع <span class="trans-req">*</span>
+                </label>
+                <div class="trans-input-wrap">
+                  <input type="number" id="trans-weight-enter-input" class="trans-input trans-num-input" placeholder="0.000" step="0.001" min="0.001" required />
+                  <span class="trans-unit-suffix">طن</span>
+                </div>
+                <span class="trans-field-hint">الوزن الإجمالي للشاحنة محملة عند ميزان الدخول.</span>
+                <span class="trans-field-error" id="trans-weight-enter-error"></span>
+              </div>
+
+              <!-- Field J: Weight When Exiting Factory -->
+              <div class="trans-form-group" id="group-trans-weight-exit">
+                <label class="trans-label" for="trans-weight-exit-input">
+                  وزن خروج المصنع <span class="trans-req">*</span>
+                </label>
+                <div class="trans-input-wrap">
+                  <input type="number" id="trans-weight-exit-input" class="trans-input trans-num-input" placeholder="0.000" step="0.001" min="0.001" required />
+                  <span class="trans-unit-suffix">طن</span>
+                </div>
+                <span class="trans-field-hint">وزن الشاحنة فارغة بعد التفريغ عند ميزان الخروج.</span>
+                <span class="trans-field-error" id="trans-weight-exit-error"></span>
+              </div>
+            </div>
+
+            <!-- Dynamic Weight Warning Banner -->
+            <div class="trans-calc-warning" id="trans-weight-warning" style="display: none;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              <span id="trans-weight-warning-text">خطأ منطقي في الأوزان</span>
+            </div>
+
+            <!-- Automatic Calculated Weights Cards (Read-only) -->
+            <div class="trans-calc-grid">
+              <!-- Expected Weight Card -->
+              <div class="trans-calc-card expected-card">
+                <div class="trans-calc-header">
+                  <span class="trans-calc-badge">حساب تلقائي</span>
+                  <span class="trans-calc-formula">المعادلة: الوزن قبل التحميل − وزن خروج المصنع</span>
+                </div>
+                <label class="trans-calc-label" for="trans-expected-weight-display">الوزن المتوقع</label>
+                <div class="trans-calc-value-wrap">
+                  <input type="text" id="trans-expected-weight-display" class="trans-calc-input" readonly value="0.000" />
+                  <span class="trans-calc-unit">طن</span>
+                </div>
+                <p class="trans-calc-subtext">يتم التحديث فوراً عند تغيير الوزن قبل التحميل أو وزن خروج المصنع.</p>
+              </div>
+
+              <!-- Net Weight Card -->
+              <div class="trans-calc-card net-card">
+                <div class="trans-calc-header">
+                  <span class="trans-calc-badge primary">حساب تلقائي</span>
+                  <span class="trans-calc-formula">المعادلة: وزن دخول المصنع − وزن خروج المصنع</span>
+                </div>
+                <label class="trans-calc-label" for="trans-net-weight-display">الوزن الفعلي</label>
+                <div class="trans-calc-value-wrap">
+                  <input type="text" id="trans-net-weight-display" class="trans-calc-input" readonly value="0.000" />
+                  <span class="trans-calc-unit">طن</span>
+                </div>
+                <p class="trans-calc-subtext">صافي حمولة الخرسانة المستلمة. يتم التحديث فوراً عند تغيير وزن الدخول أو الخروج.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4. Receiving Information & Notes Section -->
+          <div class="trans-form-section">
+            <div class="trans-section-header">
+              <div class="trans-section-num">4</div>
+              <div>
+                <h2 class="trans-section-title">بيانات الاستلام والاعتماد</h2>
+                <p class="trans-section-desc">موقف قبول الشحنة بالمصنع وملاحظات الجودة والمطابقة.</p>
+              </div>
+            </div>
+
+            <div class="trans-grid-2">
+              <!-- Field 7: Receiving Status -->
+              <div class="trans-form-group" id="group-trans-receiving-status">
+                <label class="trans-label" for="trans-receiving-status-select">
+                  حالة الاستلام / الاعتماد <span class="trans-req">*</span>
+                </label>
+                <div class="trans-input-wrap">
+                  <select id="trans-receiving-status-select" class="trans-input trans-select" required>
+                    <option value="" disabled selected>-- اختر حالة الاستلام / الاعتماد --</option>
+                  </select>
+                </div>
+                <span class="trans-field-hint">موقف قبول الخامة ومطابقتها للمواصفات.</span>
+                <span class="trans-field-error" id="trans-receiving-status-error"></span>
+              </div>
+
+              <!-- Field 9: Submission Date -->
+              <div class="trans-form-group">
+                <label class="trans-label" for="trans-submission-date-display">
+                  تاريخ وتوقيت الحفظ
+                </label>
+                <div class="trans-input-wrap trans-readonly-wrap">
+                  <input type="text" id="trans-submission-date-display" class="trans-input" readonly value="يتم التوليد تلقائياً من الخادم عند الحفظ" />
+                  <span class="trans-server-badge">توقيت الخادم</span>
+                </div>
+                <span class="trans-field-hint">تسجيل زمني رسمي يصدره خادم النظام عند الحفظ في قاعدة البيانات.</span>
+              </div>
+            </div>
+
+            <!-- Field 8: Notes (Optional) -->
+            <div class="trans-form-group" id="group-trans-notes" style="margin-top: 1rem;">
+              <label class="trans-label" for="trans-notes-input">
+                ملاحظات <span class="trans-opt">(اختياري)</span>
+              </label>
+              <textarea id="trans-notes-input" class="trans-input trans-textarea" rows="3" placeholder="أدخل أي ملاحظات خاصة بالجودة، رقم الخلطة، أو تعليمات الشحن والتعتيق..."></textarea>
+              <span class="trans-field-hint">ملاحظات إضافية (بحد أقصى 1000 حرف).</span>
+              <span class="trans-field-error" id="trans-notes-error"></span>
+            </div>
+          </div>
+
+          <!-- Form Buttons Bar (Submit & Clear) -->
+          <div class="trans-form-actions">
+            <button type="button" class="trans-btn trans-btn-clear" id="trans-clear-btn" title="مسح كافة البيانات المدخلة">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+              <span>مسح</span>
+            </button>
+
+            <button type="submit" class="trans-btn trans-btn-submit" id="trans-submit-btn">
+              <span class="trans-btn-spinner" id="trans-submit-spinner" style="display: none;"></span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" id="trans-submit-icon"><polyline points="20 6 9 17 4 12"/></svg>
+              <span id="trans-submit-btn-text">حفظ</span>
+            </button>
+          </div>
+
+        </form>
+
+        <!-- Recent Transactions Log Section -->
+        <div class="trans-recent-section" id="trans-recent-section">
+          <div class="trans-recent-header">
+            <div>
+              <h2 class="trans-recent-title">سجل الحركات الأخيرة</h2>
+              <p class="trans-recent-subtitle">حركات النقل المحفوظة في قاعدة بيانات المصنع SQL Server خلال هذه الجلسة.</p>
+            </div>
+            <button type="button" class="trans-btn-refresh" id="trans-refresh-btn" title="تحديث السجل من قاعدة البيانات">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+              <span>تحديث السجل</span>
+            </button>
+          </div>
+
+          <div class="trans-table-responsive">
+            <table class="trans-data-table" id="trans-data-table">
+              <thead>
+                <tr>
+                  <th>رقم الحركة</th>
+                  <th>التاريخ</th>
+                  <th>رقم السيارة</th>
+                  <th>اسم السائق</th>
+                  <th>نوع الخامة</th>
+                  <th>الوزن الفعلي</th>
+                  <th>الوزن المتوقع</th>
+                  <th>الوجهة</th>
+                  <th>حالة النقلة</th>
+                  <th>حالة الاستلام / الاعتماد</th>
+                  <th>وقت الحفظ</th>
+                </tr>
+              </thead>
+              <tbody id="trans-recent-tbody">
+                <tr>
+                  <td colspan="11" class="trans-empty-row">لا توجد حركات مسجلة حتى الآن. قم بتسجيل حركة جديدة أعلاه لإضافتها للسجل.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </main>
+
+    <!-- Clear Confirmation Modal -->
+    <div class="trans-confirm-backdrop" id="trans-confirm-modal" dir="rtl" style="display: none;">
+      <div class="trans-confirm-card">
+        <div class="trans-confirm-icon-box">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+        <h3 class="trans-confirm-title">مسح بيانات النموذج؟</h3>
+        <p class="trans-confirm-msg">لقد قمت بإدخال بيانات في النموذج. هل أنت متأكد من مسح جميع الحقول؟ سيتم إعادة ضبط كافة البيانات المدخلة.</p>
+        <div class="trans-confirm-actions">
+          <button type="button" class="trans-btn-dialog secondary" id="trans-confirm-cancel-btn">إلغاء</button>
+          <button type="button" class="trans-btn-dialog danger" id="trans-confirm-proceed-btn">نعم، مسح الكل</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       Storage Department Page (Inventory & Warehouse Management) - Arabic RTL
+       ======================================================================== -->
+  <div class="storage-page-root" id="storage-page-root" dir="rtl" style="display: none;">
+    <!-- Top Sticky Header -->
+    <header class="storage-page-header">
+      <div class="storage-brand">
+        <div class="dept-brand-logo storage-brand-logo">FS</div>
+        <div>
+          <span class="storage-title">فيس ستون لإدارة المخازن والمستودعات</span>
+          <span class="storage-tag">نظام تتبع وإدارة حركات المواد وأرصدة المخزون</span>
+        </div>
+      </div>
+
+      <div class="storage-header-actions">
+        <div class="storage-user-pill">
+          <div class="storage-user-avatar" id="storage-user-avatar">FS</div>
+          <div class="storage-user-meta">
+            <span class="storage-user-name" id="storage-user-name">مستخدم مصرح له</span>
+            <span class="storage-user-role" id="storage-user-role">إدارة المخازن</span>
+          </div>
+        </div>
+        <button type="button" class="btn-back-departments" id="storage-back-to-departments-btn" title="العودة إلى شاشة اختيار الأقسام">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          <span>العودة إلى الأقسام</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="storage-main-container">
+      <div class="storage-dashboard-wrapper">
+
+        <!-- Header Banner Card -->
+        <div class="storage-header-card">
+          <div class="storage-header-icon-box">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+          </div>
+          <div class="storage-header-text">
+            <div class="storage-badge-row">
+              <span class="storage-status-chip active">نظام إدارة المخازن معتمد</span>
+              <span class="storage-status-chip info" id="storage-overall-balance-chip">الرصيد العام: 0.000 طن</span>
+            </div>
+            <h1 class="storage-heading">تسجيل حركة وارد ومنصرف للمخازن</h1>
+            <p class="storage-subheading">
+              تسجيل عمليات الإضافة والصرف والتحويل والتسوية الجردية لمستودعات وخامات المصنع مع ربط نقلات التوريد واحتساب الرصيد آلياً.
+            </p>
+          </div>
+        </div>
+
+        <!-- Live Status / Alert Banner -->
+        <div class="storage-alert-banner" id="storage-alert-banner" style="display: none;" role="alert">
+          <div class="storage-alert-icon" id="storage-alert-icon">✓</div>
+          <div class="storage-alert-body">
+            <span class="storage-alert-title" id="storage-alert-title">نجاح</span>
+            <span class="storage-alert-msg" id="storage-alert-msg">تم حفظ حركة المخزن بنجاح</span>
+          </div>
+          <button type="button" class="storage-alert-close" id="storage-alert-close-btn" aria-label="إغلاق التنبيه">✕</button>
+        </div>
+
+        <!-- Main Storage Form Card -->
+        <section class="storage-form-card" aria-label="نموذج تسجيل حركة المخزن">
+          <form id="storage-entry-form" novalidate>
+
+            <!-- 1. بيانات الحركة -->
+            <div class="storage-section">
+              <div class="storage-section-header">
+                <span class="storage-section-num">1</span>
+                <div>
+                  <h2 class="storage-section-title">بيانات الحركة</h2>
+                  <p class="storage-section-subtitle">المعلومات الأساسية لحركة المخزن ونوع العملية المعتمدة</p>
+                </div>
+              </div>
+
+              <div class="storage-grid-4">
+                <!-- رقم الحركة -->
+                <div class="storage-field-group">
+                  <label class="storage-label" for="storage-movement-number">
+                    <span>رقم الحركة</span>
+                    <span class="storage-required-star">*</span>
+                  </label>
+                  <div class="storage-input-wrap">
+                    <span class="storage-input-prefix">#</span>
+                    <input type="number" id="storage-movement-number" name="movementNumber" class="storage-input" required min="1" step="1" placeholder="مثال: 5001" dir="ltr">
+                  </div>
+                  <span class="storage-field-hint">رقم تسلسلي لحركة المستودع</span>
+                  <span class="storage-error-msg" id="err-storage-movement-number"></span>
+                </div>
+
+                <!-- التاريخ -->
+                <div class="storage-field-group">
+                  <label class="storage-label" for="storage-date">
+                    <span>التاريخ</span>
+                    <span class="storage-required-star">*</span>
+                  </label>
+                  <input type="datetime-local" id="storage-date" name="transactionDate" class="storage-input" required dir="ltr">
+                  <span class="storage-field-hint">تاريخ وتوقيت تنفيذ حركة المخزن</span>
+                  <span class="storage-error-msg" id="err-storage-date"></span>
+                </div>
+
+                <!-- نوع الخدمة -->
+                <div class="storage-field-group">
+                  <label class="storage-label" for="storage-service-type">
+                    <span>نوع الخدمة</span>
+                    <span class="storage-required-star">*</span>
+                  </label>
+                  <select id="storage-service-type" name="serviceType" class="storage-input storage-select" required>
+                    <option value="" disabled selected>-- اختر نوع الخدمة --</option>
+                    <option value="إضافة">إضافة</option>
+                    <option value="صرف">صرف</option>
+                    <option value="تحويل">تحويل</option>
+                    <option value="تسوية">تسوية</option>
+                  </select>
+                  <span class="storage-field-hint">يحدد طبيعة وأثر الحركة على الرصيد</span>
+                  <span class="storage-error-msg" id="err-storage-service-type"></span>
+                </div>
+
+                <!-- رقم المرجع -->
+                <div class="storage-field-group">
+                  <label class="storage-label" for="storage-reference-number">
+                    <span>رقم المرجع</span>
+                    <span class="storage-required-star">*</span>
+                    <span class="storage-ref-status" id="storage-ref-status"></span>
+                  </label>
+                  <div class="storage-input-wrap">
+                    <span class="storage-input-prefix">REF-</span>
+                    <input type="number" id="storage-reference-number" name="referenceNumber" class="storage-input" required min="1" step="1" placeholder="مثال: 7001" dir="ltr">
+                  </div>
+                  <span class="storage-field-hint">رقم فريد غير مكرر للربط المستندي</span>
+                  <span class="storage-error-msg" id="err-storage-reference-number"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. بيانات أمر الشراء والنقل -->
+            <div class="storage-section">
+              <div class="storage-section-header">
+                <span class="storage-section-num">2</span>
+                <div>
+                  <h2 class="storage-section-title">بيانات أمر الشراء والنقل</h2>
+                  <p class="storage-section-subtitle">ربط أمر الشراء وتحديد أرقام النقلات التابعة للحركة (الحركة الواحدة قد تتكون من أكثر من نقلة)</p>
+                </div>
+              </div>
+
+              <div class="storage-grid-po-trans">
+                <!-- رقم أمر الشراء (PO) -->
+                <div class="storage-field-group">
+                  <label class="storage-label" for="storage-po-number">
+                    <span>رقم أمر الشراء (PO)</span>
+                    <span class="storage-required-star">*</span>
+                  </label>
+                  <input type="text" id="storage-po-number" name="poNumber" class="storage-input" required maxlength="100" placeholder="مثال: PO-2026-FS-101" dir="ltr">
+                  <span class="storage-field-hint">أمر الشراء المعتمد للمواد الخام</span>
+                  <span class="storage-error-msg" id="err-storage-po-number"></span>
+                </div>
+
+                <!-- رقم النقلة (Multiple Transportation Movements Repeater) -->
+                <div class="storage-field-group storage-movements-full">
+                  <div class="storage-label-row">
+                    <label class="storage-label" style="margin-bottom: 0;">
+                      <span>رقم النقلة</span>
+                      <span class="storage-required-star">*</span>
+                    </label>
+                    <span class="storage-pill-counter" id="storage-movements-count">1 نقلة محددة</span>
+                  </div>
+
+                  <div class="storage-movements-card">
+                    <p class="storage-movements-note">الحركة الواحدة يمكن أن تتكون من أكثر من نقلة. أضف أرقام نقلات التوريد التابعة لهذه الحركة:</p>
+                    
+                    <!-- Dynamic Repeater Container -->
+                    <div class="storage-movements-list" id="storage-movements-list">
+                      <!-- Row template generated by JS -->
+                    </div>
+
+                    <!-- Add Button & Available Movements Quick Chips -->
+                    <div class="storage-movements-actions">
+                      <button type="button" class="btn-storage-add-movement" id="btn-storage-add-movement">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        <span>إضافة نقلة</span>
+                      </button>
+
+                      <div class="storage-quick-select-wrap">
+                        <span class="storage-quick-label">اختر من النقلات المسجلة حديثاً:</span>
+                        <div class="storage-quick-chips" id="storage-quick-chips">
+                          <!-- Filled dynamically from Transportation records -->
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <span class="storage-error-msg" id="err-storage-movements"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. بيانات الكميات -->
+            <div class="storage-section">
+              <div class="storage-section-header">
+                <span class="storage-section-num">3</span>
+                <div>
+                  <h2 class="storage-section-title">بيانات الكميات</h2>
+                  <p class="storage-section-subtitle">الكميات الواردة والمنصرفة واحتساب الرصيد الافتتاحي والختامي تلقائياً</p>
+                </div>
+              </div>
+
+              <div class="storage-grid-4">
+                <!-- الكمية الواردة -->
+                <div class="storage-field-group">
+                  <label class="storage-label" for="storage-incoming-qty">
+                    <span>الكمية الواردة</span>
+                    <span class="storage-required-star" id="star-incoming">*</span>
+                  </label>
+                  <div class="storage-input-wrap">
+                    <span class="storage-unit-suffix">طن</span>
+                    <input type="number" id="storage-incoming-qty" name="incomingQuantity" class="storage-input storage-num-input" min="0" step="0.001" value="0.000" dir="ltr">
+                  </div>
+                  <span class="storage-field-hint">الكمية الداخلة إلى المستودع</span>
+                  <span class="storage-error-msg" id="err-storage-incoming-qty"></span>
+                </div>
+
+                <!-- الكمية المنصرفة -->
+                <div class="storage-field-group">
+                  <label class="storage-label" for="storage-outgoing-qty">
+                    <span>الكمية المنصرفة</span>
+                    <span class="storage-required-star" id="star-outgoing">*</span>
+                  </label>
+                  <div class="storage-input-wrap">
+                    <span class="storage-unit-suffix">طن</span>
+                    <input type="number" id="storage-outgoing-qty" name="outgoingQuantity" class="storage-input storage-num-input" min="0" step="0.001" value="0.000" dir="ltr">
+                  </div>
+                  <span class="storage-field-hint">الكمية الخارجة من المستودع</span>
+                  <span class="storage-error-msg" id="err-storage-outgoing-qty"></span>
+                </div>
+
+                <!-- الرصيد الافتتاحي -->
+                <div class="storage-field-group">
+                  <label class="storage-label" for="storage-opening-balance">
+                    <span>الرصيد الافتتاحي</span>
+                    <span class="storage-readonly-pill">محسوب / مسجل</span>
+                  </label>
+                  <div class="storage-input-wrap storage-readonly-wrap">
+                    <span class="storage-unit-suffix">طن</span>
+                    <input type="number" id="storage-opening-balance" name="openingBalance" class="storage-input storage-readonly-input" readonly step="0.001" value="0.000" dir="ltr">
+                  </div>
+                  <span class="storage-field-hint">رصيد المستودع قبل تنفيذ هذه الحركة</span>
+                </div>
+
+                <!-- الرصيد الختامي -->
+                <div class="storage-field-group">
+                  <label class="storage-label" for="storage-closing-balance">
+                    <span>الرصيد الختامي</span>
+                    <span class="storage-calc-pill">حساب آلي = افتتاحي + وارد - منصرف</span>
+                  </label>
+                  <div class="storage-input-wrap storage-calc-wrap">
+                    <span class="storage-unit-suffix">طن</span>
+                    <input type="number" id="storage-closing-balance" name="closingBalance" class="storage-input storage-calc-input" readonly step="0.001" value="0.000" dir="ltr">
+                  </div>
+                  <span class="storage-field-hint">الرصيد المتوقع بعد حفظ الحركة</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 4. التخزين والاستلام -->
+            <div class="storage-section">
+              <div class="storage-section-header">
+                <span class="storage-section-num">4</span>
+                <div>
+                  <h2 class="storage-section-title">التخزين والاستلام</h2>
+                  <p class="storage-section-subtitle">تحديد موقع المستودع والموظف المستلم والملاحظات</p>
+                </div>
+              </div>
+
+              <div class="storage-grid-2">
+                <!-- مكان التخزين -->
+                <div class="storage-field-group">
+                  <label class="storage-label" for="storage-location">
+                    <span id="label-storage-location">مكان التخزين</span>
+                    <span class="storage-required-star">*</span>
+                  </label>
+                  <select id="storage-location" name="storageLocation" class="storage-input storage-select" required>
+                    <option value="" disabled selected>-- اختر مكان التخزين --</option>
+                  </select>
+                  <span class="storage-field-hint">المستودع أو الصومعة المعنية بالحركة</span>
+                  <span class="storage-error-msg" id="err-storage-location"></span>
+                </div>
+
+                <!-- مكان التخزين المحول إليه (Destination Storage Location - Shown when ServiceType is تحويل) -->
+                <div class="storage-field-group" id="storage-destination-group" style="display: none;">
+                  <label class="storage-label" for="storage-destination-location">
+                    <span>مكان التخزين المحول إليه (الوجهة)</span>
+                    <span class="storage-required-star">*</span>
+                  </label>
+                  <select id="storage-destination-location" name="destinationStorageLocation" class="storage-input storage-select">
+                    <option value="" disabled selected>-- اختر المستودع المحول إليه --</option>
+                  </select>
+                  <span class="storage-field-hint">المستودع الذي سيستقبل المواد المحولة</span>
+                  <span class="storage-error-msg" id="err-storage-destination-location"></span>
+                </div>
+
+                <!-- اسم الموظف المستلم -->
+                <div class="storage-field-group">
+                  <label class="storage-label" for="storage-receiving-employee">
+                    <span>اسم الموظف المستلم</span>
+                    <span class="storage-required-star">*</span>
+                  </label>
+                  <div class="storage-input-wrap">
+                    <select id="storage-receiving-employee" name="receivingEmployee" class="storage-input storage-select" required>
+                      <option value="" disabled selected>-- اختر الموظف المستلم من القائمة --</option>
+                    </select>
+                  </div>
+                  <span class="storage-field-hint">الموظف المصرح له بالاستلام من قاعدة المستخدمين</span>
+                  <span class="storage-error-msg" id="err-storage-receiving-employee"></span>
+                </div>
+              </div>
+
+              <!-- ملاحظات -->
+              <div class="storage-field-group" style="margin-top: 1.25rem;">
+                <label class="storage-label" for="storage-notes">
+                  <span>ملاحظات</span>
+                  <span class="storage-optional-pill">(اختياري)</span>
+                </label>
+                <textarea id="storage-notes" name="notes" class="storage-input storage-textarea" rows="3" maxlength="1000" placeholder="أدخل أي ملاحظات إضافية حول فحص الخامة، حالة المستودع، أو أسباب التحويل والتسوية..."></textarea>
+                <span class="storage-field-hint">بحد أقصى 1000 حرف</span>
+                <span class="storage-error-msg" id="err-storage-notes"></span>
+              </div>
+            </div>
+
+            <!-- Form Action Buttons -->
+            <div class="storage-form-actions">
+              <button type="submit" class="storage-btn storage-btn-submit" id="btn-storage-submit">
+                <span class="storage-btn-spinner" id="storage-submit-spinner" style="display: none;"></span>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                <span id="storage-submit-text">حفظ</span>
+              </button>
+
+              <button type="button" class="storage-btn storage-btn-clear" id="btn-storage-clear">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                <span>مسح</span>
+              </button>
+            </div>
+
+          </form>
+        </section>
+
+        <!-- Recent Storage Transactions Table Card -->
+        <section class="storage-recent-card" aria-label="سجل حركات المخزن الأخيرة">
+          <div class="storage-recent-header">
+            <div>
+              <h2 class="storage-recent-title">سجل حركات المخازن الأخيرة</h2>
+              <p class="storage-recent-subtitle">عرض تفصيلي لآخر حركات الوارد والمنصرف والتحويل مع النقلات المرتبطة والأرصدة.</p>
+            </div>
+            <button type="button" class="storage-btn-refresh" id="btn-storage-refresh" title="تحديث البيانات">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+              <span>تحديث</span>
+            </button>
+          </div>
+
+          <div class="storage-table-responsive">
+            <table class="storage-data-table" id="storage-data-table">
+              <thead>
+                <tr>
+                  <th>رقم الحركة</th>
+                  <th>التاريخ</th>
+                  <th>نوع الخدمة</th>
+                  <th>رقم المرجع</th>
+                  <th>رقم أمر الشراء (PO)</th>
+                  <th>أرقام النقلات</th>
+                  <th>الكمية الواردة</th>
+                  <th>الكمية المنصرفة</th>
+                  <th>الرصيد الختامي</th>
+                  <th>مكان التخزين</th>
+                  <th>الموظف المستلم</th>
+                  <th>ملاحظات</th>
+                </tr>
+              </thead>
+              <tbody id="storage-table-body">
+                <tr id="storage-loading-row">
+                  <td colspan="12" class="storage-loading-cell">
+                    <div class="storage-spinner-box">
+                      <span class="storage-btn-spinner"></span>
+                      <span>جاري تحميل بيانات حركات المخزن...</span>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+      </div>
+    </main>
+
+    <!-- Confirmation Modal for Clear Action -->
+    <div class="storage-modal-backdrop" id="storage-confirm-modal" role="dialog" aria-modal="true" style="display: none;">
+      <div class="storage-modal-card">
+        <div class="storage-modal-icon-wrap">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+        <h3 class="storage-confirm-title">تأكيد مسح البيانات</h3>
+        <p class="storage-confirm-msg">هل أنت متأكد من مسح جميع البيانات المدخلة في النموذج؟ لن يتم حفظ أي تعديلات.</p>
+        <div class="storage-confirm-actions">
+          <button type="button" class="storage-btn-dialog secondary" id="storage-confirm-cancel-btn">إلغاء</button>
+          <button type="button" class="storage-btn-dialog danger" id="storage-confirm-proceed-btn">نعم، مسح الكل</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ========================================================================
+       Empty Management Department Page (Coming Soon Placeholder)
+       ======================================================================== -->
+  <!-- ========================================================================
+       Management Department Page (Material Receiving & Transportation Oversight) - Arabic RTL
+       ======================================================================== -->
+  <div class="management-page-root" id="management-page-root" dir="rtl" style="display: none;">
+    <!-- Top Header -->
+    <header class="mgmt-page-header">
+      <div class="mgmt-brand">
+        <div class="dept-brand-logo mgmt-brand-logo">FS</div>
+        <div>
+          <span class="mgmt-title">فيس ستون للإدارة والرقابة</span>
+          <span class="mgmt-tag">لوحة متابعة استلام الخامات وحركات النقل والموازين</span>
+        </div>
+      </div>
+
+      <div class="mgmt-header-actions">
+        <div class="mgmt-user-pill">
+          <div class="mgmt-user-avatar" id="mgmt-user-avatar">FS</div>
+          <div class="mgmt-user-meta">
+            <span class="mgmt-user-name" id="mgmt-user-name">مستخدم مصرح له</span>
+            <span class="mgmt-user-role" id="mgmt-user-role">الإدارة العامة</span>
+          </div>
+        </div>
+        <button type="button" class="btn-back-departments" id="management-back-to-departments-btn" title="العودة إلى شاشة اختيار الأقسام">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          <span>العودة إلى الأقسام</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="mgmt-main-container">
+      <div class="mgmt-dashboard-wrapper">
+
+        <!-- Header Banner Card -->
+        <div class="mgmt-header-card">
+          <div class="mgmt-header-icon-box">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/><path d="M7 10h2v3H7zM11 7h2v6h-2zM15 10h2v3h-2z"/></svg>
+          </div>
+          <div class="mgmt-header-text">
+            <div class="mgmt-badge-row">
+              <span class="mgmt-role-badge">صلاحية: الرئيس التنفيذي / الدعم الفني / مدير المصنع</span>
+              <span class="mgmt-live-badge"><span class="live-dot-pulse"></span> قاعدة بيانات المصنع المباشرة SQL Server</span>
+            </div>
+            <h1 class="mgmt-heading">لوحة الرقابة والمتابعة الإدارية</h1>
+            <p class="mgmt-subheading">متابعة دقيقة لكميات الخامات المستلمة، أذونات الشراء، حركات وسيارات النقل، ومواقف الجودة والاعتماد.</p>
+          </div>
+        </div>
+
+        <!-- 1. Management Summary KPI Cards -->
+        <section class="mgmt-summary-section" aria-label="ملخص المؤشرات الرئيسية">
+          <div class="mgmt-summary-grid">
+            
+            <!-- Card 1: Total Movements -->
+            <div class="mgmt-kpi-card kpi-movements">
+              <div class="mgmt-kpi-top">
+                <span class="mgmt-kpi-title">إجمالي النقلات</span>
+                <div class="mgmt-kpi-icon-box icon-truck">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                </div>
+              </div>
+              <div class="mgmt-kpi-value-row">
+                <span class="mgmt-kpi-value" id="mgmt-summary-movements">0</span>
+                <span class="mgmt-kpi-unit">نقلة</span>
+              </div>
+              <span class="mgmt-kpi-hint">إجمالي الشحنات والحركات المسجلة</span>
+            </div>
+
+            <!-- Card 2: Total Received Quantity -->
+            <div class="mgmt-kpi-card kpi-received">
+              <div class="mgmt-kpi-top">
+                <span class="mgmt-kpi-title">إجمالي الكمية المستلمة</span>
+                <div class="mgmt-kpi-icon-box icon-scale">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M6 8l6-5 6 5M6 8l-4 8h8l-4-8zM18 8l-4 8h8l-4-8z"/></svg>
+                </div>
+              </div>
+              <div class="mgmt-kpi-value-row">
+                <span class="mgmt-kpi-value" id="mgmt-summary-received">0.000</span>
+                <span class="mgmt-kpi-unit">طن</span>
+              </div>
+              <span class="mgmt-kpi-hint">الوزن الفعلي الإجمالي الوارد للمصنع</span>
+            </div>
+
+            <!-- Card 3: Accepted Quantity -->
+            <div class="mgmt-kpi-card kpi-accepted">
+              <div class="mgmt-kpi-top">
+                <span class="mgmt-kpi-title">إجمالي الكمية المقبولة</span>
+                <div class="mgmt-kpi-icon-box icon-check">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                </div>
+              </div>
+              <div class="mgmt-kpi-value-row">
+                <span class="mgmt-kpi-value text-success" id="mgmt-summary-accepted">0.000</span>
+                <span class="mgmt-kpi-unit">طن</span>
+              </div>
+              <span class="mgmt-kpi-hint">شحنات معتمدة ومطابقة للجودة</span>
+            </div>
+
+            <!-- Card 4: Pending / Unaccepted Quantity -->
+            <div class="mgmt-kpi-card kpi-pending">
+              <div class="mgmt-kpi-top">
+                <span class="mgmt-kpi-title">إجمالي الكمية المعلقة / غير المعتمدة</span>
+                <div class="mgmt-kpi-icon-box icon-clock">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                </div>
+              </div>
+              <div class="mgmt-kpi-value-row">
+                <span class="mgmt-kpi-value text-warning" id="mgmt-summary-pending">0.000</span>
+                <span class="mgmt-kpi-unit">طن</span>
+              </div>
+              <span class="mgmt-kpi-hint">قيد الفحص المخبري أو غير معتمدة</span>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- 2. Filters Bar Section -->
+        <section class="mgmt-filters-card" aria-label="فلاتر البحث والتصفية">
+          <div class="mgmt-filters-header">
+            <div class="mgmt-filters-title-group">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+              <h2 class="mgmt-filters-title">أدوات البحث والتصفية</h2>
+            </div>
+            <div class="mgmt-filter-actions">
+              <button type="button" class="mgmt-btn-secondary" id="mgmt-reset-filters-btn" title="مسح كافة الفلاتر والعودة للوضع الافتراضي">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                <span>إعادة ضبط</span>
+              </button>
+              <button type="button" class="mgmt-btn-secondary" id="mgmt-refresh-btn" title="تحديث البيانات المباشرة من قاعدة البيانات">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                <span>تحديث</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="mgmt-filters-grid">
+            <!-- Search Input -->
+            <div class="mgmt-filter-group mgmt-filter-search">
+              <label class="mgmt-filter-label" for="mgmt-search-input">البحث الشامل</label>
+              <div class="mgmt-search-wrap">
+                <svg class="mgmt-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" id="mgmt-search-input" class="mgmt-input" placeholder="بحث برقم الحركة، أمر الشراء (PO)، رقم السيارة، أو الخامة..." autocomplete="off" />
+                <button type="button" class="mgmt-search-clear" id="mgmt-search-clear-btn" style="display: none;" title="مسح نص البحث">✕</button>
+              </div>
+            </div>
+
+            <!-- Date Range From -->
+            <div class="mgmt-filter-group">
+              <label class="mgmt-filter-label" for="mgmt-date-from">التاريخ (من)</label>
+              <input type="date" id="mgmt-date-from" class="mgmt-input" />
+            </div>
+
+            <!-- Date Range To -->
+            <div class="mgmt-filter-group">
+              <label class="mgmt-filter-label" for="mgmt-date-to">التاريخ (إلى)</label>
+              <input type="date" id="mgmt-date-to" class="mgmt-input" />
+            </div>
+
+            <!-- Material Type Select -->
+            <div class="mgmt-filter-group">
+              <label class="mgmt-filter-label" for="mgmt-filter-material">نوع الخامة</label>
+              <select id="mgmt-filter-material" class="mgmt-input mgmt-select">
+                <option value="all">جميع الخامات</option>
+              </select>
+            </div>
+
+            <!-- Receiving Status Select -->
+            <div class="mgmt-filter-group">
+              <label class="mgmt-filter-label" for="mgmt-filter-status">حالة الاستلام</label>
+              <select id="mgmt-filter-status" class="mgmt-input mgmt-select">
+                <option value="all">جميع حالات الاستلام</option>
+              </select>
+            </div>
+
+            <!-- Destination Select -->
+            <div class="mgmt-filter-group">
+              <label class="mgmt-filter-label" for="mgmt-filter-destination">الوجهة</label>
+              <select id="mgmt-filter-destination" class="mgmt-input mgmt-select">
+                <option value="all">جميع الوجهات</option>
+              </select>
+            </div>
+          </div>
+        </section>
+
+        <!-- 3. Management Data Table Section -->
+        <section class="mgmt-table-card" aria-label="جدول بيانات إدارة النقل والاستلام">
+          <div class="mgmt-table-header">
+            <div>
+              <h2 class="mgmt-table-title">سجل استلام الشحنات وحركات النقل</h2>
+              <p class="mgmt-table-subtitle">عرض تفصيلي مجمع لأوامر التوريد، حركات وسيارات النقل، والأوزان المستلمة والمعتمدة.</p>
+            </div>
+            <div class="mgmt-table-meta">
+              <span class="mgmt-records-badge" id="mgmt-badge-count">جاري التحميل...</span>
+            </div>
+          </div>
+
+          <div class="mgmt-table-responsive">
+            <table class="mgmt-data-table" id="mgmt-data-table">
+              <thead>
+                <tr>
+                  <th class="sortable" data-sort="txnumber">رقم الحركة <span class="sort-icon">↕</span></th>
+                  <th class="sortable" data-sort="date">التاريخ <span class="sort-icon">↕</span></th>
+                  <th class="sortable" data-sort="po">رقم أمر الشراء (PO) <span class="sort-icon">↕</span></th>
+                  <th class="sortable" data-sort="material">نوع الخامة <span class="sort-icon">↕</span></th>
+                  <th class="sortable" data-sort="trips">عدد النقلات <span class="sort-icon">↕</span></th>
+                  <th class="sortable" data-sort="received">إجمالي الكمية المستلمة <span class="sort-icon">↕</span></th>
+                  <th>أرقام السيارات / أرقام الحركات</th>
+                  <th class="sortable" data-sort="accepted">الكمية المقبولة <span class="sort-icon">↕</span></th>
+                  <th class="sortable" data-sort="pending">الكمية المعلقة / غير المعتمدة <span class="sort-icon">↕</span></th>
+                  <th class="sortable" data-sort="status">حالة الاستلام <span class="sort-icon">↕</span></th>
+                  <th class="sortable" data-sort="destination">الوجهة <span class="sort-icon">↕</span></th>
+                  <th>ملاحظات</th>
+                </tr>
+              </thead>
+              <tbody id="mgmt-table-body">
+                <!-- Dynamic rows inserted by JavaScript -->
+                <tr id="mgmt-table-loading-row">
+                  <td colspan="12" class="mgmt-loading-cell">
+                    <div class="mgmt-spinner-box">
+                      <span class="trans-btn-spinner"></span>
+                      <span>جاري تحميل بيانات الإدارة من قاعدة البيانات...</span>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- 4. Pagination & Page Size Footer -->
+          <div class="mgmt-pagination-bar" id="mgmt-pagination-bar">
+            <div class="mgmt-pagination-info" id="mgmt-pagination-info">
+              عرض 0 إلى 0 من إجمالي 0 سجل
+            </div>
+
+            <div class="mgmt-pagination-controls">
+              <!-- Page Size Selector -->
+              <div class="mgmt-page-size-wrap">
+                <label for="mgmt-page-size-select">سجل في الصفحة:</label>
+                <select id="mgmt-page-size-select" class="mgmt-select-mini">
+                  <option value="5">5</option>
+                  <option value="10" selected>10</option>
+                  <option value="25">25</option>
+                  <option value="50">50</option>
+                </select>
+              </div>
+
+              <!-- Pagination Navigation Buttons -->
+              <div class="mgmt-page-nav">
+                <button type="button" class="mgmt-nav-btn" id="mgmt-prev-btn" title="الصفحة السابقة" disabled>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                  <span>السابق</span>
+                </button>
+                <span class="mgmt-page-indicator" id="mgmt-page-indicator">صفحة 1 من 1</span>
+                <button type="button" class="mgmt-nav-btn" id="mgmt-next-btn" title="الصفحة التالية" disabled>
+                  <span>التالي</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- ========================================================================
+       403 Access Denied Screen (Strict Authorization Failure)
+       ======================================================================== -->
+  <div class="access-denied-root" id="access-denied-root" dir="rtl" style="display: none;">
+    <div class="access-denied-card">
+      <div class="access-denied-icon-ring">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      </div>
+      <h1 class="access-denied-code">403 / تم رفض الوصول</h1>
+      <h2 class="access-denied-title">صلاحية الدخول للقسم مقيّدة</h2>
+      <p class="access-denied-msg" id="access-denied-msg">
+        ليس لديك صلاحية للوصول إلى هذا القسم.
+      </p>
+      <p class="access-denied-submsg" id="access-denied-submsg">
+        الوصول إلى هذا القسم مقتصر حصراً على المستخدمين المصرح لهم وفقاً لسياسات النظام.
+      </p>
+      <div class="access-denied-action">
+        <button type="button" class="btn-enter-dept" id="access-denied-back-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          <span>العودة إلى لوحة الأقسام</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       Finance Department Redirection Page (Gateway / Hub) - Arabic RTL
+       ======================================================================== -->
+  <div class="finance-hub-root" id="finance-hub-root" dir="rtl" style="display: none;">
+    <!-- Top Header -->
+    <header class="finance-hub-header">
+      <div class="finance-hub-brand">
+        <div class="finance-hub-logo">FS</div>
+        <div>
+          <span class="finance-hub-title">إدارة الشؤون المالية | فيس ستون</span>
+          <span class="finance-hub-subtitle">بوابة الخدمات والعمليات المالية</span>
+        </div>
+      </div>
+
+      <div class="finance-mgmt-actions">
+        <div class="finance-hub-user-pill">
+          <div class="finance-hub-user-avatar" id="finance-hub-user-avatar">FS</div>
+          <div class="finance-hub-user-meta">
+            <span class="finance-hub-user-name" id="finance-hub-user-name">المستخدم</span>
+            <span class="finance-hub-user-role" id="finance-hub-user-role">محاسب</span>
+          </div>
+        </div>
+        <button type="button" class="btn-hub-back" id="finance-hub-back-to-departments-btn" title="العودة إلى شاشة الأقسام الرئيسية">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          <span>العودة إلى الأقسام</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="finance-hub-content">
+      <div class="finance-hub-hero">
+        <span class="finance-hub-hero-badge">بوابة الإدارة والتواصل المالي</span>
+        <h1 class="finance-hub-hero-heading">المالية</h1>
+        <p class="finance-hub-hero-sub">
+          اختر مساحة العمل المطلوبة: التواصل المباشر مع فريق المالية، أو الدخول إلى لوحة الإحصائيات والإدارة المالية ومتابعة أوامر الشراء والمدفوعات.
+        </p>
+      </div>
+
+      <!-- Two Large Action Cards -->
+      <div class="finance-hub-cards-grid">
+        
+        <!-- CARD 1: التواصل مع فريق المالية -->
+        <div class="finance-hub-card card-chat">
+          <div class="finance-hub-card-icon-wrap">
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </div>
+          <span class="finance-hub-card-tag">محادثات وتنسيق فوري</span>
+          <h2 class="finance-hub-card-title">التواصل مع فريق المالية</h2>
+          <h3 class="finance-hub-card-sub">التواصل مع فريق المالية والاستفسارات</h3>
+          <p class="finance-hub-card-desc">
+            غرفة المحادثات والاستفسارات المباشرة مع المحاسبين وفريق المالية، استفسارات الفواتير، التنسيق المالي الميداني، ومشاركة المستندات والمواقع الحية.
+          </p>
+          <button type="button" class="btn-enter-finance-action btn-enter-finance-chat" id="btn-finance-hub-chat">
+            <span>دخول المحادثة</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+        </div>
+
+        <!-- CARD 2: الإحصائيات وإدارة المالية -->
+        <div class="finance-hub-card card-mgmt">
+          <div class="finance-hub-card-icon-wrap">
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/><path d="M7 10h2v3H7zM11 7h2v6h-2zM15 10h2v3h-2z"/></svg>
+          </div>
+          <span class="finance-hub-card-tag">بيانات وإحصائيات متقدمة</span>
+          <h2 class="finance-hub-card-title">الإحصائيات وإدارة المالية</h2>
+          <h3 class="finance-hub-card-sub">عرض البيانات المالية والإحصائيات وإدارة المدفوعات</h3>
+          <p class="finance-hub-card-desc">
+            متابعة أوامر الشراء (PO)، الموردين، الكميات الموردة والمتبقية، الكميات المعتمدة والهالك، أسعار الأطنان، المبالغ المستحقة والمدفوعة، وحالات السداد والفواتير.
+          </p>
+          <button type="button" class="btn-enter-finance-action btn-enter-finance-mgmt" id="btn-finance-hub-mgmt">
+            <span>دخول الإدارة المالية</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- ========================================================================
+       Finance Management & Statistics Page - Arabic RTL
+       ======================================================================== -->
+  <div class="finance-mgmt-root" id="finance-management-page-root" dir="rtl" style="display: none;">
+    <!-- Top Header -->
+    <header class="finance-mgmt-header">
+      <div class="finance-mgmt-brand">
+        <div class="finance-hub-logo">FS</div>
+        <div>
+          <span class="finance-hub-title">الإحصائيات وإدارة المالية</span>
+          <span class="finance-hub-subtitle">لوحة أوامر الشراء والبيانات المالية والمدفوعات</span>
+        </div>
+      </div>
+
+      <div class="finance-mgmt-actions">
+        <div class="finance-hub-user-pill">
+          <div class="finance-hub-user-avatar" id="finance-mgmt-user-avatar">FS</div>
+          <div class="finance-hub-user-meta">
+            <span class="finance-hub-user-name" id="finance-mgmt-user-name">المستخدم</span>
+            <span class="finance-hub-user-role" id="finance-mgmt-user-role">محاسب</span>
+          </div>
+        </div>
+
+        <button type="button" class="finance-btn-nav finance-btn-nav-primary" id="finance-mgmt-back-to-hub-btn" title="العودة لبوابة المالية الرئيسية">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          <span>بوابة المالية</span>
+        </button>
+
+        <button type="button" class="finance-btn-nav finance-btn-nav-secondary" id="finance-mgmt-back-to-departments-btn" title="العودة إلى شاشة اختيار الأقسام">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+          <span>الأقسام</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="finance-mgmt-container">
+      
+      <!-- Title Banner Card -->
+      <div class="finance-mgmt-title-card">
+        <div class="finance-mgmt-title-content">
+          <h1>لوحة الإدارة والبيانات المالية</h1>
+          <p>عرض تفصيلي وتلقائي لبيانات أوامر الشراء، الكميات الموردة والمعتمدة، موقف السداد، والفواتير الضريبية</p>
+        </div>
+        <div class="finance-badge-pill">
+          <span class="live-dot-pulse"></span>
+          <span>مزامنة مباشرة مع حركة النقل والمخازن</span>
+        </div>
+      </div>
+
+      <!-- 6 KPI Summary Cards -->
+      <section class="finance-kpis-grid" aria-label="ملخص المؤشرات المالية">
+        <!-- KPI 1: إجمالي قيمة أوامر الشراء -->
+        <div class="finance-kpi-card kpi-po-val">
+          <div class="finance-kpi-top">
+            <span class="finance-kpi-label">إجمالي قيمة أوامر الشراء</span>
+            <div class="finance-kpi-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            </div>
+          </div>
+          <span class="finance-kpi-val" id="finance-kpi-total-po-value">0.00 ج.م</span>
+          <span class="finance-kpi-hint">القيمة الإجمالية لجميع العقود</span>
+        </div>
+
+        <!-- KPI 2: إجمالي الكمية التي تم توريدها -->
+        <div class="finance-kpi-card kpi-supplied">
+          <div class="finance-kpi-top">
+            <span class="finance-kpi-label">إجمالي الكمية الموردة</span>
+            <div class="finance-kpi-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M6 8l6-5 6 5M6 8l-4 8h8l-4-8zM18 8l-4 8h8l-4-8z"/></svg>
+            </div>
+          </div>
+          <span class="finance-kpi-val" id="finance-kpi-total-supplied-qty">0.000 طن</span>
+          <span class="finance-kpi-hint">الوزن الفعلي الوارد من المحطات</span>
+        </div>
+
+        <!-- KPI 3: إجمالي الكمية المتبقية -->
+        <div class="finance-kpi-card kpi-remaining">
+          <div class="finance-kpi-top">
+            <span class="finance-kpi-label">إجمالي الكمية المتبقية</span>
+            <div class="finance-kpi-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+          </div>
+          <span class="finance-kpi-val" id="finance-kpi-total-remaining-qty">0.000 طن</span>
+          <span class="finance-kpi-hint">الكميات الجاري استكمال توريدها</span>
+        </div>
+
+        <!-- KPI 4: إجمالي المبلغ المدفوع -->
+        <div class="finance-kpi-card kpi-paid">
+          <div class="finance-kpi-top">
+            <span class="finance-kpi-label">إجمالي المبلغ المدفوع</span>
+            <div class="finance-kpi-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+          </div>
+          <span class="finance-kpi-val" id="finance-kpi-total-paid-amount">0.00 ج.م</span>
+          <span class="finance-kpi-hint">المدفوعات المعتمدة من الإدارة</span>
+        </div>
+
+        <!-- KPI 5: إجمالي المبلغ المستحق -->
+        <div class="finance-kpi-card kpi-outstanding">
+          <div class="finance-kpi-top">
+            <span class="finance-kpi-label">إجمالي المبلغ المستحق</span>
+            <div class="finance-kpi-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </div>
+          </div>
+          <span class="finance-kpi-val" id="finance-kpi-total-outstanding-amount">0.00 ج.م</span>
+          <span class="finance-kpi-hint">مستحقات الموردين واجبة السداد</span>
+        </div>
+
+        <!-- KPI 6: إجمالي عدد النقلات -->
+        <div class="finance-kpi-card kpi-movements">
+          <div class="finance-kpi-top">
+            <span class="finance-kpi-label">إجمالي عدد النقلات</span>
+            <div class="finance-kpi-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+            </div>
+          </div>
+          <span class="finance-kpi-val" id="finance-kpi-total-movements">0</span>
+          <span class="finance-kpi-hint">حركات النقل والشحن المسجلة</span>
+        </div>
+      </section>
+
+      <!-- Search & Filters Section -->
+      <section class="finance-filters-card" aria-label="أدوات البحث والفلترة">
+        <div class="finance-filters-top">
+          <div class="finance-filters-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+            <span>أدوات البحث وتصفية البيانات المالية</span>
+          </div>
+          <div class="finance-filter-actions">
+            <button type="button" class="finance-btn-filter-action" id="finance-reset-filters-btn" title="مسح كافة الفلاتر">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+              <span>إعادة ضبط</span>
+            </button>
+            <button type="button" class="finance-btn-filter-action" id="finance-refresh-btn" title="تحديث البيانات">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+              <span>تحديث</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="finance-filters-grid">
+          <!-- Search -->
+          <div class="finance-filter-item">
+            <label class="finance-filter-label" for="finance-search-input">البحث الشامل</label>
+            <div class="finance-input-wrap">
+              <input type="text" id="finance-search-input" class="finance-input finance-input-search" placeholder="بحث بأمر الشراء (PO)، المورد، أو الفاتورة..." autocomplete="off" />
+              <button type="button" class="finance-search-clear-btn" id="finance-search-clear-btn" style="display: none;" title="مسح البحث">✕</button>
+            </div>
+          </div>
+
+          <!-- PO Filter -->
+          <div class="finance-filter-item">
+            <label class="finance-filter-label" for="finance-filter-po">أمر الشراء (PO)</label>
+            <input type="text" id="finance-filter-po" class="finance-input" placeholder="مثال: PO-2026-9810" dir="ltr" autocomplete="off" />
+          </div>
+
+          <!-- Supplier Dropdown -->
+          <div class="finance-filter-item">
+            <label class="finance-filter-label" for="finance-filter-supplier">المورد</label>
+            <select id="finance-filter-supplier" class="finance-input finance-select">
+              <option value="all">جميع الموردين</option>
+            </select>
+          </div>
+
+          <!-- Payment Status Dropdown -->
+          <div class="finance-filter-item">
+            <label class="finance-filter-label" for="finance-filter-payment-status">حالة السداد</label>
+            <select id="finance-filter-payment-status" class="finance-input finance-select">
+              <option value="all">جميع الحالات</option>
+              <option value="غير مدفوع">غير مدفوع</option>
+              <option value="مدفوع جزئياً">مدفوع جزئياً</option>
+              <option value="مدفوع بالكامل">مدفوع بالكامل</option>
+            </select>
+          </div>
+
+          <!-- Invoice Number -->
+          <div class="finance-filter-item">
+            <label class="finance-filter-label" for="finance-filter-invoice">رقم الفاتورة</label>
+            <input type="text" id="finance-filter-invoice" class="finance-input" placeholder="مثال: FS-2026-INV" dir="ltr" autocomplete="off" />
+          </div>
+
+          <!-- Date From -->
+          <div class="finance-filter-item">
+            <label class="finance-filter-label" for="finance-filter-date-from">من تاريخ</label>
+            <input type="date" id="finance-filter-date-from" class="finance-input" />
+          </div>
+
+          <!-- Date To -->
+          <div class="finance-filter-item">
+            <label class="finance-filter-label" for="finance-filter-date-to">إلى تاريخ</label>
+            <input type="date" id="finance-filter-date-to" class="finance-input" />
+          </div>
+        </div>
+      </section>
+
+      <!-- Table Section Card (17 Columns) -->
+      <section class="finance-table-card" aria-label="جدول البيانات المالية">
+        <div class="finance-table-header">
+          <div class="finance-table-heading">
+            <span>سجل أوامر الشراء والبيانات المالية</span>
+            <span class="finance-table-count-badge" id="finance-table-count">17 عمود مالي معتمد</span>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <label for="finance-page-size-select" style="font-size: 0.8rem; font-weight: 700; color: #4B5563;">صفوف بالصفحة:</label>
+            <select id="finance-page-size-select" class="finance-input finance-select" style="width: 70px; height: 32px; padding: 0 6px;">
+              <option value="10" selected>10</option>
+              <option value="25">25</option>
+              <option value="50">50</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Scrollable Table -->
+        <div class="finance-table-scroll" id="finance-table-scroll">
+          <table class="finance-table" id="finance-management-table">
+            <thead>
+              <tr>
+                <th class="th-sticky-right">PO</th>
+                <th>المورد</th>
+                <th>تاريخ أمر الشراء</th>
+                <th>كمية أمر الشراء</th>
+                <th>قيمة أمر الشراء</th>
+                <th>سعر الطن</th>
+                <th>الكمية التي تم توريدها</th>
+                <th>قيمة الكمية التي تم توريدها</th>
+                <th>الكمية المتبقية</th>
+                <th>القيمة المتبقية</th>
+                <th>عدد النقلات</th>
+                <th>الكمية المعتمدة</th>
+                <th>الكمية الهالك / الغير معتمدة</th>
+                <th>المبلغ المدفوع</th>
+                <th>المبلغ المستحق</th>
+                <th>حالة السداد</th>
+                <th>رقم الفاتورة</th>
+              </tr>
+            </thead>
+            <tbody id="finance-table-body">
+              <!-- Dynamically populated rows -->
+            </tbody>
+          </table>
+
+          <!-- Loading State -->
+          <div class="finance-table-state" id="finance-table-loading" style="display: none;">
+            <div class="finance-spinner"></div>
+            <div class="finance-table-state-title">جاري تحميل البيانات المالية المحدثة...</div>
+            <div class="finance-table-state-desc">يتم احتساب الكميات، النقلات، وموقف السداد من قاعدة البيانات.</div>
+          </div>
+
+          <!-- Empty State -->
+          <div class="finance-table-state" id="finance-table-empty" style="display: none;">
+            <div style="font-size: 2.5rem;">📄</div>
+            <div class="finance-table-state-title">لا توجد أوامر شراء مطابقة للبحث أو الفلتر المحدد</div>
+            <div class="finance-table-state-desc">جرّب تغيير كلمات البحث أو إعادة ضبط الفلاتر لعرض كافة البيانات.</div>
+          </div>
+
+          <!-- Error State -->
+          <div class="finance-table-state" id="finance-table-error" style="display: none;">
+            <div style="font-size: 2.5rem; color: #DC2626;">⚠️</div>
+            <div class="finance-table-state-title">فشل في تحميل البيانات المالية</div>
+            <div class="finance-table-state-desc finance-error-msg">حدث خطأ أثناء الاتصال بالخادم.</div>
+          </div>
+        </div>
+
+        <!-- Pagination Footer -->
+        <div class="finance-table-footer">
+          <div class="finance-pagination-info" id="finance-pagination-info">
+            عرض 0 إلى 0 من إجمالي 0 أمر شراء
+          </div>
+          <div class="finance-pagination-controls">
+            <button type="button" class="finance-page-btn" id="finance-btn-prev-page" title="الصفحة السابقة" disabled>
+              السابق
+            </button>
+            <div id="finance-page-numbers" style="display: inline-flex; gap: 4px;"></div>
+            <button type="button" class="finance-page-btn" id="finance-btn-next-page" title="الصفحة التالية" disabled>
+              التالي
+            </button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- CEO Payment Breakdown Inspection Modal -->
+  <div class="finance-modal-backdrop" id="finance-modal-backdrop" style="display: none;">
+    <div class="finance-modal-card" id="finance-payment-modal" role="dialog" aria-modal="true">
+      <div class="finance-modal-header">
+        <div class="finance-modal-title">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          <span>سجل دفعات أمر الشراء: <span id="finance-modal-po-number" dir="ltr" style="font-family: monospace;"></span></span>
+        </div>
+        <button type="button" class="finance-modal-close-btn" id="finance-modal-close-btn" title="إغلاق">✕</button>
+      </div>
+      <div class="finance-modal-body" id="finance-modal-payments-list">
+        <!-- Dynamically loaded payments -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       Main Two-Panel Messaging Container (Finance Department)
+       ======================================================================== -->
+  <div class="chat-app-root" id="chat-app-root" dir="rtl" style="display: none;">
 
     <!-- --------------------------------------------------------------------
          1. Left Sidebar: Conversations & User Directory
          -------------------------------------------------------------------- -->
-    <aside class="sidebar-panel" id="sidebar-panel" aria-label="Conversations Sidebar">
+    <aside class="sidebar-panel" id="sidebar-panel" aria-label="شريط المحادثات الجانبي">
       <!-- Sidebar Top Header -->
       <header class="sidebar-header">
-        <div class="user-profile-summary" id="user-profile-summary" title="Your Account">
+        <div class="user-profile-summary" id="user-profile-summary" title="حسابك الشخصي">
           <div class="user-avatar-wrap">
             <div class="user-avatar-circle" id="current-user-avatar">FS</div>
             <div class="online-status-badge"></div>
           </div>
           <div class="user-details">
-            <span class="user-full-name" id="current-user-name">Loading...</span>
-            <span class="user-role-label" id="current-user-role">Connecting</span>
+            <span class="user-full-name" id="current-user-name">جاري التحميل...</span>
+            <span class="user-role-label" id="current-user-role">جاري الاتصال...</span>
           </div>
         </div>
 
         <div class="sidebar-header-actions">
-          <div class="connection-status-pill" id="connection-status-pill" title="SignalR Live Connection">
+          <button type="button" class="dept-nav-btn finance-hub-link-btn" id="btn-chat-to-finance-hub" title="العودة إلى بوابة المالية" aria-label="بوابة المالية">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+            <span>بوابة المالية</span>
+          </button>
+          <button type="button" class="dept-nav-btn" id="btn-back-to-departments" title="العودة إلى لوحة الأقسام" aria-label="الأقسام">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"/><polyline points="12 5 19 12 12 19"/></svg>
+            <span>الأقسام</span>
+          </button>
+          <div class="connection-status-pill" id="connection-status-pill" title="حالة الاتصال المباشر">
             <span class="connection-dot"></span>
-            <span>Connecting...</span>
+            <span>جاري الاتصال...</span>
           </div>
-          <button type="button" class="icon-btn" id="user-logout-btn" title="Sign Out of Messenger" aria-label="Sign Out">
+          <button type="button" class="icon-btn" id="user-logout-btn" title="تسجيل الخروج من المنظومة" aria-label="تسجيل الخروج">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
           </button>
         </div>
@@ -51,13 +1708,13 @@
       <div class="sidebar-search-box">
         <div class="search-input-wrap">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-          <input type="text" class="search-input-field" id="search-conversations-input" placeholder="Search conversations..." autocomplete="off">
-          <button type="button" class="search-clear-btn" id="search-clear-btn" aria-label="Clear Search">✕</button>
+          <input type="text" class="search-input-field" id="search-conversations-input" placeholder="بحث في المحادثات والزملاء..." autocomplete="off">
+          <button type="button" class="search-clear-btn" id="search-clear-btn" aria-label="مسح نص البحث">✕</button>
         </div>
       </div>
 
       <!-- Conversations Stream -->
-      <div class="conversations-list" id="conversations-list-container" role="list" aria-label="Conversation Threads">
+      <div class="conversations-list" id="conversations-list-container" role="list" aria-label="قائمة المحادثات">
         <!-- Rendered dynamically by chat-app.js -->
       </div>
     </aside>
@@ -65,17 +1722,23 @@
     <!-- --------------------------------------------------------------------
          2. Right Panel: Main Chat Conversation View
          -------------------------------------------------------------------- -->
-    <main class="chat-pane" id="chat-pane" aria-label="Active Conversation">
+    <main class="chat-pane" id="chat-pane" aria-label="نافذة المحادثة النشطة">
       
       <!-- Zero Selection Empty View -->
       <div class="chat-empty-view" id="chat-empty-view">
-        <div class="empty-view-icon-circle">
-          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <div class="empty-view-intro">
+          <button type="button" class="mobile-back-btn empty-view-mobile-back" id="empty-mobile-back-btn" aria-label="العودة إلى المحادثات">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            <span style="font-size: 0.85rem; font-weight: 600; margin-right: 6px;">العودة للمحادثات</span>
+          </button>
+          <div class="empty-view-icon-circle">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </div>
+          <h2 class="empty-view-title">مراسلات فريق العمل والمالية</h2>
+          <p class="empty-view-desc">
+            اختر محادثة من القائمة لبدء التواصل الفوري المباشر مع أعضاء الفريق والمحاسبين الماليين.
+          </p>
         </div>
-        <h2 class="empty-view-title">FaceStone Messenger</h2>
-        <p class="empty-view-desc">
-          Select a conversation from the left to start live messaging with the operations team and engineering colleagues.
-        </p>
       </div>
 
       <!-- Active Chat View (Hidden when no chat selected) -->
@@ -83,25 +1746,26 @@
         <!-- Active Chat Header -->
         <header class="chat-header">
           <div class="chat-header-left">
-            <button type="button" class="mobile-back-btn" id="mobile-back-btn" aria-label="Back to conversations">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            <button type="button" class="mobile-back-btn" id="mobile-back-btn" aria-label="العودة للمحادثات">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
             </button>
             <div class="conv-avatar-wrap" style="width: 40px; height: 40px;">
               <div class="conv-avatar-img" id="chat-recipient-avatar">FS</div>
             </div>
             <div class="chat-recipient-info">
-              <span class="chat-recipient-name" id="chat-recipient-name">Recipient Name</span>
+              <span class="chat-recipient-name" id="chat-recipient-name">اسم المحاسب / الموظف</span>
               <span class="chat-recipient-status online" id="chat-recipient-status">
                 <span style="width: 7px; height: 7px; border-radius: 50%; background: var(--status-online); display: inline-block;"></span>
-                <span>Online</span>
+                <span>متصل الآن</span>
               </span>
             </div>
           </div>
 
           <div class="chat-header-actions">
-            <a href="/docs" target="_blank" class="icon-btn" title="Open API Documentation" aria-label="API Documentation">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-            </a>
+            <button type="button" class="dept-nav-btn secondary" id="chat-header-back-dept-btn" title="العودة إلى الأقسام" aria-label="العودة للأقسام">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"/><polyline points="12 5 19 12 12 19"/></svg>
+              <span>الأقسام</span>
+            </button>
           </div>
         </header>
 
@@ -111,15 +1775,43 @@
         </div>
 
         <!-- Jump to Bottom Floating Button -->
-        <button type="button" class="jump-bottom-btn" id="jump-bottom-btn" aria-label="Jump to latest message">
+        <button type="button" class="jump-bottom-btn" id="jump-bottom-btn" aria-label="الانتقال إلى أحدث الرسائل">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
-          <span>New messages</span>
+          <span>رسائل جديدة</span>
         </button>
+
+        <!-- Location Picker Popover Menu -->
+        <div class="location-popover-menu" id="location-popover-menu" style="display: none;">
+          <div class="loc-popover-header">
+            <span class="loc-popover-title">مشاركة الموقع الجغرافي</span>
+            <button type="button" class="loc-popover-close" id="loc-popover-close" aria-label="إغلاق القائمة">✕</button>
+          </div>
+          <button type="button" class="loc-popover-option" id="btn-share-current-location">
+            <span class="loc-option-icon">📍</span>
+            <span class="loc-option-info">
+              <strong>موقعي الحالي</strong>
+              <small>إرسال إحداثيات GPS الحالية لمرة واحدة</small>
+            </span>
+          </button>
+          <div class="loc-popover-divider"></div>
+          <div class="loc-popover-section-title">
+            <span class="live-dot-pulse"></span>
+            <strong>الموقع المباشر (تتبع حي)</strong>
+          </div>
+          <div class="loc-live-durations">
+            <button type="button" class="btn-live-duration" data-minutes="15">15 دقيقة</button>
+            <button type="button" class="btn-live-duration" data-minutes="30">30 دقيقة</button>
+            <button type="button" class="btn-live-duration" data-minutes="60">60 دقيقة</button>
+          </div>
+        </div>
 
         <!-- Bottom Input Bar -->
         <footer class="chat-bottom-bar">
-          <button type="button" class="icon-btn" id="chat-attach-btn" title="Attach Document or Image" aria-label="Attach File">
+          <button type="button" class="icon-btn" id="chat-attach-btn" title="إرفاق مستند أو صورة" aria-label="إرفاق ملف">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+          </button>
+          <button type="button" class="icon-btn" id="chat-location-btn" title="مشاركة الموقع الجغرافي" aria-label="مشاركة الموقع">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg>
           </button>
           <input type="file" id="chat-file-input" style="display: none;">
 
@@ -128,10 +1820,10 @@
               <span id="file-name-preview">document.pdf</span>
               <button type="button" id="file-remove-btn" style="color: inherit; font-weight: bold; cursor: pointer;">✕</button>
             </div>
-            <textarea class="msg-textarea" id="chat-msg-textarea" rows="1" placeholder="Type a message..." aria-label="Message input"></textarea>
+            <textarea class="msg-textarea" id="chat-msg-textarea" rows="1" placeholder="اكتب رسالتك هنا..." aria-label="نص الرسالة"></textarea>
           </div>
 
-          <button type="button" class="send-msg-btn" id="send-msg-btn" title="Send Message" aria-label="Send Message">
+          <button type="button" class="send-msg-btn" id="send-msg-btn" title="إرسال الرسالة" aria-label="إرسال الرسالة">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
           </button>
         </footer>
@@ -141,19 +1833,19 @@
   </div>
 
   <!-- ========================================================================
-       3. Clean, Bright Authentication Modal
+       3. Modern Executive Authentication Portal (بوابة تسجيل الدخول الرسمية)
        ======================================================================== -->
-  <div class="auth-overlay-backdrop" id="auth-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
+  <div class="auth-overlay-backdrop" id="auth-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title" dir="rtl">
     <div class="auth-card-modal">
       <div class="auth-modal-header">
         <div class="auth-brand-logo-icon">FS</div>
-        <h1 class="auth-modal-title" id="auth-modal-title">FaceStone Messenger</h1>
-        <p class="auth-modal-subtitle">Real-Time Messaging with Operations Desk & Teams</p>
+        <h1 class="auth-modal-title" id="auth-modal-title">فيس ستون</h1>
+        <p class="auth-modal-subtitle">بوابة تسجيل الدخول الموحدة لإدارة العمليات والمالية</p>
       </div>
 
       <div class="auth-tabs-bar" role="tablist">
-        <button type="button" class="auth-tab-btn active" id="auth-tab-login" role="tab" aria-selected="true">Sign In</button>
-        <button type="button" class="auth-tab-btn" id="auth-tab-register" role="tab" aria-selected="false">Create Account</button>
+        <button type="button" class="auth-tab-btn active" id="auth-tab-login" role="tab" aria-selected="true">تسجيل الدخول</button>
+        <button type="button" class="auth-tab-btn" id="auth-tab-register" role="tab" aria-selected="false">إنشاء حساب جديد</button>
       </div>
 
       <div class="auth-modal-body">
@@ -161,23 +1853,44 @@
         <div id="auth-view-login">
           <form id="auth-login-form">
             <div class="auth-form-field">
-              <label class="auth-field-label" for="login-id-input">Email, Phone, or Username</label>
-              <input type="text" class="auth-text-input" id="login-id-input" required placeholder="alex@facestone.com or alex_wright">
+              <label class="auth-field-label" for="login-id-input">البريد الإلكتروني أو اسم المستخدم</label>
+              <input type="text" class="auth-text-input" id="login-id-input" required placeholder="أدخل بريد العمل أو اسم المستخدم">
             </div>
 
             <div class="auth-form-field">
-              <label class="auth-field-label" for="login-pwd-input">Password</label>
+              <label class="auth-field-label" for="login-pwd-input">كلمة المرور</label>
               <input type="password" class="auth-text-input" id="login-pwd-input" required placeholder="••••••••">
             </div>
 
-            <button type="submit" class="auth-btn-primary">Sign In</button>
+            <button type="submit" class="auth-btn-primary">تسجيل الدخول إلى النظام</button>
           </form>
 
           <!-- Quick 1-Click Demo Accounts in Database -->
           <div class="auth-demo-accounts-pillbox">
-            <strong style="color: var(--text-main); display: block; margin-bottom: 0.35rem;">Test Database Accounts:</strong>
-            <div>Employee View: <span class="demo-account-chip" onclick="fillDemoAccount('alex@facestone.com', 'Password123!')">alex@facestone.com (Password123!)</span></div>
-            <div>Accountant View: <span class="demo-account-chip" onclick="fillDemoAccount('sarah@facestone.com', 'SecretPass123!')">sarah@facestone.com (SecretPass123!)</span></div>
+            <strong style="color: var(--text-main); display: block; margin-bottom: 0.5rem; font-weight: 700;">حسابات تجريبية سريعة (انقر للتعبئة التلقائية):</strong>
+            <div class="demo-chips-grid">
+              <div class="demo-account-chip" onclick="fillDemoAccount('kareem.ceo@facestone.com', 'Password123!')">
+                <span class="demo-role">الرئيس التنفيذي:</span> kareem.ceo@facestone.com
+              </div>
+              <div class="demo-account-chip" onclick="fillDemoAccount('it@facestone.com', 'Password123!')">
+                <span class="demo-role">تقنية المعلومات:</span> it@facestone.com
+              </div>
+              <div class="demo-account-chip" onclick="fillDemoAccount('sarah@facestone.com', 'SecretPass123!')">
+                <span class="demo-role">المحاسب المالي:</span> sarah@facestone.com
+              </div>
+              <div class="demo-account-chip" onclick="fillDemoAccount('transport@facestone.com', 'Password123!')">
+                <span class="demo-role">مدير النقل:</span> transport@facestone.com
+              </div>
+              <div class="demo-account-chip" onclick="fillDemoAccount('storage@facestone.com', 'Storage123!')">
+                <span class="demo-role">أمين المستودع:</span> storage@facestone.com
+              </div>
+              <div class="demo-account-chip" onclick="fillDemoAccount('manager@facestone.com', 'Manager123!')">
+                <span class="demo-role">مدير المصنع:</span> manager@facestone.com
+              </div>
+              <div class="demo-account-chip" onclick="fillDemoAccount('alex@facestone.com', 'Password123!')">
+                <span class="demo-role">مهندس / موظف:</span> alex@facestone.com
+              </div>
+            </div>
           </div>
         </div>
 
@@ -185,31 +1898,43 @@
         <div id="auth-view-register" style="display: none;">
           <form id="auth-register-form">
             <div class="auth-form-field">
-              <label class="auth-field-label" for="reg-name-input">Full Legal Name</label>
-              <input type="text" class="auth-text-input" id="reg-name-input" required placeholder="Eng. Tarek Mahmoud">
+              <label class="auth-field-label" for="reg-name-input">الاسم الكامل</label>
+              <input type="text" class="auth-text-input" id="reg-name-input" required placeholder="مثال: المهندس طارق محمود">
             </div>
 
             <div class="auth-form-field">
-              <label class="auth-field-label" for="reg-user-input">Username</label>
+              <label class="auth-field-label" for="reg-user-input">اسم المستخدم</label>
               <input type="text" class="auth-text-input" id="reg-user-input" required placeholder="tarek_stone">
             </div>
 
             <div class="auth-form-field">
-              <label class="auth-field-label" for="reg-email-input">Email Address</label>
-              <input type="email" class="auth-text-input" id="reg-email-input" required placeholder="tarek@firm.com">
+              <label class="auth-field-label" for="reg-email-input">البريد الإلكتروني</label>
+              <input type="email" class="auth-text-input" id="reg-email-input" required placeholder="tarek@facestone.com">
             </div>
 
             <div class="auth-form-field">
-              <label class="auth-field-label" for="reg-phone-input">Phone Number</label>
+              <label class="auth-field-label" for="reg-phone-input">رقم الهاتف</label>
               <input type="tel" class="auth-text-input" id="reg-phone-input" required placeholder="+20 10 9988 7766">
             </div>
 
             <div class="auth-form-field">
-              <label class="auth-field-label" for="reg-pwd-input">Password</label>
-              <input type="password" class="auth-text-input" id="reg-pwd-input" required minlength="6" placeholder="At least 6 characters">
+              <label class="auth-field-label" for="reg-role-input">الدور الوظيفي</label>
+              <select class="auth-text-input" id="reg-role-input" style="cursor: pointer; height: 44px;">
+                <option value="Employee">موظف ميداني</option>
+                <option value="Accountant">محاسب مالي</option>
+                <option value="TRANSPORTATION_MANAGER">مدير النقل واللوجستيات</option>
+                <option value="STORAGE_MANAGER">أمين المستودع والمخازن</option>
+                <option value="IT">تقنية المعلومات والدعم الفني</option>
+                <option value="CEO">الرئيس التنفيذي</option>
+              </select>
             </div>
 
-            <button type="submit" class="auth-btn-primary">Register Account</button>
+            <div class="auth-form-field">
+              <label class="auth-field-label" for="reg-pwd-input">كلمة المرور (6 أحرف على الأقل)</label>
+              <input type="password" class="auth-text-input" id="reg-pwd-input" required minlength="6" placeholder="••••••••">
+            </div>
+
+            <button type="submit" class="auth-btn-primary">إنشاء الحساب وتفعيله</button>
           </form>
         </div>
       </div>
@@ -217,19 +1942,47 @@
   </div>
 
   <!-- Image Lightbox Preview Modal -->
-  <div class="chat-lightbox-backdrop" id="chat-lightbox-backdrop" role="dialog" aria-modal="true" style="display: none;">
+  <div class="chat-lightbox-backdrop" id="chat-lightbox-backdrop" role="dialog" aria-modal="true" dir="rtl" style="display: none;">
     <div class="lightbox-toolbar">
-      <span class="lightbox-filename" id="lightbox-filename">Image Preview</span>
+      <span class="lightbox-filename" id="lightbox-filename">معاينة الصورة</span>
       <div class="lightbox-buttons">
-        <button type="button" class="lightbox-btn" id="lightbox-download-btn" title="Download Image">
+        <button type="button" class="lightbox-btn" id="lightbox-download-btn" title="تحميل الصورة">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Download
+          تحميل
         </button>
-        <button type="button" class="lightbox-btn-close" id="lightbox-close-btn" title="Close Preview">✕</button>
+        <button type="button" class="lightbox-btn-close" id="lightbox-close-btn" title="إغلاق المعاينة">✕</button>
       </div>
     </div>
     <div class="lightbox-image-wrap" id="lightbox-image-wrap">
-      <img id="lightbox-img-el" src="" alt="Preview" class="lightbox-img" />
+      <img id="lightbox-img-el" src="" alt="معاينة" class="lightbox-img" />
+    </div>
+  </div>
+
+  <!-- Interactive Google Maps Location Viewer Modal -->
+  <div class="chat-location-modal-backdrop" id="chat-location-modal-backdrop" role="dialog" aria-modal="true" dir="rtl" style="display: none;">
+    <div class="chat-location-modal-dialog">
+      <div class="loc-modal-header">
+        <div class="loc-modal-header-info">
+          <span class="loc-modal-badge" id="loc-modal-badge">📍 موقع تمت مشاركته</span>
+          <span class="loc-modal-subtitle" id="loc-modal-subtitle">إحداثيات الموقع</span>
+        </div>
+        <button type="button" class="loc-modal-close" id="loc-modal-close-btn" aria-label="إغلاق الخريطة">✕</button>
+      </div>
+      <div class="loc-modal-map-wrap" id="loc-modal-map-wrap">
+        <div id="shared-location-map" class="shared-location-map-canvas"></div>
+        <div id="shared-location-fallback" class="shared-location-fallback" style="display: none;">
+          <div class="fallback-icon-ring">📍</div>
+          <p class="fallback-coords-display" id="fallback-coords-display"></p>
+          <p class="fallback-desc">تعذر تحميل معاينة الخريطة داخل هذا الإطار. انقر أدناه لعرض الموقع مباشرة في خرائط Google.</p>
+        </div>
+      </div>
+      <div class="loc-modal-footer">
+        <div class="loc-modal-coords" id="loc-modal-coords-label">خط العرض: 0.00000، خط الطول: 0.00000</div>
+        <a href="#" target="_blank" rel="noopener noreferrer" class="btn-open-google-maps" id="loc-modal-external-link">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          <span>فتح في خرائط Google</span>
+        </a>
+      </div>
     </div>
   </div>
 
@@ -237,10 +1990,15 @@
   <div class="chat-toast-container" id="chat-toast-container" aria-live="polite"></div>
 
   <!-- Real-Time Client Libraries & Application Modules -->
-  <script src="js/signalr.min.js"></script>
-  <script src="js/api.js"></script>
-  <script src="js/realtime.js"></script>
-  <script src="js/chat-state.js"></script>
-  <script src="js/chat-app.js"></script>
+  <script src="/js/signalr.min.js?v=20260927_management"></script>
+  <script src="/js/api.js?v=20260927_management"></script>
+  <script src="/js/map.js?v=20260927_management"></script>
+  <script src="/js/realtime.js?v=20260927_management"></script>
+  <script src="/js/chat-state.js?v=20260927_management"></script>
+  <script src="/js/chat-app.js?v=20260927_management"></script>
+  <script src="/js/transportation.js?v=20260928_transport"></script>
+  <script src="/js/storage.js?v=20260928_storage"></script>
+  <script src="/js/management.js?v=20260928_mgmt"></script>
+  <script src="/js/finance.js?v=20260929_finance"></script>
 </body>
 </html>

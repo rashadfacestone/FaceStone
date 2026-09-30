@@ -67,6 +67,8 @@ public class AuthService : IAuthService
         var idType = ResolveIdentifierType(trimmedId);
         var inputHash = HashPassword(password);
 
+        _logger.LogInformation("[AUTH] Login request received for identifier type: {IdType}", idType);
+
         UserAccount? foundUser = null;
 
         try
@@ -99,15 +101,21 @@ public class AuthService : IAuthService
 
             if (foundUser == null)
             {
+                _logger.LogWarning("[AUTH] User lookup result: Not Found for identifier: {Identifier}", trimmedId);
                 return (false, "No account found matching this email, phone, or username in the database.", null);
             }
+
+            _logger.LogInformation("[AUTH] User lookup result: Found user {Username} ({Role})", foundUser.Username, foundUser.Role);
 
             // Strict password check - must match the database hash
             if (foundUser.PasswordHash != inputHash)
             {
+                _logger.LogWarning("[AUTH] Password verification result: FAILED for user {Username}", foundUser.Username);
                 return (false, "Incorrect password. Please verify your credentials and try again.", null);
             }
 
+            _logger.LogInformation("[AUTH] Password verification result: SUCCESS for user {Username}", foundUser.Username);
+            _logger.LogInformation("[AUTH] Login successful for user {Username} ({Role})", foundUser.Username, foundUser.Role);
             return (true, null, foundUser);
         }
         catch (Exception ex)
@@ -208,11 +216,14 @@ public class AuthService : IAuthService
 
             var validRole = model.Role switch
             {
-                "CEO" => "CEO",
-                "IT" => "IT",
-                "Accountant" => "Accountant",
-                "Employee" => "Employee",
-                _ => "Employee"
+                "CEO" => AppRoles.CEO,
+                "IT" => AppRoles.IT,
+                "TRANSPORTATION_MANAGER" or "Transportation Manager" => AppRoles.TransportationManager,
+                "STORAGE_MANAGER" or "Storage Manager" or "StorageManager" => AppRoles.StorageManager,
+                "FACTORY_MANAGER" or "Factory Manager" => AppRoles.FactoryManager,
+                "Accountant" => AppRoles.Accountant,
+                "Employee" => AppRoles.Employee,
+                _ => AppRoles.Employee
             };
 
             // 4. Create and persist user to SQL Server

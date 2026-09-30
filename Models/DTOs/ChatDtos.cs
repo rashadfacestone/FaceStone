@@ -2,12 +2,50 @@ using Microsoft.AspNetCore.Http;
 
 namespace FaceStone.Web.Models.DTOs;
 
+public class LocationCoordsDto
+{
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
+    public double? Lat { get; set; }
+    public double? Lng { get; set; }
+}
+
 public class SendMessageDto
 {
+    public string? MessageType { get; set; } = "TEXT";
     public string? Message { get; set; }
     public Guid? TargetEmployeeId { get; set; }
+    public Guid? ConversationId { get; set; }
+    public string? Status { get; set; } = "ACTIVE";
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
+    public double? Lat { get; set; }
+    public double? Lng { get; set; }
+    public LocationCoordsDto? Location { get; set; }
+    public int? DurationMinutes { get; set; } = 15;
+    public Guid? LiveSessionId { get; set; }
+    public DateTime? StartedAt { get; set; }
     public IFormFile? Attachment { get; set; }
     public string? ClientMessageId { get; set; }
+
+    public double? GetEffectiveLatitude()
+    {
+        return Latitude ?? Lat ?? Location?.Latitude ?? Location?.Lat;
+    }
+
+    public double? GetEffectiveLongitude()
+    {
+        return Longitude ?? Lng ?? Location?.Longitude ?? Location?.Lng;
+    }
+
+    public Guid? GetEffectiveTargetEmployeeId()
+    {
+        if (TargetEmployeeId.HasValue && TargetEmployeeId.Value != Guid.Empty)
+            return TargetEmployeeId.Value;
+        if (ConversationId.HasValue && ConversationId.Value != Guid.Empty)
+            return ConversationId.Value;
+        return null;
+    }
 }
 
 public class ChatAttachmentDto
@@ -40,6 +78,88 @@ public class ChatMessageDto
     public DateTime SentAt { get; set; }
     public string? ClientMessageId { get; set; }
     public ChatAttachmentDto? Attachment { get; set; }
+
+    // Location Fields
+    public string MessageType { get; set; } = "TEXT"; // "TEXT", "LOCATION", "LIVE_LOCATION"
+    public string? Status { get; set; } // "ACTIVE", "ENDED", "EXPIRED"
+    public Guid? ConversationId { get; set; }
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
+    public Guid? LiveSessionId { get; set; }
+    public bool? IsLiveActive { get; set; }
+    public DateTime? LiveExpiresAt { get; set; }
+    public DateTime? LiveStartedAt { get; set; }
+    public DateTime? LiveEndedAt { get; set; }
+    public DateTime? StartedAt { get; set; }
+    public DateTime? EndedAt { get; set; }
+    public int? LiveDurationMinutes { get; set; }
+}
+
+public static class MessageTypes
+{
+    public const string Text = "TEXT";
+    public const string Location = "LOCATION";
+    public const string LiveLocation = "LIVE_LOCATION";
+    public const string LocationUpdate = "LOCATION_UPDATE";
+    public const string LiveLocationEnded = "LIVE_LOCATION_ENDED";
+}
+
+public class SendLocationDto
+{
+    public double Latitude { get; set; }
+    public double Longitude { get; set; }
+    public Guid? TargetEmployeeId { get; set; }
+    public string? ClientMessageId { get; set; }
+}
+
+public class StartLiveLocationDto
+{
+    public double Latitude { get; set; }
+    public double Longitude { get; set; }
+    public int DurationMinutes { get; set; } = 15;
+    public Guid? TargetEmployeeId { get; set; }
+    public string? ClientMessageId { get; set; }
+}
+
+public class UpdateLiveLocationDto
+{
+    public Guid SessionId { get; set; }
+    public double Latitude { get; set; }
+    public double Longitude { get; set; }
+}
+
+public class StopLiveLocationDto
+{
+    public Guid SessionId { get; set; }
+}
+
+public class LiveLocationUpdateDto
+{
+    public string MessageType { get; set; } = "LOCATION_UPDATE";
+    public string Status { get; set; } = "ACTIVE";
+    public Guid SessionId { get; set; }
+    public Guid MessageId { get; set; }
+    public Guid EmployeeId { get; set; }
+    public Guid? ConversationId => EmployeeId;
+    public Guid SenderId { get; set; }
+    public double Latitude { get; set; }
+    public double Longitude { get; set; }
+    public DateTime UpdatedAt { get; set; }
+    public bool IsActive { get; set; }
+    public DateTime ExpiresAt { get; set; }
+}
+
+public class LiveLocationEndedDto
+{
+    public string MessageType { get; set; } = "LIVE_LOCATION_ENDED";
+    public string Status { get; set; } = "ENDED";
+    public Guid SessionId { get; set; }
+    public Guid MessageId { get; set; }
+    public Guid EmployeeId { get; set; }
+    public Guid? ConversationId => EmployeeId;
+    public DateTime EndedAt { get; set; }
+    public double LastLatitude { get; set; }
+    public double LastLongitude { get; set; }
 }
 
 public class ConversationSummaryDto

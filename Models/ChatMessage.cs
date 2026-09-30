@@ -29,6 +29,19 @@ public class ChatMessage
     // Client-generated Correlation ID for idempotency and optimistic UI deduplication
     public string? ClientMessageId { get; set; }
 
+    // Message Type: "TEXT", "LOCATION", "LIVE_LOCATION"
+    public string MessageType { get; set; } = "TEXT";
+
+    // Session / Message Status: "ACTIVE", "ENDED", etc.
+    public string? Status { get; set; }
+
+    // Location coordinates
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
+
+    // Associated live location session if MessageType == "LIVE_LOCATION"
+    public Guid? LiveSessionId { get; set; }
+
     // Navigation property
     public virtual ICollection<ChatAttachment> Attachments { get; set; } = new List<ChatAttachment>();
 }

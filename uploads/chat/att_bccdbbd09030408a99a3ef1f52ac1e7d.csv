@@ -1,0 +1,6 @@
+﻿Id,FullName,Username,Email,CountryCode,PhoneNumber,PasswordHash,CreatedAt,Role
+4649dcb0-47d3-40ee-b609-581ced1d4bf2,Alexander Wright,alex_stone,alex@facestone.com,+20,+20 10 5566 7788,0ALHDD7kyBSoAGkRgfAC9lVuVqJHXw7g+OxkgrfXAbw=,2026-09-24 06:32:49.047,Senior Structural Engineer
+937333eb-e327-4446-bafb-6a0561705b38,farah,farah,farah@facestone.com,+20,+20+201012389977,O1d16wbqNSU0ytNw7+coxencInxr99hPoUvpb/5lSEs=,2026-09-24 06:38:23.061,Employee
+f2923d5f-bea2-48a6-ab97-7c5fa78c6fed,rashad,rashad,rashadfacestone@gmail.com,+20,+20+201012389970,O1d16wbqNSU0ytNw7+coxencInxr99hPoUvpb/5lSEs=,2026-09-24 06:33:03.996,Accountant
+1c4abc95-3257-49ca-9381-dfb29f79057f,Sarah Mitchell,sarah_acc,sarah@facestone.com,+20,+20 10 1122 3344,Zsn0idUQLm7j8HoGb1vNI9Zn3RctzWFp/i3sqrwJGsw=,2026-09-24 06:32:49.047,Accountant
+4b58373c-bc88-4abd-9204-f7cf16dee1c7,Rana Mohamed,rana_ashour,ranamohamed@facestone.com,+20,+2001026276608,MU/qENM6lT03oJMnHMzTrE0AbjTiJQzMWROsFlwHSGg=,2026-09-24 06:42:28.515,Accountant

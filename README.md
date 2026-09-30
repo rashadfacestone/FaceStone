@@ -112,3 +112,5 @@ dotnet run --project FaceStone.Web.csproj --urls "http://localhost:5124"
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Alexander Wright** | `alex@facestone.com` | `alex_wright` | `+15550192834` | `Password123!` | `Employee` |
 | **Sarah Mitchell** | `sarah@facestone.com` | `sarah_concrete` | `+1555-018-9999` | `SecretPass123!` | `Accountant` |
+| **Transportation Manager** | `transport@facestone.com` | `transport_manager` | `+20 10 3344 5566` | `Password123!` | `TRANSPORTATION_MANAGER` |
+

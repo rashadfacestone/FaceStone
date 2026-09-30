@@ -105,6 +105,24 @@ class ChatStateStore {
       return;
     }
 
+    // Live Location session deduplication: Never add duplicate cards for the same live session
+    if (msg.liveSessionId) {
+      const existingSession = this.messages.find(m => m.liveSessionId && m.liveSessionId === msg.liveSessionId);
+      if (existingSession) {
+        const hasChanged = existingSession.latitude !== msg.latitude ||
+                           existingSession.longitude !== msg.longitude ||
+                           existingSession.status !== msg.status ||
+                           existingSession.isLiveActive !== msg.isLiveActive;
+        Object.assign(existingSession, msg);
+        if (msg.id) this.seenMessageIds.add(msg.id);
+        if (correlationId) this.seenClientMessageIds.add(correlationId);
+        if (hasChanged) {
+          this.emitChange('messages:updated', this.messages);
+        }
+        return;
+      }
+    }
+
     if (msg.id) this.seenMessageIds.add(msg.id);
     if (correlationId) this.seenClientMessageIds.add(correlationId);
 
@@ -136,6 +154,41 @@ class ChatStateStore {
     if (msg) {
       msg.isFailed = true;
       this.emitChange('messages:failed', { tempId: correlationId });
+    }
+  }
+
+  updateLiveLocation(data) {
+    if (!data) return;
+    const msg = this.messages.find(m => 
+      (m.liveSessionId && m.liveSessionId === data.sessionId) || 
+      (m.id && m.id === data.messageId)
+    );
+    if (msg) {
+      msg.latitude = data.latitude;
+      msg.longitude = data.longitude;
+      msg.isLiveActive = data.isActive;
+      msg.status = data.status || (data.isActive ? 'ACTIVE' : 'ENDED');
+      msg.liveExpiresAt = data.expiresAt;
+      this.emitChange('messages:liveLocationUpdated', { message: msg, update: data });
+    }
+  }
+
+  endLiveLocation(data) {
+    if (!data) return;
+    const msg = this.messages.find(m => 
+      (m.liveSessionId && m.liveSessionId === data.sessionId) || 
+      (m.id && m.id === data.messageId)
+    );
+    if (msg) {
+      msg.isLiveActive = false;
+      msg.status = 'ENDED';
+      msg.liveEndedAt = data.endedAt;
+      msg.endedAt = data.endedAt;
+      if (data.lastLatitude && data.lastLongitude) {
+        msg.latitude = data.lastLatitude;
+        msg.longitude = data.lastLongitude;
+      }
+      this.emitChange('messages:liveLocationEnded', { message: msg, update: data });
     }
   }
 
