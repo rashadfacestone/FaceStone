@@ -327,6 +327,53 @@ BEGIN
     CREATE INDEX IX_StorageTransactions_MovementNumber ON StorageTransactions(MovementNumber);
     CREATE INDEX IX_StorageTransactions_Location ON StorageTransactions(StorageLocation);
 END
+ELSE
+BEGIN
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('StorageTransactions') AND name = 'Material')
+        ALTER TABLE StorageTransactions ADD Material NVARCHAR(100) NOT NULL CONSTRAINT DF_StorageTx_Mat DEFAULT 'powder';
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('StorageTransactions') AND name = 'Action')
+        ALTER TABLE StorageTransactions ADD Action NVARCHAR(50) NOT NULL CONSTRAINT DF_StorageTx_Act DEFAULT 'Import';
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('StorageTransactions') AND name = 'IsExportRelatedToPO')
+        ALTER TABLE StorageTransactions ADD IsExportRelatedToPO BIT NOT NULL CONSTRAINT DF_StorageTx_IsExportPO DEFAULT 0;
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('StorageTransactions') AND name = 'PurchaseOrderId')
+        ALTER TABLE StorageTransactions ADD PurchaseOrderId INT NULL CONSTRAINT FK_StorageTransactions_PurchaseOrders REFERENCES PurchaseOrders(Id) ON DELETE SET NULL;
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('StorageTransactions') AND name = 'InternalWeighbridgeReference')
+        ALTER TABLE StorageTransactions ADD InternalWeighbridgeReference NVARCHAR(100) NOT NULL CONSTRAINT DF_StorageTx_IntWbRef DEFAULT '';
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('StorageTransactions') AND name = 'InternalLoadedWeight')
+        ALTER TABLE StorageTransactions ADD InternalLoadedWeight DECIMAL(18,3) NOT NULL CONSTRAINT DF_StorageTx_IntLoaded DEFAULT 0;
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('StorageTransactions') AND name = 'InternalEmptyWeight')
+        ALTER TABLE StorageTransactions ADD InternalEmptyWeight DECIMAL(18,3) NOT NULL CONSTRAINT DF_StorageTx_IntEmpty DEFAULT 0;
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('StorageTransactions') AND name = 'InternalNetWeight')
+        ALTER TABLE StorageTransactions ADD InternalNetWeight DECIMAL(18,3) NOT NULL CONSTRAINT DF_StorageTx_IntNet DEFAULT 0;
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('StorageTransactions') AND name = 'InternalEmptyWeightTime')
+        ALTER TABLE StorageTransactions ADD InternalEmptyWeightTime DATETIME2 NULL;
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('StorageTransactions') AND name = 'InternalLoadedWeightTime')
+        ALTER TABLE StorageTransactions ADD InternalLoadedWeightTime DATETIME2 NULL;
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('StorageTransactions') AND name = 'HasExternalWeighbridge')
+        ALTER TABLE StorageTransactions ADD HasExternalWeighbridge BIT NOT NULL CONSTRAINT DF_StorageTx_HasExtWb DEFAULT 0;
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('StorageTransactions') AND name = 'ExternalWeighbridgeReference')
+        ALTER TABLE StorageTransactions ADD ExternalWeighbridgeReference NVARCHAR(100) NULL;
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('StorageTransactions') AND name = 'ExternalLoadedWeight')
+        ALTER TABLE StorageTransactions ADD ExternalLoadedWeight DECIMAL(18,3) NULL;
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('StorageTransactions') AND name = 'ExternalEmptyWeight')
+        ALTER TABLE StorageTransactions ADD ExternalEmptyWeight DECIMAL(18,3) NULL;
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('StorageTransactions') AND name = 'ExternalNetWeight')
+        ALTER TABLE StorageTransactions ADD ExternalNetWeight DECIMAL(18,3) NULL;
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('StorageTransactions') AND name = 'ExternalEmptyWeightTime')
+        ALTER TABLE StorageTransactions ADD ExternalEmptyWeightTime DATETIME2 NULL;
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('StorageTransactions') AND name = 'ExternalLoadedWeightTime')
+        ALTER TABLE StorageTransactions ADD ExternalLoadedWeightTime DATETIME2 NULL;
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('StorageTransactions') AND name = 'WeighbridgeAttachmentPath')
+        ALTER TABLE StorageTransactions ADD WeighbridgeAttachmentPath NVARCHAR(500) NULL;
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('StorageTransactions') AND name = 'WeighbridgeFileName')
+        ALTER TABLE StorageTransactions ADD WeighbridgeFileName NVARCHAR(260) NULL;
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('StorageTransactions') AND name = 'WeighbridgeFileType')
+        ALTER TABLE StorageTransactions ADD WeighbridgeFileType NVARCHAR(50) NULL;
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('StorageTransactions') AND name = 'WeighbridgeFileSize')
+        ALTER TABLE StorageTransactions ADD WeighbridgeFileSize BIGINT NOT NULL CONSTRAINT DF_StorageTx_WbFileSize DEFAULT 0;
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('StorageTransactions') AND name = 'CreatedBy')
+        ALTER TABLE StorageTransactions ADD CreatedBy NVARCHAR(150) NULL;
+END
 
 IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'StorageTransactionMovements')
 BEGIN

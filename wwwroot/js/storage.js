@@ -1,7 +1,10 @@
 /**
  * FaceStone Storage Department Management - Arabic RTL Application Module
- * Handles Storage Transaction Entry, Service Type Reactive Logic, Uniqueness Validation,
- * Dynamic Multiple Transportation Movement Linkages, Auto Balance Calculations, and API Persistence.
+ * Redesigned Storage Transaction Workflow:
+ *  - Section 1: النوع (Material: powder/slurry, Action: import/export, Incoming/Outgoing Quantity, Export PO Linkage)
+ *  - Section 2: التاريخ (Transaction Date & Time)
+ *  - Section 3: الميزان (Internal Weighbridge, External Weighbridge Toggle & Fields, Receipt Attachment)
+ *  - Section 4: الموظف المسؤول (Controlled selection from existing Users database)
  */
 
 (function () {
@@ -13,8 +16,9 @@
       this.initialized = false;
       this.config = null;
       this.recentTransactions = [];
-      this.activeMovements = [0]; // Array of movement numbers
-      this.refCheckTimeout = null;
+      this.currentReceiptFile = null;
+      this.poCheckTimeout = null;
+      this.poValidated = false;
       this.init();
     }
 
@@ -35,7 +39,6 @@
       this.userNameEl = document.getElementById('storage-user-name');
       this.userRoleEl = document.getElementById('storage-user-role');
       this.userAvatarEl = document.getElementById('storage-user-avatar');
-      this.overallBalanceChip = document.getElementById('storage-overall-balance-chip');
 
       // Banner / Alert
       this.alertBanner = document.getElementById('storage-alert-banner');
@@ -44,51 +47,82 @@
       this.alertMsg = document.getElementById('storage-alert-msg');
       this.alertCloseBtn = document.getElementById('storage-alert-close-btn');
 
-      // Form Elements
+      // Main Form
       this.form = document.getElementById('storage-entry-form');
-      this.movementNumberInput = document.getElementById('storage-movement-number');
-      this.dateInput = document.getElementById('storage-date');
-      this.serviceTypeSelect = document.getElementById('storage-service-type');
-      this.referenceNumberInput = document.getElementById('storage-reference-number');
-      this.refStatusEl = document.getElementById('storage-ref-status');
 
-      this.poNumberInput = document.getElementById('storage-po-number');
-      this.movementsListEl = document.getElementById('storage-movements-list');
-      this.movementsCountEl = document.getElementById('storage-movements-count');
-      this.btnAddMovement = document.getElementById('btn-storage-add-movement');
-      this.quickChipsContainer = document.getElementById('storage-quick-chips');
+      // SECTION 1 — TYPE (النوع)
+      this.materialSelect = document.getElementById('storage-material-select');
+      this.actionSelect = document.getElementById('storage-action-select');
 
+      this.incomingGroup = document.getElementById('group-storage-incoming-qty');
       this.incomingQtyInput = document.getElementById('storage-incoming-qty');
-      this.outgoingQtyInput = document.getElementById('storage-outgoing-qty');
-      this.openingBalanceInput = document.getElementById('storage-opening-balance');
-      this.closingBalanceInput = document.getElementById('storage-closing-balance');
-      this.starIncoming = document.getElementById('star-incoming');
-      this.starOutgoing = document.getElementById('star-outgoing');
 
-      this.locationSelect = document.getElementById('storage-location');
-      this.destinationGroup = document.getElementById('storage-destination-group');
-      this.destinationSelect = document.getElementById('storage-destination-location');
-      this.receivingEmployeeSelect = document.getElementById('storage-receiving-employee');
+      this.outgoingGroup = document.getElementById('group-storage-outgoing-qty');
+      this.outgoingQtyInput = document.getElementById('storage-outgoing-qty');
+
+      this.poContainer = document.getElementById('group-storage-po-container');
+      this.exportPoCheckbox = document.getElementById('storage-export-po-checkbox');
+      this.poInputWrap = document.getElementById('storage-po-input-wrap');
+      this.poNumberInput = document.getElementById('storage-po-number');
+      this.poStatusEl = document.getElementById('storage-po-status');
+
+      // SECTION 2 — DATE (التاريخ)
+      this.dateInput = document.getElementById('storage-date');
+
+      // SECTION 3 — WEIGHBRIDGE (الميزان)
+      // Internal Weighbridge
+      this.internalRefInput = document.getElementById('storage-wb-int-ref');
+      this.internalLoadedInput = document.getElementById('storage-wb-int-loaded');
+      this.internalEmptyInput = document.getElementById('storage-wb-int-empty');
+      this.internalNetInput = document.getElementById('storage-wb-int-net');
+      this.internalEmptyTimeInput = document.getElementById('storage-wb-int-empty-time');
+      this.internalLoadedTimeInput = document.getElementById('storage-wb-int-loaded-time');
+
+      // External Weighbridge Toggle & Fields
+      this.hasExtWbCheckbox = document.getElementById('storage-has-ext-wb-checkbox');
+      this.extWbCard = document.getElementById('storage-ext-wb-card');
+      this.extRefInput = document.getElementById('storage-wb-ext-ref');
+      this.extLoadedInput = document.getElementById('storage-wb-ext-loaded');
+      this.extEmptyInput = document.getElementById('storage-wb-ext-empty');
+      this.extNetInput = document.getElementById('storage-wb-ext-net');
+      this.extEmptyTimeInput = document.getElementById('storage-wb-ext-empty-time');
+      this.extLoadedTimeInput = document.getElementById('storage-wb-ext-loaded-time');
+
+      // Weighbridge Receipt Attachment
+      this.receiptSection = document.getElementById('storage-receipt-attachment-section');
+      this.receiptRequiredStar = document.getElementById('storage-receipt-required-star');
+      this.dropzone = document.getElementById('storage-wb-dropzone');
+      this.fileInput = document.getElementById('storage-wb-attachment-input');
+      this.placeholder = document.getElementById('storage-wb-placeholder');
+      this.filePreview = document.getElementById('storage-wb-file-preview');
+      this.fileNameEl = document.getElementById('storage-wb-file-name');
+      this.fileSizeEl = document.getElementById('storage-wb-file-size');
+      this.fileIconEl = document.getElementById('storage-wb-file-icon');
+      this.btnRemoveFile = document.getElementById('storage-wb-remove-btn');
+
+      // SECTION 4 — RESPONSIBLE EMPLOYEE (الموظف المسؤول)
+      this.responsibleEmployeeSelect = document.getElementById('storage-responsible-employee');
       this.notesTextarea = document.getElementById('storage-notes');
 
-      // Action Buttons
+      // Form Action Buttons
       this.btnSubmit = document.getElementById('btn-storage-submit');
       this.submitSpinner = document.getElementById('storage-submit-spinner');
       this.submitText = document.getElementById('storage-submit-text');
       this.btnClear = document.getElementById('btn-storage-clear');
 
-      // Confirmation Modal
+      // Clear Confirmation Modal
       this.confirmModal = document.getElementById('storage-confirm-modal');
       this.confirmCancelBtn = document.getElementById('storage-confirm-cancel-btn');
       this.confirmProceedBtn = document.getElementById('storage-confirm-proceed-btn');
 
-      // Recent Table
+      // Recent Transactions Table
       this.tableBody = document.getElementById('storage-table-body');
       this.btnRefresh = document.getElementById('btn-storage-refresh');
 
       this.attachEventListeners();
       this.setDefaultDateTime();
-      this.renderMovementsList();
+      this.handleActionChange();
+      this.handleExternalWbToggle();
       this.initialized = true;
     }
 
@@ -107,32 +141,60 @@
         this.hideAlert();
       });
 
-      // Service Type Change
-      this.serviceTypeSelect?.addEventListener('change', () => {
-        this.handleServiceTypeChange();
-        this.calculateBalances();
+      // Section 1: Material change
+      this.materialSelect?.addEventListener('change', () => {
+        this.clearFieldError('storage-material-select');
       });
 
-      // Storage Location Change -> Retrieve opening balance for that location
-      this.locationSelect?.addEventListener('change', () => {
-        const loc = this.locationSelect.value;
-        this.fetchBalanceForLocation(loc);
+      // Section 1: Action change (Import vs Export)
+      this.actionSelect?.addEventListener('change', () => {
+        this.clearFieldError('storage-action-select');
+        this.handleActionChange();
       });
 
-      // Quantity Inputs -> Calculate Closing Balance
-      this.incomingQtyInput?.addEventListener('input', () => this.calculateBalances());
-      this.outgoingQtyInput?.addEventListener('input', () => this.calculateBalances());
-
-      // Reference Number check on input / blur
-      this.referenceNumberInput?.addEventListener('input', () => {
-        clearTimeout(this.refCheckTimeout);
-        this.refCheckTimeout = setTimeout(() => this.checkReferenceUniqueness(), 400);
+      // Section 1: Export PO Checkbox change
+      this.exportPoCheckbox?.addEventListener('change', () => {
+        this.handleExportPoToggle();
       });
-      this.referenceNumberInput?.addEventListener('blur', () => this.checkReferenceUniqueness());
 
-      // Add Transportation Movement button
-      this.btnAddMovement?.addEventListener('click', () => {
-        this.addTransportationMovementRow();
+      // Section 1: PO Number input with live validation
+      this.poNumberInput?.addEventListener('input', () => {
+        clearTimeout(this.poCheckTimeout);
+        this.clearFieldError('storage-po-number');
+        this.poCheckTimeout = setTimeout(() => this.validatePoNumberLive(), 450);
+      });
+      this.poNumberInput?.addEventListener('blur', () => {
+        this.validatePoNumberLive();
+      });
+
+      // Section 2: Date change
+      this.dateInput?.addEventListener('change', () => {
+        this.clearFieldError('storage-date');
+      });
+
+      // Section 3: Internal Weighbridge live net calculation
+      this.internalLoadedInput?.addEventListener('input', () => this.calculateInternalNet());
+      this.internalEmptyInput?.addEventListener('input', () => this.calculateInternalNet());
+      this.internalRefInput?.addEventListener('input', () => this.clearFieldError('storage-wb-int-ref'));
+      this.internalLoadedTimeInput?.addEventListener('change', () => this.clearFieldError('storage-wb-int-loaded-time'));
+
+      // Section 3: External Weighbridge checkbox toggle
+      this.hasExtWbCheckbox?.addEventListener('change', () => {
+        this.handleExternalWbToggle();
+      });
+
+      // Section 3: External Weighbridge live net calculation
+      this.extLoadedInput?.addEventListener('input', () => this.calculateExternalNet());
+      this.extEmptyInput?.addEventListener('input', () => this.calculateExternalNet());
+      this.extRefInput?.addEventListener('input', () => this.clearFieldError('storage-wb-ext-ref'));
+      this.extLoadedTimeInput?.addEventListener('change', () => this.clearFieldError('storage-wb-ext-loaded-time'));
+
+      // Section 3: Weighbridge Receipt File Attachment
+      this.setupAttachmentListeners();
+
+      // Section 4: Responsible Employee change
+      this.responsibleEmployeeSelect?.addEventListener('change', () => {
+        this.clearFieldError('storage-responsible-employee');
       });
 
       // Form Submit
@@ -146,7 +208,7 @@
         this.handleClearRequest();
       });
 
-      // Confirm Modal buttons
+      // Confirmation Modal buttons
       this.confirmCancelBtn?.addEventListener('click', () => {
         this.hideConfirmModal();
       });
@@ -162,18 +224,328 @@
       });
     }
 
+    // =========================================================================
+    // Attachment Handling (Drag & Drop, Validation, Preview)
+    // =========================================================================
+    setupAttachmentListeners() {
+      if (!this.dropzone) return;
+
+      // File input change
+      this.fileInput?.addEventListener('change', (e) => {
+        const file = e.target.files?.[0];
+        if (file) {
+          this.handleSelectedReceiptFile(file);
+        }
+      });
+
+      // Drag and drop
+      ['dragenter', 'dragover'].forEach(eventName => {
+        this.dropzone.addEventListener(eventName, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          this.dropzone.classList.add('dragover');
+        });
+      });
+
+      ['dragleave', 'drop'].forEach(eventName => {
+        this.dropzone.addEventListener(eventName, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          this.dropzone.classList.remove('dragover');
+        });
+      });
+
+      this.dropzone.addEventListener('drop', (e) => {
+        const file = e.dataTransfer?.files?.[0];
+        if (file) {
+          this.handleSelectedReceiptFile(file);
+        }
+      });
+
+      // Remove button
+      this.btnRemoveFile?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.clearReceiptAttachment();
+      });
+    }
+
+    handleSelectedReceiptFile(file) {
+      this.clearFieldError('storage-wb-receipt');
+      if (!file) return;
+
+      // Validate format
+      const validExtensions = ['.pdf', '.jpg', '.jpeg'];
+      const fileNameLower = file.name.toLowerCase();
+      const isValidExt = validExtensions.some(ext => fileNameLower.endsWith(ext));
+
+      if (!isValidExt) {
+        this.showFieldError('storage-wb-receipt', 'الملفات المسموحة فقط: PDF, JPG, JPEG.');
+        this.clearReceiptAttachment();
+        return;
+      }
+
+      // Validate size (max 25 MB)
+      const maxBytes = 25 * 1024 * 1024;
+      if (file.size > maxBytes) {
+        this.showFieldError('storage-wb-receipt', 'حجم الملف يتجاوز الحد الأقصى المسموح به (25 ميجابايت).');
+        this.clearReceiptAttachment();
+        return;
+      }
+
+      this.currentReceiptFile = file;
+
+      // Update Preview
+      if (this.fileNameEl) this.fileNameEl.textContent = file.name;
+      if (this.fileSizeEl) this.fileSizeEl.textContent = this.formatFileSize(file.size);
+      if (this.fileIconEl) {
+        this.fileIconEl.textContent = fileNameLower.endsWith('.pdf') ? '📄' : '🖼️';
+      }
+
+      if (this.placeholder) this.placeholder.style.display = 'none';
+      if (this.filePreview) this.filePreview.style.display = 'flex';
+    }
+
+    clearReceiptAttachment() {
+      this.currentReceiptFile = null;
+      if (this.fileInput) this.fileInput.value = '';
+      if (this.placeholder) this.placeholder.style.display = 'flex';
+      if (this.filePreview) this.filePreview.style.display = 'none';
+      if (this.fileNameEl) this.fileNameEl.textContent = '—';
+      if (this.fileSizeEl) this.fileSizeEl.textContent = '—';
+    }
+
+    formatFileSize(bytes) {
+      if (!bytes || bytes === 0) return '0 بايت';
+      const k = 1024;
+      const sizes = ['بايت', 'كيلوبايت', 'ميجابايت', 'جيجابايت'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    // =========================================================================
+    // Reactive Form Dynamics
+    // =========================================================================
     setDefaultDateTime() {
-      if (!this.dateInput) return;
       const now = new Date();
-      // Format as YYYY-MM-DDTHH:mm
       const yyyy = now.getFullYear();
       const mm = String(now.getMonth() + 1).padStart(2, '0');
       const dd = String(now.getDate()).padStart(2, '0');
       const hh = String(now.getHours()).padStart(2, '0');
       const min = String(now.getMinutes()).padStart(2, '0');
-      this.dateInput.value = `${yyyy}-${mm}-${dd}T${hh}:${min}`;
+      const formatted = `${yyyy}-${mm}-${dd}T${hh}:${min}`;
+
+      if (this.dateInput && !this.dateInput.value) {
+        this.dateInput.value = formatted;
+      }
+      if (this.internalLoadedTimeInput && !this.internalLoadedTimeInput.value) {
+        this.internalLoadedTimeInput.value = formatted;
+      }
     }
 
+    handleActionChange() {
+      const action = (this.actionSelect?.value || '').toLowerCase();
+
+      // Clear quantity validation errors
+      this.clearFieldError('storage-incoming-qty');
+      this.clearFieldError('storage-outgoing-qty');
+      this.clearFieldError('storage-po-number');
+
+      if (action === 'import' || action === 'إيداع') {
+        // Show Incoming Quantity, Hide Outgoing Quantity & PO Checkbox
+        if (this.incomingGroup) this.incomingGroup.style.display = 'flex';
+        if (this.outgoingGroup) this.outgoingGroup.style.display = 'none';
+        if (this.outgoingQtyInput) this.outgoingQtyInput.value = '';
+
+        if (this.poContainer) this.poContainer.style.display = 'none';
+        if (this.exportPoCheckbox) this.exportPoCheckbox.checked = false;
+        if (this.poInputWrap) this.poInputWrap.style.display = 'none';
+        if (this.poNumberInput) this.poNumberInput.value = '';
+        if (this.poStatusEl) this.poStatusEl.textContent = '';
+        this.poValidated = false;
+      } else if (action === 'export' || action === 'صرف') {
+        // Show Outgoing Quantity & PO Checkbox, Hide Incoming Quantity
+        if (this.outgoingGroup) this.outgoingGroup.style.display = 'flex';
+        if (this.incomingGroup) this.incomingGroup.style.display = 'none';
+        if (this.incomingQtyInput) this.incomingQtyInput.value = '';
+
+        if (this.poContainer) this.poContainer.style.display = 'flex';
+        this.handleExportPoToggle();
+      } else {
+        // Neither selected
+        if (this.incomingGroup) this.incomingGroup.style.display = 'none';
+        if (this.outgoingGroup) this.outgoingGroup.style.display = 'none';
+        if (this.poContainer) this.poContainer.style.display = 'none';
+      }
+    }
+
+    handleExportPoToggle() {
+      const isChecked = this.exportPoCheckbox?.checked || false;
+      if (this.poInputWrap) {
+        this.poInputWrap.style.display = isChecked ? 'block' : 'none';
+      }
+
+      if (!isChecked) {
+        if (this.poNumberInput) this.poNumberInput.value = '';
+        if (this.poStatusEl) this.poStatusEl.textContent = '';
+        this.clearFieldError('storage-po-number');
+        this.poValidated = false;
+      } else {
+        if (this.poNumberInput && !this.poNumberInput.value.trim()) {
+          this.poNumberInput.focus();
+        } else {
+          this.validatePoNumberLive();
+        }
+      }
+    }
+
+    async validatePoNumberLive() {
+      if (!this.exportPoCheckbox?.checked) return true;
+      const rawPo = this.poNumberInput?.value?.trim() || '';
+
+      if (!rawPo) {
+        if (this.poStatusEl) this.poStatusEl.textContent = '';
+        this.poValidated = false;
+        return false;
+      }
+
+      // Clean prefix if entered without "PO-"
+      let poQuery = rawPo;
+      if (!poQuery.toUpperCase().startsWith('PO-') && !poQuery.toUpperCase().startsWith('PO')) {
+        poQuery = 'PO-' + poQuery;
+      }
+
+      if (this.poStatusEl) {
+        this.poStatusEl.textContent = '⏳ جاري التحقق...';
+        this.poStatusEl.className = 'storage-ref-status';
+      }
+
+      try {
+        const res = await fetch(`/api/storage/po-lookup/${encodeURIComponent(poQuery)}`, {
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': 'Bearer ' + (window.ChatApi?.getToken() || '')
+          }
+        });
+
+        const json = await res.json();
+        if (res.ok && json.success && json.data) {
+          const po = json.data;
+          this.poNumberInput.classList.remove('is-invalid');
+          this.clearFieldError('storage-po-number');
+          if (this.poStatusEl) {
+            this.poStatusEl.textContent = `✓ معتمد: ${po.poNumber} (${po.supplier || 'مورد'})`;
+            this.poStatusEl.className = 'storage-ref-status valid';
+          }
+          this.poValidated = true;
+          return true;
+        } else {
+          this.poNumberInput.classList.add('is-invalid');
+          this.showFieldError('storage-po-number', 'Purchase Order not found.');
+          if (this.poStatusEl) {
+            this.poStatusEl.textContent = '❌ Purchase Order not found.';
+            this.poStatusEl.className = 'storage-ref-status invalid';
+          }
+          this.poValidated = false;
+          return false;
+        }
+      } catch (err) {
+        console.error('PO verification error:', err);
+        return false;
+      }
+    }
+
+    handleExternalWbToggle() {
+      const isChecked = this.hasExtWbCheckbox?.checked || false;
+      if (this.extWbCard) {
+        this.extWbCard.style.display = isChecked ? 'block' : 'none';
+      }
+      if (this.receiptRequiredStar) {
+        this.receiptRequiredStar.style.display = isChecked ? 'inline' : 'none';
+      }
+
+      if (!isChecked) {
+        // Clear external weighbridge fields to prevent fake values
+        if (this.extRefInput) this.extRefInput.value = '';
+        if (this.extLoadedInput) this.extLoadedInput.value = '';
+        if (this.extEmptyInput) this.extEmptyInput.value = '';
+        if (this.extNetInput) this.extNetInput.value = '0.000';
+        if (this.extEmptyTimeInput) this.extEmptyTimeInput.value = '';
+        if (this.extLoadedTimeInput) this.extLoadedTimeInput.value = '';
+
+        this.clearFieldError('storage-wb-ext-ref');
+        this.clearFieldError('storage-wb-ext-loaded');
+        this.clearFieldError('storage-wb-ext-empty');
+        this.clearFieldError('storage-wb-ext-loaded-time');
+        this.clearFieldError('storage-wb-receipt');
+      } else {
+        // Set default loaded time for external weighbridge
+        if (this.extLoadedTimeInput && !this.extLoadedTimeInput.value) {
+          const now = new Date();
+          const yyyy = now.getFullYear();
+          const mm = String(now.getMonth() + 1).padStart(2, '0');
+          const dd = String(now.getDate()).padStart(2, '0');
+          const hh = String(now.getHours()).padStart(2, '0');
+          const min = String(now.getMinutes()).padStart(2, '0');
+          this.extLoadedTimeInput.value = `${yyyy}-${mm}-${dd}T${hh}:${min}`;
+        }
+      }
+    }
+
+    calculateInternalNet() {
+      const loaded = parseFloat(this.internalLoadedInput?.value || 0);
+      const empty = parseFloat(this.internalEmptyInput?.value || 0);
+
+      this.clearFieldError('storage-wb-int-loaded');
+      this.clearFieldError('storage-wb-int-empty');
+
+      if (!isNaN(loaded) && !isNaN(empty) && loaded > 0 && empty > 0) {
+        if (loaded <= empty) {
+          this.showFieldError('storage-wb-int-loaded', 'الوزن الداخلي قائم يجب أن يكون أكبر من الوزن الداخلي فارغ.');
+          if (this.internalNetInput) this.internalNetInput.value = '0.000';
+          return;
+        }
+
+        const net = loaded - empty;
+        if (this.internalNetInput) {
+          this.internalNetInput.value = net.toFixed(3);
+        }
+      } else {
+        if (this.internalNetInput) {
+          this.internalNetInput.value = '0.000';
+        }
+      }
+    }
+
+    calculateExternalNet() {
+      if (!this.hasExtWbCheckbox?.checked) return;
+
+      const loaded = parseFloat(this.extLoadedInput?.value || 0);
+      const empty = parseFloat(this.extEmptyInput?.value || 0);
+
+      this.clearFieldError('storage-wb-ext-loaded');
+      this.clearFieldError('storage-wb-ext-empty');
+
+      if (!isNaN(loaded) && !isNaN(empty) && loaded > 0 && empty > 0) {
+        if (loaded <= empty) {
+          this.showFieldError('storage-wb-ext-loaded', 'الوزن الخارجي قائم يجب أن يكون أكبر من الوزن الخارجي فارغ.');
+          if (this.extNetInput) this.extNetInput.value = '0.000';
+          return;
+        }
+
+        const net = loaded - empty;
+        if (this.extNetInput) {
+          this.extNetInput.value = net.toFixed(3);
+        }
+      } else {
+        if (this.extNetInput) {
+          this.extNetInput.value = '0.000';
+        }
+      }
+    }
+
+    // =========================================================================
+    // User Badge & Initial Data Loading
+    // =========================================================================
     updateUserBadge(user) {
       if (!user) return;
       if (this.userNameEl) {
@@ -226,321 +598,35 @@
         const json = await res.json();
         if (json.success && json.data) {
           this.config = json.data;
-          this.populateConfigDropdowns(json.data);
+          this.populateResponsibleEmployees(json.data.employees || []);
         }
       } catch (err) {
         console.error('Failed to load storage config:', err);
       }
     }
 
-    populateConfigDropdowns(config) {
-      // 1. Populate Storage Locations
-      if (this.locationSelect && config.storageLocations) {
-        const currentVal = this.locationSelect.value;
-        this.locationSelect.innerHTML = '<option value="" disabled selected>-- اختر مكان التخزين --</option>';
-        config.storageLocations.forEach(loc => {
-          const opt = document.createElement('option');
-          opt.value = loc;
-          opt.textContent = loc;
-          this.locationSelect.appendChild(opt);
-        });
-        if (currentVal && config.storageLocations.includes(currentVal)) {
-          this.locationSelect.value = currentVal;
-        } else if (config.storageLocations.length > 0) {
-          this.locationSelect.value = config.storageLocations[0];
-          this.fetchBalanceForLocation(config.storageLocations[0]);
-        }
-      }
+    populateResponsibleEmployees(employees) {
+      if (!this.responsibleEmployeeSelect) return;
+      const currentVal = this.responsibleEmployeeSelect.value;
+      this.responsibleEmployeeSelect.innerHTML = '<option value="" disabled selected>-- اختر الموظف المسؤول من القائمة --</option>';
 
-      // 2. Populate Destination Storage Location (for transfer)
-      if (this.destinationSelect && config.storageLocations) {
-        const currentDestVal = this.destinationSelect.value;
-        this.destinationSelect.innerHTML = '<option value="" disabled selected>-- اختر المستودع المحول إليه --</option>';
-        config.storageLocations.forEach(loc => {
-          const opt = document.createElement('option');
-          opt.value = loc;
-          opt.textContent = loc;
-          this.destinationSelect.appendChild(opt);
-        });
-        if (currentDestVal && config.storageLocations.includes(currentDestVal)) {
-          this.destinationSelect.value = currentDestVal;
-        }
-      }
-
-      // 3. Populate Employees
-      if (this.receivingEmployeeSelect && config.employees) {
-        const currentEmpVal = this.receivingEmployeeSelect.value;
-        this.receivingEmployeeSelect.innerHTML = '<option value="" disabled selected>-- اختر الموظف المستلم من القائمة --</option>';
-        config.employees.forEach(emp => {
-          const opt = document.createElement('option');
-          opt.value = emp.fullName;
-          opt.textContent = `${emp.fullName} (${this.formatRoleArabic(emp.role)})`;
-          this.receivingEmployeeSelect.appendChild(opt);
-        });
-
-        // Set default to current user if available
-        const currentUser = window.chatState?.currentUser || window.ChatApi?.getCurrentUser();
-        if (currentUser && currentUser.fullName) {
-          const found = config.employees.find(e => e.fullName === currentUser.fullName);
-          if (found) {
-            this.receivingEmployeeSelect.value = found.fullName;
-          }
-        }
-      }
-
-      // 4. Populate Available Transportation Movements Quick Chips
-      if (this.quickChipsContainer && config.availableTransportationMovements) {
-        this.quickChipsContainer.innerHTML = '';
-        const recent = config.availableTransportationMovements.slice(0, 5);
-        if (recent.length === 0) {
-          this.quickChipsContainer.innerHTML = '<span style="font-size:0.75rem; color:#9CA3AF;">لا توجد نقلات مسجلة حالياً</span>';
-        } else {
-          recent.forEach(m => {
-            const chip = document.createElement('button');
-            chip.type = 'button';
-            chip.className = 'storage-quick-chip';
-            chip.innerHTML = `<span>نقلة #${m.transactionNumber}</span><span style="opacity:0.7;">(${m.carNumber || m.poNumber})</span>`;
-            chip.title = `إضافة النقلة #${m.transactionNumber} - ${m.materialType || ''} (${m.netWeight} طن)`;
-            chip.addEventListener('click', () => {
-              this.addSpecificTransportationMovement(m.transactionNumber, m.poNumber);
-            });
-            this.quickChipsContainer.appendChild(chip);
-          });
-        }
-      }
-
-      // 5. Update overall balance chip
-      if (this.overallBalanceChip) {
-        const bal = parseFloat(config.currentOverallBalance || 0);
-        this.overallBalanceChip.textContent = `الرصيد العام الحالي: ${bal.toFixed(3)} طن`;
-      }
-    }
-
-    async fetchBalanceForLocation(locationName) {
-      if (!locationName) return;
-      try {
-        const url = `/api/storage/balance?storageLocation=${encodeURIComponent(locationName)}`;
-        const res = await fetch(url, {
-          headers: {
-            'Accept': 'application/json',
-            'Authorization': 'Bearer ' + (window.ChatApi?.getToken() || '')
-          }
-        });
-        const json = await res.json();
-        if (json.success && json.data) {
-          const bal = parseFloat(json.data.currentBalance || 0);
-          if (this.openingBalanceInput) {
-            this.openingBalanceInput.value = bal.toFixed(3);
-          }
-          this.calculateBalances();
-        }
-      } catch (err) {
-        console.error('Failed to fetch balance for location:', err);
-      }
-    }
-
-    async checkReferenceUniqueness() {
-      if (!this.referenceNumberInput) return true;
-      const refVal = parseInt(this.referenceNumberInput.value, 10);
-      if (!refVal || isNaN(refVal) || refVal <= 0) {
-        if (this.refStatusEl) this.refStatusEl.textContent = '';
-        return false;
-      }
-
-      try {
-        const res = await fetch(`/api/storage/check-reference/${refVal}`, {
-          headers: {
-            'Accept': 'application/json',
-            'Authorization': 'Bearer ' + (window.ChatApi?.getToken() || '')
-          }
-        });
-        const json = await res.json();
-        if (json.success && json.data) {
-          if (json.data.exists) {
-            this.referenceNumberInput.classList.add('is-invalid');
-            this.showFieldError('storage-reference-number', 'رقم المرجع مستخدم بالفعل');
-            if (this.refStatusEl) {
-              this.refStatusEl.textContent = '❌ غير متاح';
-              this.refStatusEl.className = 'storage-ref-status invalid';
-            }
-            return false;
-          } else {
-            this.referenceNumberInput.classList.remove('is-invalid');
-            this.clearFieldError('storage-reference-number');
-            if (this.refStatusEl) {
-              this.refStatusEl.textContent = '✓ متاح';
-              this.refStatusEl.className = 'storage-ref-status valid';
-            }
-            return true;
-          }
-        }
-      } catch (err) {
-        console.error('Reference check error:', err);
-      }
-      return true;
-    }
-
-    handleServiceTypeChange() {
-      const type = this.serviceTypeSelect?.value;
-      if (!type) return;
-
-      // Reset requirements and styles
-      if (this.destinationGroup) {
-        this.destinationGroup.style.display = (type === 'تحويل') ? 'flex' : 'none';
-        if (this.destinationSelect) {
-          this.destinationSelect.required = (type === 'تحويل');
-        }
-      }
-
-      const labelLoc = document.getElementById('label-storage-location');
-      if (labelLoc) {
-        labelLoc.textContent = (type === 'تحويل') ? 'مكان التخزين (المصدر / المحول منه)' : 'مكان التخزين';
-      }
-
-      switch (type) {
-        case 'إضافة':
-          this.incomingQtyInput.disabled = false;
-          this.incomingQtyInput.classList.remove('storage-readonly-input');
-          this.outgoingQtyInput.disabled = true;
-          this.outgoingQtyInput.classList.add('storage-readonly-input');
-          this.outgoingQtyInput.value = '0.000';
-          if (parseFloat(this.incomingQtyInput.value) === 0) {
-            this.incomingQtyInput.value = '';
-          }
-          break;
-
-        case 'صرف':
-          this.outgoingQtyInput.disabled = false;
-          this.outgoingQtyInput.classList.remove('storage-readonly-input');
-          this.incomingQtyInput.disabled = true;
-          this.incomingQtyInput.classList.add('storage-readonly-input');
-          this.incomingQtyInput.value = '0.000';
-          if (parseFloat(this.outgoingQtyInput.value) === 0) {
-            this.outgoingQtyInput.value = '';
-          }
-          break;
-
-        case 'تحويل':
-          // Transfer removes from source location
-          this.outgoingQtyInput.disabled = false;
-          this.outgoingQtyInput.classList.remove('storage-readonly-input');
-          this.incomingQtyInput.disabled = true;
-          this.incomingQtyInput.classList.add('storage-readonly-input');
-          this.incomingQtyInput.value = '0.000';
-          if (parseFloat(this.outgoingQtyInput.value) === 0) {
-            this.outgoingQtyInput.value = '';
-          }
-          break;
-
-        case 'تسوية':
-          this.incomingQtyInput.disabled = false;
-          this.incomingQtyInput.classList.remove('storage-readonly-input');
-          this.outgoingQtyInput.disabled = false;
-          this.outgoingQtyInput.classList.remove('storage-readonly-input');
-          break;
-      }
-    }
-
-    calculateBalances() {
-      const openBal = parseFloat(this.openingBalanceInput?.value || 0) || 0;
-      const incoming = parseFloat(this.incomingQtyInput?.value || 0) || 0;
-      const outgoing = parseFloat(this.outgoingQtyInput?.value || 0) || 0;
-
-      // Formula: ClosingBalance = OpeningBalance + IncomingQuantity - OutgoingQuantity
-      const closing = openBal + incoming - outgoing;
-
-      if (this.closingBalanceInput) {
-        this.closingBalanceInput.value = isNaN(closing) ? '0.000' : closing.toFixed(3);
-      }
-    }
-
-    // =========================================================================
-    // Multiple Transportation Movements (رقم النقلة) Repeater Logic
-    // =========================================================================
-    renderMovementsList() {
-      if (!this.movementsListEl) return;
-      this.movementsListEl.innerHTML = '';
-
-      if (this.activeMovements.length === 0) {
-        this.activeMovements = [0];
-      }
-
-      this.activeMovements.forEach((movNum, index) => {
-        const row = document.createElement('div');
-        row.className = 'storage-movement-row';
-        row.dataset.index = index;
-
-        const val = movNum > 0 ? movNum : '';
-        row.innerHTML = `
-          <span class="storage-movement-row-prefix">نقلة ${index + 1}:</span>
-          <input type="number" class="storage-movement-input" min="1" step="1" placeholder="رقم النقلة (مثال: ${1001 + index})" value="${val}">
-          ${this.activeMovements.length > 1 ? `
-            <button type="button" class="btn-storage-remove-movement" title="حذف هذه النقلة">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              <span>حذف</span>
-            </button>
-          ` : ''}
-        `;
-
-        const input = row.querySelector('.storage-movement-input');
-        input?.addEventListener('input', () => {
-          const n = parseInt(input.value, 10);
-          this.activeMovements[index] = (!isNaN(n) && n > 0) ? n : 0;
-          this.updateMovementsCounter();
-        });
-
-        const btnRemove = row.querySelector('.btn-storage-remove-movement');
-        btnRemove?.addEventListener('click', () => {
-          this.removeTransportationMovementRow(index);
-        });
-
-        this.movementsListEl.appendChild(row);
+      employees.forEach(emp => {
+        const opt = document.createElement('option');
+        opt.value = emp.fullName || emp.username;
+        opt.textContent = `${emp.fullName} (${this.formatRoleArabic(emp.role)})`;
+        this.responsibleEmployeeSelect.appendChild(opt);
       });
 
-      this.updateMovementsCounter();
-    }
-
-    addTransportationMovementRow() {
-      this.activeMovements.push(0);
-      this.renderMovementsList();
-      // Focus on new input
-      const inputs = this.movementsListEl.querySelectorAll('.storage-movement-input');
-      if (inputs.length > 0) {
-        inputs[inputs.length - 1].focus();
-      }
-    }
-
-    addSpecificTransportationMovement(movNumber, poNumber) {
-      if (!movNumber) return;
-      // If first row is empty, replace it
-      const emptyIdx = this.activeMovements.findIndex(m => m === 0);
-      if (emptyIdx !== -1) {
-        this.activeMovements[emptyIdx] = movNumber;
-      } else if (!this.activeMovements.includes(movNumber)) {
-        this.activeMovements.push(movNumber);
-      }
-
-      // If PO is empty, automatically populate from transportation
-      if (poNumber && this.poNumberInput && !this.poNumberInput.value.trim()) {
-        this.poNumberInput.value = poNumber;
-      }
-
-      this.renderMovementsList();
-    }
-
-    removeTransportationMovementRow(index) {
-      if (this.activeMovements.length <= 1) {
-        this.activeMovements = [0];
-      } else {
-        this.activeMovements.splice(index, 1);
-      }
-      this.renderMovementsList();
-    }
-
-    updateMovementsCounter() {
-      const validCount = this.activeMovements.filter(n => n > 0).length;
-      if (this.movementsCountEl) {
-        this.movementsCountEl.textContent = `${validCount} نقلة محددة`;
+      // Default to current user if available
+      const currentUser = window.chatState?.currentUser || window.ChatApi?.getCurrentUser();
+      if (currentUser && (currentUser.fullName || currentUser.username)) {
+        const targetName = currentUser.fullName || currentUser.username;
+        const found = employees.find(e => e.fullName === targetName || e.username === targetName);
+        if (found) {
+          this.responsibleEmployeeSelect.value = found.fullName || found.username;
+        }
+      } else if (currentVal) {
+        this.responsibleEmployeeSelect.value = currentVal;
       }
     }
 
@@ -553,126 +639,202 @@
       this.clearAllErrors();
       this.hideAlert();
 
-      // Read values
-      const movementNumber = parseInt(this.movementNumberInput?.value, 10);
+      // Read form values
+      const material = this.materialSelect?.value;
+      const action = this.actionSelect?.value;
       const transactionDate = this.dateInput?.value;
-      const serviceType = this.serviceTypeSelect?.value;
-      const referenceNumber = parseInt(this.referenceNumberInput?.value, 10);
-      const poNumber = this.poNumberInput?.value?.trim();
 
-      const validMovements = this.activeMovements.filter(n => n > 0);
-      const incomingQty = parseFloat(this.incomingQtyInput?.value || 0) || 0;
-      const outgoingQty = parseFloat(this.outgoingQtyInput?.value || 0) || 0;
-      const openingBalance = parseFloat(this.openingBalanceInput?.value || 0) || 0;
-      const closingBalance = openingBalance + incomingQty - outgoingQty;
+      const incomingQty = parseFloat(this.incomingQtyInput?.value || 0);
+      const outgoingQty = parseFloat(this.outgoingQtyInput?.value || 0);
 
-      const storageLocation = this.locationSelect?.value;
-      const destinationLocation = this.destinationSelect?.value;
-      const receivingEmployee = this.receivingEmployeeSelect?.value;
-      const notes = this.notesTextarea?.value?.trim() || null;
+      const isExportPo = (action === 'export' || action === 'صرف') && (this.exportPoCheckbox?.checked || false);
+      const poNumber = this.poNumberInput?.value?.trim() || '';
 
-      // Validate
+      // Internal Weighbridge
+      const internalRef = this.internalRefInput?.value?.trim() || '';
+      const internalLoaded = parseFloat(this.internalLoadedInput?.value || 0);
+      const internalEmpty = parseFloat(this.internalEmptyInput?.value || 0);
+      const internalEmptyTime = this.internalEmptyTimeInput?.value || null;
+      const internalLoadedTime = this.internalLoadedTimeInput?.value || null;
+
+      // External Weighbridge
+      const hasExtWb = this.hasExtWbCheckbox?.checked || false;
+      const extRef = this.extRefInput?.value?.trim() || '';
+      const extLoaded = parseFloat(this.extLoadedInput?.value || 0);
+      const extEmpty = parseFloat(this.extEmptyInput?.value || 0);
+      const extEmptyTime = this.extEmptyTimeInput?.value || null;
+      const extLoadedTime = this.extLoadedTimeInput?.value || null;
+
+      // Responsible Employee & Notes
+      const responsibleEmployee = this.responsibleEmployeeSelect?.value;
+      const notes = this.notesTextarea?.value?.trim() || '';
+
+      // Validation
       let hasError = false;
 
-      if (!movementNumber || isNaN(movementNumber) || movementNumber <= 0) {
-        this.showFieldError('storage-movement-number', 'يرجى إدخال رقم حركة صحيح.');
+      // Section 1 Validation
+      if (!material) {
+        this.showFieldError('storage-material-select', 'نوع الخامة مطلوب (powder أو slurry).');
         hasError = true;
       }
 
+      if (!action) {
+        this.showFieldError('storage-action-select', 'نوع الحركة مطلوب (إيداع أو صرف).');
+        hasError = true;
+      }
+
+      if (action === 'import' || action === 'إيداع') {
+        if (isNaN(incomingQty) || incomingQty <= 0) {
+          this.showFieldError('storage-incoming-qty', 'الكمية الواردة مطلوبة ويجب أن تكون أكبر من الصفر.');
+          hasError = true;
+        }
+      } else if (action === 'export' || action === 'صرف') {
+        if (isNaN(outgoingQty) || outgoingQty <= 0) {
+          this.showFieldError('storage-outgoing-qty', 'الكمية الصادرة مطلوبة ويجب أن تكون أكبر من الصفر.');
+          hasError = true;
+        }
+
+        if (isExportPo) {
+          if (!poNumber) {
+            this.showFieldError('storage-po-number', 'رقم أمر الشراء مطلوب عند تحديد أن الصادر مربوط بأمر شراء.');
+            hasError = true;
+          }
+        }
+      }
+
+      // Section 2 Validation
       if (!transactionDate) {
-        this.showFieldError('storage-date', 'التاريخ مطلوب.');
+        this.showFieldError('storage-date', 'تاريخ ووقت الحركة مطلوب.');
         hasError = true;
       }
 
-      if (!serviceType) {
-        this.showFieldError('storage-service-type', 'يرجى اختيار نوع الخدمة.');
+      // Section 3: Internal Weighbridge Validation
+      if (!internalRef) {
+        this.showFieldError('storage-wb-int-ref', 'رقم مرجع الميزان الداخلي مطلوب ويجب إدخاله يدوياً.');
         hasError = true;
       }
 
-      if (!referenceNumber || isNaN(referenceNumber) || referenceNumber <= 0) {
-        this.showFieldError('storage-reference-number', 'رقم المرجع مطلوب.');
+      if (isNaN(internalLoaded) || internalLoaded <= 0) {
+        this.showFieldError('storage-wb-int-loaded', 'الوزن الداخلي قائم مطلوب ويجب أن يكون أكبر من الصفر.');
         hasError = true;
       }
 
-      if (!poNumber) {
-        this.showFieldError('storage-po-number', 'رقم أمر الشراء (PO) مطلوب.');
+      if (isNaN(internalEmpty) || internalEmpty <= 0) {
+        this.showFieldError('storage-wb-int-empty', 'الوزن الداخلي فارغ مطلوب ويجب أن يكون أكبر من الصفر.');
         hasError = true;
       }
 
-      if (validMovements.length === 0) {
-        this.showFieldError('storage-movements', 'يجب إضافة رقم نقلة واحد على الأقل.');
+      if (!isNaN(internalLoaded) && !isNaN(internalEmpty) && internalLoaded <= internalEmpty) {
+        this.showFieldError('storage-wb-int-loaded', 'الوزن الداخلي قائم يجب أن يكون أكبر من الوزن الداخلي فارغ.');
         hasError = true;
       }
 
-      // Quantity validations based on service type
-      if (serviceType === 'إضافة') {
-        if (incomingQty <= 0) {
-          this.showFieldError('storage-incoming-qty', 'في حالة الإضافة، يجب أن تكون الكمية الواردة أكبر من الصفر.');
+      if (!internalLoadedTime) {
+        this.showFieldError('storage-wb-int-loaded-time', 'تاريخ ووقت الوزن القائم الداخلي مطلوب.');
+        hasError = true;
+      }
+
+      // Section 3: External Weighbridge Validation
+      if (hasExtWb) {
+        if (!extRef) {
+          this.showFieldError('storage-wb-ext-ref', 'رقم مرجع الميزان الخارجي مطلوب عند تفعيل الميزان الخارجي.');
           hasError = true;
         }
-      } else if (serviceType === 'صرف') {
-        if (outgoingQty <= 0) {
-          this.showFieldError('storage-outgoing-qty', 'في حالة الصرف، يجب أن تكون الكمية المنصرفة أكبر من الصفر.');
+
+        if (isNaN(extLoaded) || extLoaded <= 0) {
+          this.showFieldError('storage-wb-ext-loaded', 'الوزن الخارجي قائم مطلوب ويجب أن يكون أكبر من الصفر.');
           hasError = true;
         }
-      } else if (serviceType === 'تحويل') {
-        if (!destinationLocation) {
-          this.showFieldError('storage-destination-location', 'يرجى اختيار المستودع المحول إليه.');
-          hasError = true;
-        } else if (destinationLocation === storageLocation) {
-          this.showFieldError('storage-destination-location', 'المستودع المحول إليه يجب أن يختلف عن مستودع المصدر.');
+
+        if (isNaN(extEmpty) || extEmpty <= 0) {
+          this.showFieldError('storage-wb-ext-empty', 'الوزن الخارجي فارغ مطلوب ويجب أن يكون أكبر من الصفر.');
           hasError = true;
         }
-        if (outgoingQty <= 0) {
-          this.showFieldError('storage-outgoing-qty', 'يرجى تحديد الكمية المحولة.');
+
+        if (!isNaN(extLoaded) && !isNaN(extEmpty) && extLoaded <= extEmpty) {
+          this.showFieldError('storage-wb-ext-loaded', 'الوزن الخارجي قائم يجب أن يكون أكبر من الوزن الخارجي فارغ.');
           hasError = true;
         }
-      } else if (serviceType === 'تسوية') {
-        if (incomingQty === 0 && outgoingQty === 0) {
-          this.showFieldError('storage-incoming-qty', 'يرجى إدخال كمية التسوية الجردية (إضافة فائض أو صرف عجز).');
+
+        if (!extLoadedTime) {
+          this.showFieldError('storage-wb-ext-loaded-time', 'تاريخ ووقت الوزن القائم الخارجي مطلوب.');
+          hasError = true;
+        }
+
+        if (!this.currentReceiptFile) {
+          this.showFieldError('storage-wb-receipt', 'إرفاق إيصال الميزان مطلوب في حالة وجود ميزان خارجي.');
           hasError = true;
         }
       }
 
-      if (!storageLocation) {
-        this.showFieldError('storage-location', 'يرجى اختيار مكان التخزين.');
-        hasError = true;
-      }
-
-      if (!receivingEmployee) {
-        this.showFieldError('storage-receiving-employee', 'اسم الموظف المستلم مطلوب.');
+      // Section 4 Validation
+      if (!responsibleEmployee) {
+        this.showFieldError('storage-responsible-employee', 'الموظف المسؤول مطلوب من القائمة المعتمدة.');
         hasError = true;
       }
 
       if (hasError) {
-        this.showAlert('error', 'خطأ في التحقق', 'يرجى تصحيح الأخطاء الموضحة أعلاه قبل المتابعة.');
+        this.showAlert('error', 'خطأ في التحقق', 'يرجى مراجعة الحقول وتصحيح الأخطاء الموضحة أعلاه قبل المتابعة.');
         return;
       }
 
-      // Pre-check reference uniqueness
-      const isRefUnique = await this.checkReferenceUniqueness();
-      if (!isRefUnique) {
-        this.showAlert('error', 'رقم المرجع مكرر', 'رقم المرجع مستخدم بالفعل، يرجى إدخال رقم مرجع جديد.');
-        return;
+      // Live PO existence check before network submit
+      if (isExportPo) {
+        const poValid = await this.validatePoNumberLive();
+        if (!poValid) {
+          this.showAlert('error', 'خطأ في أمر الشراء', 'Purchase Order not found.');
+          return;
+        }
       }
 
-      // Payload
-      const payload = {
-        movementNumber,
-        transactionDate: new Date(transactionDate).toISOString(),
-        serviceType,
-        referenceNumber,
-        poNumber,
-        transportationMovementNumbers: validMovements,
-        incomingQuantity: incomingQty,
-        outgoingQuantity: outgoingQty,
-        openingBalance,
-        closingBalance,
-        storageLocation,
-        destinationStorageLocation: (serviceType === 'تحويل') ? destinationLocation : null,
-        receivingEmployee,
-        notes
-      };
+      // Build FormData payload
+      const formData = new FormData();
+      formData.append('material', material);
+      formData.append('action', action);
+
+      if (action === 'import' || action === 'إيداع') {
+        formData.append('incomingQuantity', incomingQty.toFixed(3));
+      } else {
+        formData.append('outgoingQuantity', outgoingQty.toFixed(3));
+        formData.append('isExportRelatedToPO', isExportPo ? 'true' : 'false');
+        if (isExportPo && poNumber) {
+          formData.append('poNumber', poNumber);
+        }
+      }
+
+      formData.append('transactionDate', new Date(transactionDate).toISOString());
+
+      // Internal Weighbridge
+      formData.append('internalWeighbridgeReference', internalRef);
+      formData.append('internalLoadedWeight', internalLoaded.toFixed(3));
+      formData.append('internalEmptyWeight', internalEmpty.toFixed(3));
+      if (internalEmptyTime) {
+        formData.append('internalEmptyWeightTime', new Date(internalEmptyTime).toISOString());
+      }
+      formData.append('internalLoadedWeightTime', new Date(internalLoadedTime).toISOString());
+
+      // External Weighbridge
+      formData.append('hasExternalWeighbridge', hasExtWb ? 'true' : 'false');
+      if (hasExtWb) {
+        formData.append('externalWeighbridgeReference', extRef);
+        formData.append('externalLoadedWeight', extLoaded.toFixed(3));
+        formData.append('externalEmptyWeight', extEmpty.toFixed(3));
+        if (extEmptyTime) {
+          formData.append('externalEmptyWeightTime', new Date(extEmptyTime).toISOString());
+        }
+        formData.append('externalLoadedWeightTime', new Date(extLoadedTime).toISOString());
+      }
+
+      // Attachment
+      if (this.currentReceiptFile) {
+        formData.append('weighbridgeAttachment', this.currentReceiptFile);
+      }
+
+      // Section 4
+      formData.append('responsibleEmployee', responsibleEmployee);
+      if (notes) {
+        formData.append('notes', notes);
+      }
 
       this.setSubmitting(true);
 
@@ -680,30 +842,28 @@
         const res = await fetch('/api/storage', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
             'Accept': 'application/json',
             'Authorization': 'Bearer ' + (window.ChatApi?.getToken() || '')
           },
-          body: JSON.stringify(payload)
+          body: formData
         });
 
         const json = await res.json();
 
         if (res.status === 201 && json.success) {
-          this.showAlert('success', 'نجاح الحفظ', 'تم حفظ حركة المخزن بنجاح');
+          this.showAlert('success', 'نجاح الحفظ', 'تم حفظ حركة المخزن بنجاح.');
           this.resetForm(false); // Don't clear success alert
           await this.loadRecentTransactions();
-          await this.fetchConfig(); // refresh balance chip
         } else {
           const errMsg = json.message || 'حدث خطأ أثناء حفظ حركة المخزن.';
-          if (errMsg.includes('رقم المرجع مستخدم بالفعل')) {
-            this.showFieldError('storage-reference-number', 'رقم المرجع مستخدم بالفعل');
+          if (errMsg.includes('Purchase Order not found') || errMsg.includes('أمر الشراء')) {
+            this.showFieldError('storage-po-number', 'Purchase Order not found.');
           }
           this.showAlert('error', 'فشل الحفظ', errMsg);
         }
       } catch (err) {
-        console.error('Submission error:', err);
-        this.showAlert('error', 'خطأ في الاتصال', 'تعذر الاتصال بالخادم. يرجى التحقق من اتصال الشبكة.');
+        console.error('Storage submission error:', err);
+        this.showAlert('error', 'خطأ في الاتصال', 'تعذر الاتصال بالخادم. يرجى التحقق من اتصال الشبكة والمحاولة مرة أخرى.');
       } finally {
         this.setSubmitting(false);
       }
@@ -718,22 +878,26 @@
         this.submitSpinner.style.display = loading ? 'inline-block' : 'none';
       }
       if (this.submitText) {
-        this.submitText.textContent = loading ? 'جاري الحفظ...' : 'حفظ';
+        this.submitText.textContent = loading ? 'جاري الحفظ...' : 'حفظ الحركة';
       }
     }
 
     // =========================================================================
-    // Form Clear & Confirmation
+    // Form Clear & Confirmation Modal
     // =========================================================================
     handleClearRequest() {
       const hasData = Boolean(
-        this.movementNumberInput?.value ||
-        this.referenceNumberInput?.value ||
-        this.poNumberInput?.value ||
+        this.materialSelect?.value ||
+        this.actionSelect?.value ||
         parseFloat(this.incomingQtyInput?.value || 0) > 0 ||
         parseFloat(this.outgoingQtyInput?.value || 0) > 0 ||
-        this.notesTextarea?.value ||
-        this.activeMovements.some(n => n > 0)
+        this.poNumberInput?.value ||
+        this.internalRefInput?.value ||
+        parseFloat(this.internalLoadedInput?.value || 0) > 0 ||
+        parseFloat(this.internalEmptyInput?.value || 0) > 0 ||
+        this.hasExtWbCheckbox?.checked ||
+        this.currentReceiptFile ||
+        this.notesTextarea?.value
       );
 
       if (hasData) {
@@ -765,36 +929,19 @@
         this.form.reset();
       }
 
+      this.clearReceiptAttachment();
       this.setDefaultDateTime();
-      this.activeMovements = [0];
-      this.renderMovementsList();
+      this.handleActionChange();
+      this.handleExternalWbToggle();
 
-      if (this.refStatusEl) {
-        this.refStatusEl.textContent = '';
-      }
+      if (this.internalNetInput) this.internalNetInput.value = '0.000';
+      if (this.extNetInput) this.extNetInput.value = '0.000';
+      if (this.poStatusEl) this.poStatusEl.textContent = '';
+      this.poValidated = false;
 
-      if (this.destinationGroup) {
-        this.destinationGroup.style.display = 'none';
-      }
-
-      if (this.incomingQtyInput) {
-        this.incomingQtyInput.disabled = false;
-        this.incomingQtyInput.classList.remove('storage-readonly-input');
-        this.incomingQtyInput.value = '0.000';
-      }
-
-      if (this.outgoingQtyInput) {
-        this.outgoingQtyInput.disabled = false;
-        this.outgoingQtyInput.classList.remove('storage-readonly-input');
-        this.outgoingQtyInput.value = '0.000';
-      }
-
-      // Refresh location opening balance
-      if (this.locationSelect && this.locationSelect.value) {
-        this.fetchBalanceForLocation(this.locationSelect.value);
-      } else {
-        if (this.openingBalanceInput) this.openingBalanceInput.value = '0.000';
-        if (this.closingBalanceInput) this.closingBalanceInput.value = '0.000';
+      // Re-populate default employee
+      if (this.config?.employees) {
+        this.populateResponsibleEmployees(this.config.employees);
       }
     }
 
@@ -820,7 +967,7 @@
         console.error('Failed to load recent storage transactions:', err);
         this.tableBody.innerHTML = `
           <tr>
-            <td colspan="12" style="text-align:center; padding: 2rem; color: #DC2626; font-weight:700;">
+            <td colspan="10" style="text-align:center; padding: 2rem; color: #DC2626; font-weight:700;">
               تعذر تحميل بيانات حركات المخزن. اضغط تحديث للمحاولة مرة أخرى.
             </td>
           </tr>
@@ -835,7 +982,7 @@
       if (!transactions || transactions.length === 0) {
         this.tableBody.innerHTML = `
           <tr>
-            <td colspan="12" style="text-align:center; padding: 2.5rem; color: #6B7280; font-weight: 700;">
+            <td colspan="10" style="text-align:center; padding: 2.5rem; color: #6B7280; font-weight: 700;">
               لا توجد حركات مخزن مسجلة حالياً. استخدم النموذج أعلاه لتسجيل أول حركة.
             </td>
           </tr>
@@ -846,6 +993,7 @@
       transactions.forEach(tx => {
         const tr = document.createElement('tr');
 
+        // Date format
         const dateStr = new Date(tx.transactionDate).toLocaleString('ar-EG', {
           year: 'numeric',
           month: 'short',
@@ -854,29 +1002,84 @@
           minute: '2-digit'
         });
 
-        const movementsBadges = (tx.transportationMovementNumbers || [])
-          .map(n => `<span style="display:inline-block; background:#000; color:#FFCC00; padding:2px 7px; border-radius:10px; font-size:0.75rem; font-weight:800; margin:1px;">#${n}</span>`)
-          .join(' ') || '<span style="color:#9CA3AF;">-</span>';
+        // Material badge
+        const mat = (tx.material || '').toLowerCase();
+        let matBadge = `<span class="storage-badge-service powder">بودرة (powder)</span>`;
+        if (mat === 'slurry') {
+          matBadge = `<span class="storage-badge-service slurry">معلق (slurry)</span>`;
+        }
 
-        const destinationText = (tx.serviceType === 'تحويل' && tx.destinationStorageLocation)
-          ? `<span style="font-size:0.75rem; color:#1E40AF; display:block;">إلى: ${tx.destinationStorageLocation}</span>`
-          : '';
+        // Action badge
+        const act = (tx.action || tx.serviceType || '').toLowerCase();
+        const isImport = act === 'import' || act === 'إيداع';
+        const actBadge = isImport
+          ? `<span class="storage-badge-service import">إيداع (Import)</span>`
+          : `<span class="storage-badge-service export">صرف (Export)</span>`;
+
+        // Quantity (tons)
+        let qtyDisplay = '-';
+        if (isImport && tx.incomingQuantity) {
+          qtyDisplay = `<span dir="ltr" style="font-weight:800; color:#166534;">+${parseFloat(tx.incomingQuantity).toFixed(3)} طن</span>`;
+        } else if (!isImport && tx.outgoingQuantity) {
+          qtyDisplay = `<span dir="ltr" style="font-weight:800; color:#991B1B;">-${parseFloat(tx.outgoingQuantity).toFixed(3)} طن</span>`;
+        } else if (tx.incomingQuantity) {
+          qtyDisplay = `<span dir="ltr" style="font-weight:800; color:#166534;">+${parseFloat(tx.incomingQuantity).toFixed(3)} طن</span>`;
+        }
+
+        // PO Number
+        const poDisplay = tx.poNumber
+          ? `<span class="storage-badge-po">${tx.poNumber}</span>`
+          : `<span style="color:#9CA3AF;">-</span>`;
+
+        // Internal Weighbridge
+        const intNet = (tx.internalNetWeight !== undefined && tx.internalNetWeight !== null)
+          ? parseFloat(tx.internalNetWeight).toFixed(3)
+          : (parseFloat(tx.internalLoadedWeight || 0) - parseFloat(tx.internalEmptyWeight || 0)).toFixed(3);
+
+        const intWbDisplay = `
+          <div style="font-size:0.8rem;">
+            <span style="font-weight:700;">#${tx.internalWeighbridgeReference || tx.referenceNumber || '-'}</span>
+            <div style="color:#0F172A; font-weight:800; dir:ltr;">صافي: ${intNet} طن</div>
+          </div>
+        `;
+
+        // External Weighbridge
+        let extWbDisplay = `<span style="color:#9CA3AF; font-size:0.75rem;">غير مفعل</span>`;
+        if (tx.hasExternalWeighbridge) {
+          const extNet = (tx.externalNetWeight !== undefined && tx.externalNetWeight !== null)
+            ? parseFloat(tx.externalNetWeight).toFixed(3)
+            : (parseFloat(tx.externalLoadedWeight || 0) - parseFloat(tx.externalEmptyWeight || 0)).toFixed(3);
+
+          extWbDisplay = `
+            <div style="font-size:0.8rem;">
+              <span style="font-weight:700; color:#1E40AF;">#${tx.externalWeighbridgeReference || '-'}</span>
+              <div style="color:#1E40AF; font-weight:800; dir:ltr;">صافي: ${extNet} طن</div>
+            </div>
+          `;
+        }
+
+        // Weighbridge Receipt Attachment
+        let receiptDisplay = `<span style="color:#9CA3AF; font-size:0.75rem;">لا يوجد</span>`;
+        const fileUrl = tx.weighbridgeAttachmentPath || (tx.weighbridgeFileName ? `/api/storage/attachments/${encodeURIComponent(tx.weighbridgeFileName)}` : null);
+        if (fileUrl) {
+          receiptDisplay = `
+            <a href="${fileUrl}" target="_blank" rel="noopener noreferrer" class="storage-btn-attachment-link" title="تحميل / عرض الإيصال المرفق">
+              📎 <span>عرض الإيصال</span>
+            </a>
+          `;
+        }
 
         tr.innerHTML = `
-          <td><strong>#${tx.movementNumber}</strong></td>
+          <td><strong>#${tx.movementNumber || tx.id}</strong></td>
           <td dir="ltr" style="text-align:right;">${dateStr}</td>
-          <td><span class="storage-badge-service ${tx.serviceType}">${tx.serviceType}</span></td>
-          <td><strong>REF-${tx.referenceNumber}</strong></td>
-          <td dir="ltr" style="text-align:right;">${tx.poNumber || '-'}</td>
-          <td>${movementsBadges}</td>
-          <td dir="ltr" style="font-weight:700; color:${tx.incomingQuantity > 0 ? '#166534' : '#6B7280'};">${tx.incomingQuantity.toFixed(3)} طن</td>
-          <td dir="ltr" style="font-weight:700; color:${tx.outgoingQuantity > 0 ? '#991B1B' : '#6B7280'};">${tx.outgoingQuantity.toFixed(3)} طن</td>
-          <td dir="ltr" style="font-weight:800; color:#000;">${tx.closingBalance.toFixed(3)} طن</td>
-          <td>${tx.storageLocation}${destinationText}</td>
-          <td>${tx.receivingEmployee}</td>
-          <td style="max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${tx.notes || ''}">
-            ${tx.notes || '<span style="color:#9CA3AF;">-</span>'}
-          </td>
+          <td>${matBadge}</td>
+          <td>${actBadge}</td>
+          <td>${qtyDisplay}</td>
+          <td>${poDisplay}</td>
+          <td>${intWbDisplay}</td>
+          <td>${extWbDisplay}</td>
+          <td>${tx.responsibleEmployee || tx.createdBy || '-'}</td>
+          <td>${receiptDisplay}</td>
         `;
 
         this.tableBody.appendChild(tr);
@@ -912,7 +1115,7 @@
         e.textContent = '';
         e.classList.remove('visible');
       });
-      const inputs = this.pageRoot?.querySelectorAll('.storage-input.is-invalid');
+      const inputs = this.pageRoot?.querySelectorAll('.is-invalid');
       inputs?.forEach(i => i.classList.remove('is-invalid'));
     }
 

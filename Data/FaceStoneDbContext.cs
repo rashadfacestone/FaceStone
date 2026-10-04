@@ -481,50 +481,153 @@ public class FaceStoneDbContext : DbContext
             entity.Property(e => e.TransactionDate)
                   .IsRequired();
 
+            entity.Property(e => e.Material)
+                  .HasMaxLength(100)
+                  .HasDefaultValue("powder")
+                  .IsRequired();
+
+            entity.Property(e => e.Action)
+                  .HasMaxLength(50)
+                  .HasDefaultValue("Import")
+                  .IsRequired();
+
             entity.Property(e => e.ServiceType)
                   .HasMaxLength(50)
+                  .HasDefaultValue("إيداع")
                   .IsRequired();
 
             entity.Property(e => e.ReferenceNumber)
                   .IsRequired();
 
-            entity.HasIndex(e => e.ReferenceNumber)
-                  .IsUnique();
+            entity.HasIndex(e => e.ReferenceNumber);
+
+            entity.Property(e => e.IsExportRelatedToPO)
+                  .HasDefaultValue(false)
+                  .IsRequired();
 
             entity.Property(e => e.PONumber)
                   .HasMaxLength(100)
-                  .IsRequired();
+                  .IsRequired(false);
+
+            entity.Property(e => e.PurchaseOrderId)
+                  .IsRequired(false);
+
+            entity.HasOne(e => e.PurchaseOrder)
+                  .WithMany(p => p.StorageTransactions)
+                  .HasForeignKey(e => e.PurchaseOrderId)
+                  .OnDelete(DeleteBehavior.SetNull);
 
             entity.Property(e => e.IncomingQuantity)
                   .HasPrecision(18, 3)
+                  .HasDefaultValue(0m)
                   .IsRequired();
 
             entity.Property(e => e.OutgoingQuantity)
                   .HasPrecision(18, 3)
+                  .HasDefaultValue(0m)
                   .IsRequired();
 
             entity.Property(e => e.OpeningBalance)
                   .HasPrecision(18, 3)
+                  .HasDefaultValue(0m)
                   .IsRequired();
 
             entity.Property(e => e.ClosingBalance)
                   .HasPrecision(18, 3)
+                  .HasDefaultValue(0m)
                   .IsRequired();
 
             entity.Property(e => e.StorageLocation)
                   .HasMaxLength(200)
+                  .HasDefaultValue("مستودع الخامات الرئيسي")
                   .IsRequired();
 
             entity.Property(e => e.DestinationStorageLocation)
                   .HasMaxLength(200)
                   .IsRequired(false);
 
+            // Section 3: الميزان الداخلي
+            entity.Property(e => e.InternalWeighbridgeReference)
+                  .HasMaxLength(100)
+                  .HasDefaultValue(string.Empty)
+                  .IsRequired();
+
+            entity.Property(e => e.InternalLoadedWeight)
+                  .HasPrecision(18, 3)
+                  .HasDefaultValue(0m)
+                  .IsRequired();
+
+            entity.Property(e => e.InternalEmptyWeight)
+                  .HasPrecision(18, 3)
+                  .HasDefaultValue(0m)
+                  .IsRequired();
+
+            entity.Property(e => e.InternalNetWeight)
+                  .HasPrecision(18, 3)
+                  .HasDefaultValue(0m)
+                  .IsRequired();
+
+            entity.Property(e => e.InternalEmptyWeightTime)
+                  .IsRequired(false);
+
+            entity.Property(e => e.InternalLoadedWeightTime)
+                  .IsRequired(false);
+
+            // Section 3: الميزان الخارجي
+            entity.Property(e => e.HasExternalWeighbridge)
+                  .HasDefaultValue(false)
+                  .IsRequired();
+
+            entity.Property(e => e.ExternalWeighbridgeReference)
+                  .HasMaxLength(100)
+                  .IsRequired(false);
+
+            entity.Property(e => e.ExternalLoadedWeight)
+                  .HasPrecision(18, 3)
+                  .IsRequired(false);
+
+            entity.Property(e => e.ExternalEmptyWeight)
+                  .HasPrecision(18, 3)
+                  .IsRequired(false);
+
+            entity.Property(e => e.ExternalNetWeight)
+                  .HasPrecision(18, 3)
+                  .IsRequired(false);
+
+            entity.Property(e => e.ExternalEmptyWeightTime)
+                  .IsRequired(false);
+
+            entity.Property(e => e.ExternalLoadedWeightTime)
+                  .IsRequired(false);
+
+            // Section 3: إيصال الميزان
+            entity.Property(e => e.WeighbridgeAttachmentPath)
+                  .HasMaxLength(500)
+                  .IsRequired(false);
+
+            entity.Property(e => e.WeighbridgeFileName)
+                  .HasMaxLength(260)
+                  .IsRequired(false);
+
+            entity.Property(e => e.WeighbridgeFileType)
+                  .HasMaxLength(50)
+                  .IsRequired(false);
+
+            entity.Property(e => e.WeighbridgeFileSize)
+                  .HasDefaultValue(0L)
+                  .IsRequired();
+
+            // Section 4: الموظف المسؤول
             entity.Property(e => e.ReceivingEmployee)
                   .HasMaxLength(150)
                   .IsRequired();
 
             entity.Property(e => e.Notes)
                   .HasMaxLength(1000)
+                  .IsRequired(false);
+
+            entity.Property(e => e.CreatedBy)
+                  .HasMaxLength(150)
                   .IsRequired(false);
 
             entity.Property(e => e.CreatedAt)
@@ -538,6 +641,9 @@ public class FaceStoneDbContext : DbContext
             entity.HasIndex(e => e.TransactionDate);
             entity.HasIndex(e => e.MovementNumber);
             entity.HasIndex(e => e.StorageLocation);
+            entity.HasIndex(e => e.Material);
+            entity.HasIndex(e => e.Action);
+            entity.HasIndex(e => e.PONumber);
         });
 
         modelBuilder.Entity<StorageTransactionMovement>(entity =>

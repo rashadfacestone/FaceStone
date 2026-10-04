@@ -71,4 +71,9 @@ public class PurchaseOrder
     /// Transportation transactions recorded against this PO
     /// </summary>
     public ICollection<Transportation> TransportationTransactions { get; set; } = new List<Transportation>();
+
+    /// <summary>
+    /// Storage transactions recorded against this PO
+    /// </summary>
+    public ICollection<StorageTransaction> StorageTransactions { get; set; } = new List<StorageTransaction>();
 }

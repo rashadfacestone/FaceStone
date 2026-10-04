@@ -5208,6 +5208,120 @@ a {
   to { transform: rotate(360deg); }
 }
 
+/* =========================================================================
+   Storage Weighbridge & Redesigned Section Styles
+   ========================================================================= */
+.storage-wb-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-top: 1rem;
+}
+
+.storage-wb-card {
+  background: #FAFAFA;
+  border: 2px solid #000000;
+  border-radius: 12px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
+}
+
+.storage-wb-card.external-wb-card {
+  background: #FFFDF0;
+  border-color: #D97706;
+}
+
+.storage-wb-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-bottom: 0.75rem;
+  border-bottom: 1.5px solid #E5E7EB;
+}
+
+.storage-wb-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #000000;
+  color: #FFCC00;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-weight: 800;
+  font-size: 0.875rem;
+}
+
+.storage-wb-badge.external {
+  background: #B45309;
+  color: #FFFFFF;
+}
+
+.storage-checkbox-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #FFFFFF;
+  border: 2px solid #000000;
+  border-radius: 8px;
+  padding: 0.9rem 1.25rem;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #111827;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.storage-checkbox-card:hover {
+  background: #FFFDF0;
+  border-color: #FFCC00;
+}
+
+.storage-checkbox-card input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  accent-color: #000000;
+  cursor: pointer;
+}
+
+.storage-ext-wb-toggle-card {
+  margin: 1.25rem 0 0.5rem 0;
+}
+
+.storage-readonly {
+  background: #F3F4F6 !important;
+  color: #1F2937 !important;
+  font-weight: 800 !important;
+  cursor: not-allowed;
+}
+
+.storage-opt {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6B7280;
+}
+
+.storage-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem;
+}
+
+@media (max-width: 768px) {
+  .storage-grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.storage-field-group.full-width {
+  grid-column: 1 / -1;
+}
+
 /* Recent Storage Table */
 .storage-recent-card {
   background: #FFFFFF;

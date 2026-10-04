@@ -1286,7 +1286,7 @@
         <img src="/images/facestone-logo-transparent.png" alt="FaceStone Logo" class="dept-brand-logo-img">
         <div>
           <span class="storage-title">FaceStone</span>
-          <span class="storage-tag">المستودعات والتخزين — نظام تتبع وإدارة حركات المواد وأرصدة المخزون</span>
+          <span class="storage-tag">المستودعات والتخزين — نظام إدارة حركات المخازن والموازين</span>
         </div>
       </div>
 
@@ -1316,12 +1316,11 @@
           </div>
           <div class="storage-header-text">
             <div class="storage-badge-row">
-              <span class="storage-status-chip active">نظام إدارة المخازن معتمد</span>
-              <span class="storage-status-chip info" id="storage-overall-balance-chip">الرصيد العام: 0.000 طن</span>
+              <span class="storage-status-chip active">نظام إدارة المخازن والموازين معتمد</span>
             </div>
             <h1 class="storage-heading">تسجيل حركة وارد ومنصرف للمخازن</h1>
             <p class="storage-subheading">
-              تسجيل عمليات الإضافة والصرف والتحويل والتسوية الجردية لمستودعات وخامات المصنع مع ربط نقلات التوريد واحتساب الرصيد آلياً.
+              تسجيل عمليات الإيداع والصرف وتحديد الكميات بالطن مع ربط أوامر الشراء والتحقق من أوزان الميزان الداخلي والخارجي وإيصالات الميزان المعتمدة.
             </p>
           </div>
         </div>
@@ -1340,265 +1339,398 @@
         <section class="storage-form-card" aria-label="نموذج تسجيل حركة المخزن">
           <form id="storage-entry-form" novalidate>
 
-            <!-- 1. بيانات الحركة -->
-            <div class="storage-section">
+            <!-- ==============================================================
+                 SECTION 1 — TYPE (النوع)
+                 ============================================================== -->
+            <div class="storage-section" id="section-storage-type">
               <div class="storage-section-header">
                 <span class="storage-section-num">1</span>
                 <div>
-                  <h2 class="storage-section-title">بيانات الحركة</h2>
-                  <p class="storage-section-subtitle">المعلومات الأساسية لحركة المخزن ونوع العملية المعتمدة</p>
-                </div>
-              </div>
-
-              <div class="storage-grid-4">
-                <!-- رقم الحركة -->
-                <div class="storage-field-group">
-                  <label class="storage-label" for="storage-movement-number">
-                    <span>رقم الحركة</span>
-                    <span class="storage-required-star">*</span>
-                  </label>
-                  <div class="storage-input-wrap">
-                    <span class="storage-input-prefix">#</span>
-                    <input type="number" id="storage-movement-number" name="movementNumber" class="storage-input" required min="1" step="1" placeholder="مثال: 5001" dir="ltr">
-                  </div>
-                  <span class="storage-field-hint">رقم تسلسلي لحركة المستودع</span>
-                  <span class="storage-error-msg" id="err-storage-movement-number"></span>
-                </div>
-
-                <!-- التاريخ -->
-                <div class="storage-field-group">
-                  <label class="storage-label" for="storage-date">
-                    <span>التاريخ</span>
-                    <span class="storage-required-star">*</span>
-                  </label>
-                  <input type="datetime-local" id="storage-date" name="transactionDate" class="storage-input" required dir="ltr">
-                  <span class="storage-field-hint">تاريخ وتوقيت تنفيذ حركة المخزن</span>
-                  <span class="storage-error-msg" id="err-storage-date"></span>
-                </div>
-
-                <!-- نوع الخدمة -->
-                <div class="storage-field-group">
-                  <label class="storage-label" for="storage-service-type">
-                    <span>نوع الخدمة</span>
-                    <span class="storage-required-star">*</span>
-                  </label>
-                  <select id="storage-service-type" name="serviceType" class="storage-input storage-select" required>
-                    <option value="" disabled selected>-- اختر نوع الخدمة --</option>
-                    <option value="إضافة">إضافة</option>
-                    <option value="صرف">صرف</option>
-                    <option value="تحويل">تحويل</option>
-                    <option value="تسوية">تسوية</option>
-                  </select>
-                  <span class="storage-field-hint">يحدد طبيعة وأثر الحركة على الرصيد</span>
-                  <span class="storage-error-msg" id="err-storage-service-type"></span>
-                </div>
-
-                <!-- رقم المرجع -->
-                <div class="storage-field-group">
-                  <label class="storage-label" for="storage-reference-number">
-                    <span>رقم المرجع</span>
-                    <span class="storage-required-star">*</span>
-                    <span class="storage-ref-status" id="storage-ref-status"></span>
-                  </label>
-                  <div class="storage-input-wrap">
-                    <span class="storage-input-prefix">REF-</span>
-                    <input type="number" id="storage-reference-number" name="referenceNumber" class="storage-input" required min="1" step="1" placeholder="مثال: 7001" dir="ltr">
-                  </div>
-                  <span class="storage-field-hint">رقم فريد غير مكرر للربط المستندي</span>
-                  <span class="storage-error-msg" id="err-storage-reference-number"></span>
-                </div>
-              </div>
-            </div>
-
-            <!-- 2. بيانات أمر الشراء والنقل -->
-            <div class="storage-section">
-              <div class="storage-section-header">
-                <span class="storage-section-num">2</span>
-                <div>
-                  <h2 class="storage-section-title">بيانات أمر الشراء والنقل</h2>
-                  <p class="storage-section-subtitle">ربط أمر الشراء وتحديد أرقام النقلات التابعة للحركة (الحركة الواحدة قد تتكون من أكثر من نقلة)</p>
-                </div>
-              </div>
-
-              <div class="storage-grid-po-trans">
-                <!-- رقم أمر الشراء (PO) -->
-                <div class="storage-field-group">
-                  <label class="storage-label" for="storage-po-number">
-                    <span>رقم أمر الشراء (PO)</span>
-                    <span class="storage-required-star">*</span>
-                  </label>
-                  <input type="text" id="storage-po-number" name="poNumber" class="storage-input" required maxlength="100" placeholder="مثال: PO-2026-FS-101" dir="ltr">
-                  <span class="storage-field-hint">أمر الشراء المعتمد للمواد الخام</span>
-                  <span class="storage-error-msg" id="err-storage-po-number"></span>
-                </div>
-
-                <!-- رقم النقلة (Multiple Transportation Movements Repeater) -->
-                <div class="storage-field-group storage-movements-full">
-                  <div class="storage-label-row">
-                    <label class="storage-label" style="margin-bottom: 0;">
-                      <span>رقم النقلة</span>
-                      <span class="storage-required-star">*</span>
-                    </label>
-                    <span class="storage-pill-counter" id="storage-movements-count">1 نقلة محددة</span>
-                  </div>
-
-                  <div class="storage-movements-card">
-                    <p class="storage-movements-note">الحركة الواحدة يمكن أن تتكون من أكثر من نقلة. أضف أرقام نقلات التوريد التابعة لهذه الحركة:</p>
-                    
-                    <!-- Dynamic Repeater Container -->
-                    <div class="storage-movements-list" id="storage-movements-list">
-                      <!-- Row template generated by JS -->
-                    </div>
-
-                    <!-- Add Button & Available Movements Quick Chips -->
-                    <div class="storage-movements-actions">
-                      <button type="button" class="btn-storage-add-movement" id="btn-storage-add-movement">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                        <span>إضافة نقلة</span>
-                      </button>
-
-                      <div class="storage-quick-select-wrap">
-                        <span class="storage-quick-label">اختر من النقلات المسجلة حديثاً:</span>
-                        <div class="storage-quick-chips" id="storage-quick-chips">
-                          <!-- Filled dynamically from Transportation records -->
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <span class="storage-error-msg" id="err-storage-movements"></span>
-                </div>
-              </div>
-            </div>
-
-            <!-- 3. بيانات الكميات -->
-            <div class="storage-section">
-              <div class="storage-section-header">
-                <span class="storage-section-num">3</span>
-                <div>
-                  <h2 class="storage-section-title">بيانات الكميات</h2>
-                  <p class="storage-section-subtitle">الكميات الواردة والمنصرفة واحتساب الرصيد الافتتاحي والختامي تلقائياً</p>
-                </div>
-              </div>
-
-              <div class="storage-grid-4">
-                <!-- الكمية الواردة -->
-                <div class="storage-field-group">
-                  <label class="storage-label" for="storage-incoming-qty">
-                    <span>الكمية الواردة</span>
-                    <span class="storage-required-star" id="star-incoming">*</span>
-                  </label>
-                  <div class="storage-input-wrap">
-                    <span class="storage-unit-suffix">طن</span>
-                    <input type="number" id="storage-incoming-qty" name="incomingQuantity" class="storage-input storage-num-input" min="0" step="0.001" value="0.000" dir="ltr">
-                  </div>
-                  <span class="storage-field-hint">الكمية الداخلة إلى المستودع</span>
-                  <span class="storage-error-msg" id="err-storage-incoming-qty"></span>
-                </div>
-
-                <!-- الكمية المنصرفة -->
-                <div class="storage-field-group">
-                  <label class="storage-label" for="storage-outgoing-qty">
-                    <span>الكمية المنصرفة</span>
-                    <span class="storage-required-star" id="star-outgoing">*</span>
-                  </label>
-                  <div class="storage-input-wrap">
-                    <span class="storage-unit-suffix">طن</span>
-                    <input type="number" id="storage-outgoing-qty" name="outgoingQuantity" class="storage-input storage-num-input" min="0" step="0.001" value="0.000" dir="ltr">
-                  </div>
-                  <span class="storage-field-hint">الكمية الخارجة من المستودع</span>
-                  <span class="storage-error-msg" id="err-storage-outgoing-qty"></span>
-                </div>
-
-                <!-- الرصيد الافتتاحي -->
-                <div class="storage-field-group">
-                  <label class="storage-label" for="storage-opening-balance">
-                    <span>الرصيد الافتتاحي</span>
-                    <span class="storage-readonly-pill">محسوب / مسجل</span>
-                  </label>
-                  <div class="storage-input-wrap storage-readonly-wrap">
-                    <span class="storage-unit-suffix">طن</span>
-                    <input type="number" id="storage-opening-balance" name="openingBalance" class="storage-input storage-readonly-input" readonly step="0.001" value="0.000" dir="ltr">
-                  </div>
-                  <span class="storage-field-hint">رصيد المستودع قبل تنفيذ هذه الحركة</span>
-                </div>
-
-                <!-- الرصيد الختامي -->
-                <div class="storage-field-group">
-                  <label class="storage-label" for="storage-closing-balance">
-                    <span>الرصيد الختامي</span>
-                    <span class="storage-calc-pill">حساب آلي = افتتاحي + وارد - منصرف</span>
-                  </label>
-                  <div class="storage-input-wrap storage-calc-wrap">
-                    <span class="storage-unit-suffix">طن</span>
-                    <input type="number" id="storage-closing-balance" name="closingBalance" class="storage-input storage-calc-input" readonly step="0.001" value="0.000" dir="ltr">
-                  </div>
-                  <span class="storage-field-hint">الرصيد المتوقع بعد حفظ الحركة</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- 4. التخزين والاستلام -->
-            <div class="storage-section">
-              <div class="storage-section-header">
-                <span class="storage-section-num">4</span>
-                <div>
-                  <h2 class="storage-section-title">التخزين والاستلام</h2>
-                  <p class="storage-section-subtitle">تحديد موقع المستودع والموظف المستلم والملاحظات</p>
+                  <h2 class="storage-section-title">النوع</h2>
+                  <p class="storage-section-subtitle">تحديد نوع الخامة وطبيعة الحركة (إيداع أو صرف) والكمية الصافية بالطن</p>
                 </div>
               </div>
 
               <div class="storage-grid-2">
-                <!-- مكان التخزين -->
-                <div class="storage-field-group">
-                  <label class="storage-label" for="storage-location">
-                    <span id="label-storage-location">مكان التخزين</span>
-                    <span class="storage-required-star">*</span>
-                  </label>
-                  <select id="storage-location" name="storageLocation" class="storage-input storage-select" required>
-                    <option value="" disabled selected>-- اختر مكان التخزين --</option>
-                  </select>
-                  <span class="storage-field-hint">المستودع أو الصومعة المعنية بالحركة</span>
-                  <span class="storage-error-msg" id="err-storage-location"></span>
-                </div>
-
-                <!-- مكان التخزين المحول إليه (Destination Storage Location - Shown when ServiceType is تحويل) -->
-                <div class="storage-field-group" id="storage-destination-group" style="display: none;">
-                  <label class="storage-label" for="storage-destination-location">
-                    <span>مكان التخزين المحول إليه (الوجهة)</span>
-                    <span class="storage-required-star">*</span>
-                  </label>
-                  <select id="storage-destination-location" name="destinationStorageLocation" class="storage-input storage-select">
-                    <option value="" disabled selected>-- اختر المستودع المحول إليه --</option>
-                  </select>
-                  <span class="storage-field-hint">المستودع الذي سيستقبل المواد المحولة</span>
-                  <span class="storage-error-msg" id="err-storage-destination-location"></span>
-                </div>
-
-                <!-- اسم الموظف المستلم -->
-                <div class="storage-field-group">
-                  <label class="storage-label" for="storage-receiving-employee">
-                    <span>اسم الموظف المستلم</span>
+                <!-- 1. نوع الخامة (Material) -->
+                <div class="storage-field-group" id="group-storage-material">
+                  <label class="storage-label" for="storage-material-select">
+                    <span>نوع الخامة</span>
                     <span class="storage-required-star">*</span>
                   </label>
                   <div class="storage-input-wrap">
-                    <select id="storage-receiving-employee" name="receivingEmployee" class="storage-input storage-select" required>
-                      <option value="" disabled selected>-- اختر الموظف المستلم من القائمة --</option>
+                    <select id="storage-material-select" name="material" class="storage-input storage-select" required>
+                      <option value="" disabled selected>-- اختر نوع الخامة --</option>
+                      <option value="powder">powder (بودرة)</option>
+                      <option value="slurry">slurry (معلق / سائل)</option>
                     </select>
                   </div>
-                  <span class="storage-field-hint">الموظف المصرح له بالاستلام من قاعدة المستخدمين</span>
-                  <span class="storage-error-msg" id="err-storage-receiving-employee"></span>
+                  <span class="storage-field-hint">اختيار من قائمة الخامات المعتمدة بالمشروع</span>
+                  <span class="storage-error-msg" id="err-storage-material-select"></span>
+                </div>
+
+                <!-- 2. نوع الحركة (Action) -->
+                <div class="storage-field-group" id="group-storage-action">
+                  <label class="storage-label" for="storage-action-select">
+                    <span>نوع الحركة</span>
+                    <span class="storage-required-star">*</span>
+                  </label>
+                  <div class="storage-input-wrap">
+                    <select id="storage-action-select" name="action" class="storage-input storage-select" required>
+                      <option value="" disabled selected>-- اختر نوع الحركة --</option>
+                      <option value="import">إيداع (Import)</option>
+                      <option value="export">صرف (Export)</option>
+                    </select>
+                  </div>
+                  <span class="storage-field-hint">يحدد طبيعة العملية وحقول الكميات المعروضة</span>
+                  <span class="storage-error-msg" id="err-storage-action-select"></span>
+                </div>
+
+                <!-- الكمية الواردة (Only when Action is Import) -->
+                <div class="storage-field-group" id="group-storage-incoming-qty" style="display: none;">
+                  <label class="storage-label" for="storage-incoming-qty">
+                    <span>الكمية الواردة</span>
+                    <span class="storage-required-star">*</span>
+                  </label>
+                  <div class="storage-input-wrap">
+                    <input type="number" id="storage-incoming-qty" name="incomingQuantity" class="storage-input storage-num-input" placeholder="مثال: 25.500" step="0.001" min="0.001" dir="ltr" />
+                    <span class="storage-unit-suffix">طن</span>
+                  </div>
+                  <span class="storage-field-hint">الكمية الداخلة إلى المخزن بالطن (قيمة عشرية)</span>
+                  <span class="storage-error-msg" id="err-storage-incoming-qty"></span>
+                </div>
+
+                <!-- الكمية الصادرة (Only when Action is Export) -->
+                <div class="storage-field-group" id="group-storage-outgoing-qty" style="display: none;">
+                  <label class="storage-label" for="storage-outgoing-qty">
+                    <span>الكمية الصادرة</span>
+                    <span class="storage-required-star">*</span>
+                  </label>
+                  <div class="storage-input-wrap">
+                    <input type="number" id="storage-outgoing-qty" name="outgoingQuantity" class="storage-input storage-num-input" placeholder="مثال: 15.750" step="0.001" min="0.001" dir="ltr" />
+                    <span class="storage-unit-suffix">طن</span>
+                  </div>
+                  <span class="storage-field-hint">الكمية الخارجة من المخزن بالطن (قيمة عشرية)</span>
+                  <span class="storage-error-msg" id="err-storage-outgoing-qty"></span>
+                </div>
+
+                <!-- Export PO Checkbox & PO Number input (Only when Action is Export) -->
+                <div class="storage-field-group full-width" id="group-storage-po-container" style="display: none;">
+                  <label class="storage-checkbox-card" for="storage-export-po-checkbox">
+                    <input type="checkbox" id="storage-export-po-checkbox" />
+                    <span>هل الصادر مربوط بأمر شراء؟ (Is the export related to a Purchase Order?)</span>
+                  </label>
+
+                  <div id="storage-po-input-wrap" style="display: none; margin-top: 1rem;">
+                    <label class="storage-label" for="storage-po-number">
+                      <span>رقم أمر الشراء</span>
+                      <span class="storage-required-star">*</span>
+                      <span class="storage-ref-status" id="storage-po-status"></span>
+                    </label>
+                    <div class="storage-input-wrap">
+                      <span class="storage-input-prefix">PO-</span>
+                      <input type="text" id="storage-po-number" name="poNumber" class="storage-input" placeholder="أدخل رقم أمر الشراء (مثال: PO-2026-9810)" dir="ltr" autocomplete="off" />
+                    </div>
+                    <span class="storage-field-hint">يتم التحقق من وجود أمر الشراء في قاعدة البيانات تلقائياً</span>
+                    <span class="storage-error-msg" id="err-storage-po-number"></span>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- ==============================================================
+                 SECTION 2 — DATE (التاريخ)
+                 ============================================================== -->
+            <div class="storage-section" id="section-storage-date">
+              <div class="storage-section-header">
+                <span class="storage-section-num">2</span>
+                <div>
+                  <h2 class="storage-section-title">التاريخ</h2>
+                  <p class="storage-section-subtitle">تاريخ ووقت الحركة الفعلي المعتمد لحركة المخزن</p>
                 </div>
               </div>
 
-              <!-- ملاحظات -->
-              <div class="storage-field-group" style="margin-top: 1.25rem;">
-                <label class="storage-label" for="storage-notes">
-                  <span>ملاحظات</span>
-                  <span class="storage-optional-pill">(اختياري)</span>
-                </label>
-                <textarea id="storage-notes" name="notes" class="storage-input storage-textarea" rows="3" maxlength="1000" placeholder="أدخل أي ملاحظات إضافية حول فحص الخامة، حالة المستودع، أو أسباب التحويل والتسوية..."></textarea>
-                <span class="storage-field-hint">بحد أقصى 1000 حرف</span>
-                <span class="storage-error-msg" id="err-storage-notes"></span>
+              <div class="storage-grid-2">
+                <div class="storage-field-group">
+                  <label class="storage-label" for="storage-date">
+                    <span>تاريخ ووقت الحركة</span>
+                    <span class="storage-required-star">*</span>
+                  </label>
+                  <input type="datetime-local" id="storage-date" name="transactionDate" class="storage-input" required dir="ltr" />
+                  <span class="storage-field-hint">يمثل التوقيت الفعلي لحركة المخزن</span>
+                  <span class="storage-error-msg" id="err-storage-date"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- ==============================================================
+                 SECTION 3 — WEIGHBRIDGE (الميزان)
+                 ============================================================== -->
+            <div class="storage-section" id="section-storage-weighbridge">
+              <div class="storage-section-header">
+                <span class="storage-section-num">3</span>
+                <div>
+                  <h2 class="storage-section-title">الميزان</h2>
+                  <p class="storage-section-subtitle">تسجيل قياسات الميزان الداخلي والميزان الخارجي وإرفاق إيصال الوزن المعتمد</p>
+                </div>
+              </div>
+
+              <div class="storage-wb-container">
+                <!-- 3.1 الميزان الداخلي (Internal Weighbridge) -->
+                <div class="storage-wb-card internal-wb-card">
+                  <div class="storage-wb-header">
+                    <div class="storage-wb-badge">⚖️ الميزان الداخلي</div>
+                  </div>
+
+                  <div class="storage-grid-2">
+                    <!-- رقم المرجع للميزان الداخلي -->
+                    <div class="storage-field-group full-width" id="group-storage-wb-int-ref">
+                      <label class="storage-label" for="storage-wb-int-ref">
+                        <span>رقم المرجع (الميزان الداخلي)</span>
+                        <span class="storage-required-star">*</span>
+                      </label>
+                      <div class="storage-input-wrap">
+                        <span class="storage-input-prefix">🔖</span>
+                        <input type="text" id="storage-wb-int-ref" name="internalWeighbridgeReference" class="storage-input" placeholder="أدخل رقم المرجع الصادر من الميزان الداخلي يدوياً (مثال: WB-001)" required autocomplete="off" dir="ltr" />
+                      </div>
+                      <span class="storage-field-hint">يدخل يدوياً من قبل الموظف وفقاً لإشعار الميزان الداخلي.</span>
+                      <span class="storage-error-msg" id="err-storage-wb-int-ref"></span>
+                    </div>
+
+                    <!-- الوزن القائم -->
+                    <div class="storage-field-group" id="group-storage-wb-int-loaded">
+                      <label class="storage-label" for="storage-wb-int-loaded">
+                        <span>الوزن القائم (داخلي)</span>
+                        <span class="storage-required-star">*</span>
+                      </label>
+                      <div class="storage-input-wrap">
+                        <input type="number" id="storage-wb-int-loaded" class="storage-input storage-num-input" placeholder="0.000" step="0.001" min="0.001" required dir="ltr" />
+                        <span class="storage-unit-suffix">طن</span>
+                      </div>
+                      <span class="storage-field-hint">وزن الشاحنة/الحاوية محملة بالمخزن.</span>
+                      <span class="storage-error-msg" id="err-storage-wb-int-loaded"></span>
+                    </div>
+
+                    <!-- الوزن الفارغ -->
+                    <div class="storage-field-group" id="group-storage-wb-int-empty">
+                      <label class="storage-label" for="storage-wb-int-empty">
+                        <span>الوزن الفارغ (داخلي)</span>
+                        <span class="storage-required-star">*</span>
+                      </label>
+                      <div class="storage-input-wrap">
+                        <input type="number" id="storage-wb-int-empty" class="storage-input storage-num-input" placeholder="0.000" step="0.001" min="0.001" required dir="ltr" />
+                        <span class="storage-unit-suffix">طن</span>
+                      </div>
+                      <span class="storage-field-hint">وزن الشاحنة/الحاوية فارغة.</span>
+                      <span class="storage-error-msg" id="err-storage-wb-int-empty"></span>
+                    </div>
+
+                    <!-- الوزن الصافي الداخلي (Auto-calculated, Read-only) -->
+                    <div class="storage-field-group full-width">
+                      <label class="storage-label" for="storage-wb-int-net">
+                        <span>الوزن الصافي (داخلي)</span>
+                        <span class="trans-lock-badge">🔒 تلقائي = القائم − الفارغ</span>
+                      </label>
+                      <div class="storage-input-wrap">
+                        <input type="text" id="storage-wb-int-net" class="storage-input storage-readonly" readonly value="0.000" dir="ltr" />
+                        <span class="storage-unit-suffix">طن</span>
+                      </div>
+                      <span class="storage-field-hint">يحسب آلياً: الوزن القائم − الوزن الفارغ (لا يمكن تعديله يدوياً).</span>
+                    </div>
+
+                    <!-- تاريخ ووقت الوزن الفارغ -->
+                    <div class="storage-field-group">
+                      <label class="storage-label" for="storage-wb-int-empty-time">
+                        <span>تاريخ ووقت الوزن الفارغ</span>
+                        <span class="storage-opt">(اختياري)</span>
+                      </label>
+                      <div class="storage-input-wrap">
+                        <input type="datetime-local" id="storage-wb-int-empty-time" class="storage-input" dir="ltr" />
+                      </div>
+                      <span class="storage-field-hint">توقيت تسجيل وزن الميزان الداخلي فارغاً.</span>
+                    </div>
+
+                    <!-- تاريخ ووقت الوزن القائم -->
+                    <div class="storage-field-group">
+                      <label class="storage-label" for="storage-wb-int-loaded-time">
+                        <span>تاريخ ووقت الوزن القائم</span>
+                        <span class="storage-required-star">*</span>
+                      </label>
+                      <div class="storage-input-wrap">
+                        <input type="datetime-local" id="storage-wb-int-loaded-time" class="storage-input" required dir="ltr" />
+                      </div>
+                      <span class="storage-field-hint">توقيت تسجيل وزن الميزان الداخلي قائماً.</span>
+                      <span class="storage-error-msg" id="err-storage-wb-int-loaded-time"></span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 3.2 هل يوجد وزن خارجي؟ (External Weighbridge Checkbox) -->
+                <div class="storage-ext-wb-toggle-card">
+                  <label class="storage-checkbox-card" for="storage-has-ext-wb-checkbox">
+                    <input type="checkbox" id="storage-has-ext-wb-checkbox" />
+                    <span>هل يوجد وزن خارجي؟ (External Weighbridge)</span>
+                  </label>
+                </div>
+
+                <!-- 3.3 الميزان الخارجي (External Weighbridge Card - Conditionally shown) -->
+                <div class="storage-wb-card external-wb-card" id="storage-ext-wb-card" style="display: none;">
+                  <div class="storage-wb-header">
+                    <div class="storage-wb-badge external">🏢 الميزان الخارجي</div>
+                  </div>
+
+                  <div class="storage-grid-2">
+                    <!-- رقم المرجع للميزان الخارجي -->
+                    <div class="storage-field-group full-width" id="group-storage-wb-ext-ref">
+                      <label class="storage-label" for="storage-wb-ext-ref">
+                        <span>رقم المرجع (الميزان الخارجي)</span>
+                        <span class="storage-required-star">*</span>
+                      </label>
+                      <div class="storage-input-wrap">
+                        <span class="storage-input-prefix">🔖</span>
+                        <input type="text" id="storage-wb-ext-ref" name="externalWeighbridgeReference" class="storage-input" placeholder="أدخل رقم المرجع للميزان الخارجي يدوياً (مثال: EXT-555)" autocomplete="off" dir="ltr" />
+                      </div>
+                      <span class="storage-field-hint">يدخل يدوياً من قبل الموظف وفقاً لإشعار الميزان الخارجي.</span>
+                      <span class="storage-error-msg" id="err-storage-wb-ext-ref"></span>
+                    </div>
+
+                    <!-- الوزن القائم الخارجي -->
+                    <div class="storage-field-group" id="group-storage-wb-ext-loaded">
+                      <label class="storage-label" for="storage-wb-ext-loaded">
+                        <span>الوزن الخارجي قائم</span>
+                        <span class="storage-required-star">*</span>
+                      </label>
+                      <div class="storage-input-wrap">
+                        <input type="number" id="storage-wb-ext-loaded" class="storage-input storage-num-input" placeholder="0.000" step="0.001" min="0.001" dir="ltr" />
+                        <span class="storage-unit-suffix">طن</span>
+                      </div>
+                      <span class="storage-field-hint">وزن الشاحنة محملة في الميزان الخارجي.</span>
+                      <span class="storage-error-msg" id="err-storage-wb-ext-loaded"></span>
+                    </div>
+
+                    <!-- الوزن الفارغ الخارجي -->
+                    <div class="storage-field-group" id="group-storage-wb-ext-empty">
+                      <label class="storage-label" for="storage-wb-ext-empty">
+                        <span>الوزن الخارجي فارغ</span>
+                        <span class="storage-required-star">*</span>
+                      </label>
+                      <div class="storage-input-wrap">
+                        <input type="number" id="storage-wb-ext-empty" class="storage-input storage-num-input" placeholder="0.000" step="0.001" min="0.001" dir="ltr" />
+                        <span class="storage-unit-suffix">طن</span>
+                      </div>
+                      <span class="storage-field-hint">وزن الشاحنة فارغة بعد التفريغ بالميزان الخارجي.</span>
+                      <span class="storage-error-msg" id="err-storage-wb-ext-empty"></span>
+                    </div>
+
+                    <!-- الوزن الصافي الخارجي (Auto-calculated, Read-only) -->
+                    <div class="storage-field-group full-width">
+                      <label class="storage-label" for="storage-wb-ext-net">
+                        <span>الوزن الخارجي الصافي</span>
+                        <span class="trans-lock-badge">🔒 تلقائي = القائم − الفارغ</span>
+                      </label>
+                      <div class="storage-input-wrap">
+                        <input type="text" id="storage-wb-ext-net" class="storage-input storage-readonly" readonly value="0.000" dir="ltr" />
+                        <span class="storage-unit-suffix">طن</span>
+                      </div>
+                      <span class="storage-field-hint">يحسب آلياً: الوزن القائم − الوزن الفارغ (لا يمكن تعديله يدوياً).</span>
+                    </div>
+
+                    <!-- تاريخ ووقت الوزن الفارغ الخارجي -->
+                    <div class="storage-field-group">
+                      <label class="storage-label" for="storage-wb-ext-empty-time">
+                        <span>تاريخ ووقت الوزن الفارغ (خارجي)</span>
+                        <span class="storage-opt">(اختياري)</span>
+                      </label>
+                      <div class="storage-input-wrap">
+                        <input type="datetime-local" id="storage-wb-ext-empty-time" class="storage-input" dir="ltr" />
+                      </div>
+                      <span class="storage-field-hint">توقيت تسجيل وزن الشاحنة فارغة في الميزان الخارجي.</span>
+                    </div>
+
+                    <!-- تاريخ ووقت الوزن القائم الخارجي -->
+                    <div class="storage-field-group">
+                      <label class="storage-label" for="storage-wb-ext-loaded-time">
+                        <span>تاريخ ووقت الوزن القائم (خارجي)</span>
+                        <span class="storage-required-star">*</span>
+                      </label>
+                      <div class="storage-input-wrap">
+                        <input type="datetime-local" id="storage-wb-ext-loaded-time" class="storage-input" dir="ltr" />
+                      </div>
+                      <span class="storage-field-hint">توقيت تسجيل وزن الشاحنة قائمة في الميزان الخارجي.</span>
+                      <span class="storage-error-msg" id="err-storage-wb-ext-loaded-time"></span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 3.4 إرفاق إيصال الميزان (Weighbridge Receipt Attachment) -->
+                <div class="trans-attachment-section" id="storage-receipt-attachment-section">
+                  <div class="trans-attachment-header">
+                    <span class="attachment-title">📎 إرفاق إيصال الميزان <span class="storage-required-star" id="storage-receipt-required-star" style="display: none;">*</span></span>
+                    <span class="attachment-subtitle">مطلوب رفع مستند/صورة إيصال الميزان (PDF, JPG, JPEG - حد أقصى 25 ميجابايت). إلزامي عند تفعيل الميزان الخارجي.</span>
+                  </div>
+                  <div class="trans-upload-zone" id="storage-wb-dropzone">
+                    <input type="file" id="storage-wb-attachment-input" class="trans-file-input" accept=".pdf,.jpg,.jpeg" style="display: none;" />
+                    <div class="trans-upload-placeholder" id="storage-wb-placeholder">
+                      <div class="upload-icon">⚖️</div>
+                      <div class="upload-text">
+                        <span class="upload-prompt">انقر لاختيار إيصال الميزان أو اسحب الملف هنا</span>
+                        <span class="upload-hint">الملفات المسموحة فقط: PDF, JPG, JPEG</span>
+                      </div>
+                      <button type="button" class="trans-btn-browse" onclick="document.getElementById('storage-wb-attachment-input').click()">اختيار ملف إيصال الميزان</button>
+                    </div>
+                    <div class="trans-file-preview" id="storage-wb-file-preview" style="display: none;">
+                      <span class="file-icon" id="storage-wb-file-icon">📑</span>
+                      <div class="file-info">
+                        <span class="file-name" id="storage-wb-file-name">—</span>
+                        <span class="file-size" id="storage-wb-file-size">—</span>
+                      </div>
+                      <button type="button" class="trans-btn-remove-file" id="storage-wb-remove-btn" title="إزالة الملف">✕</button>
+                    </div>
+                  </div>
+                  <span class="storage-error-msg" id="err-storage-wb-receipt"></span>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- ==============================================================
+                 SECTION 4 — RESPONSIBLE EMPLOYEE (الموظف المسؤول)
+                 ============================================================== -->
+            <div class="storage-section" id="section-storage-employee">
+              <div class="storage-section-header">
+                <span class="storage-section-num">4</span>
+                <div>
+                  <h2 class="storage-section-title">الموظف المسؤول</h2>
+                  <p class="storage-section-subtitle">تحديد الموظف المسؤول عن استلام الشحنة أو تسجيل حركة المخزن</p>
+                </div>
+              </div>
+
+              <div class="storage-grid-2">
+                <!-- المسؤول (Controlled selection) -->
+                <div class="storage-field-group">
+                  <label class="storage-label" for="storage-responsible-employee">
+                    <span>المسؤول</span>
+                    <span class="storage-required-star">*</span>
+                  </label>
+                  <div class="storage-input-wrap">
+                    <select id="storage-responsible-employee" name="responsibleEmployee" class="storage-input storage-select" required>
+                      <option value="" disabled selected>-- اختر الموظف المسؤول من القائمة --</option>
+                    </select>
+                  </div>
+                  <span class="storage-field-hint">الموظف المصرح له من قاعدة بيانات المستخدمين المعتمدة</span>
+                  <span class="storage-error-msg" id="err-storage-responsible-employee"></span>
+                </div>
+
+                <!-- ملاحظات -->
+                <div class="storage-field-group full-width">
+                  <label class="storage-label" for="storage-notes">
+                    <span>ملاحظات</span>
+                    <span class="storage-opt">(اختياري)</span>
+                  </label>
+                  <textarea id="storage-notes" name="notes" class="storage-input storage-textarea" rows="2" maxlength="1000" placeholder="أي ملاحظات تشغيلية إضافية حول الحركة أو قياسات الميزان..."></textarea>
+                  <span class="storage-field-hint">بحد أقصى 1000 حرف</span>
+                </div>
               </div>
             </div>
 
@@ -1607,12 +1739,12 @@
               <button type="submit" class="storage-btn storage-btn-submit" id="btn-storage-submit">
                 <span class="storage-btn-spinner" id="storage-submit-spinner" style="display: none;"></span>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                <span id="storage-submit-text">حفظ</span>
+                <span id="storage-submit-text">حفظ الحركة</span>
               </button>
 
               <button type="button" class="storage-btn storage-btn-clear" id="btn-storage-clear">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                <span>مسح</span>
+                <span>مسح الكل</span>
               </button>
             </div>
 
@@ -1624,7 +1756,7 @@
           <div class="storage-recent-header">
             <div>
               <h2 class="storage-recent-title">سجل حركات المخازن الأخيرة</h2>
-              <p class="storage-recent-subtitle">عرض تفصيلي لآخر حركات الوارد والمنصرف والتحويل مع النقلات المرتبطة والأرصدة.</p>
+              <p class="storage-recent-subtitle">عرض تفصيلي لآخر حركات الإيداع والصرف مع تفاصيل الميزان الداخلي والخارجي وإيصالات الميزان.</p>
             </div>
             <button type="button" class="storage-btn-refresh" id="btn-storage-refresh" title="تحديث البيانات">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
@@ -1637,22 +1769,20 @@
               <thead>
                 <tr>
                   <th>رقم الحركة</th>
-                  <th>التاريخ</th>
-                  <th>نوع الخدمة</th>
-                  <th>رقم المرجع</th>
-                  <th>رقم أمر الشراء (PO)</th>
-                  <th>أرقام النقلات</th>
-                  <th>الكمية الواردة</th>
-                  <th>الكمية المنصرفة</th>
-                  <th>الرصيد الختامي</th>
-                  <th>مكان التخزين</th>
-                  <th>الموظف المستلم</th>
-                  <th>ملاحظات</th>
+                  <th>تاريخ ووقت الحركة</th>
+                  <th>نوع الخامة</th>
+                  <th>نوع الحركة</th>
+                  <th>الكمية (طن)</th>
+                  <th>أمر الشراء (PO)</th>
+                  <th>الميزان الداخلي</th>
+                  <th>الميزان الخارجي</th>
+                  <th>الموظف المسؤول</th>
+                  <th>إيصال الميزان</th>
                 </tr>
               </thead>
               <tbody id="storage-table-body">
                 <tr id="storage-loading-row">
-                  <td colspan="12" class="storage-loading-cell">
+                  <td colspan="10" class="storage-loading-cell">
                     <div class="storage-spinner-box">
                       <span class="storage-btn-spinner"></span>
                       <span>جاري تحميل بيانات حركات المخزن...</span>
