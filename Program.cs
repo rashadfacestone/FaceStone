@@ -6,7 +6,7 @@ using Microsoft.OpenApi.Models;
 using FaceStone.Web.Data;
 using FaceStone.Web.Hubs;
 using FaceStone.Web.Services;
-
+// FaceStone Web Application Entry Point
 var builder = WebApplication.CreateBuilder(args);
 
 // 1. Add Database Context with SQL Server (Active)
@@ -208,10 +208,14 @@ if (!Directory.Exists(uploadsDir)) Directory.CreateDirectory(uploadsDir);
 
 app.UseCors("AllowAll");
 
+var contentTypeProvider = new Microsoft.AspNetCore.StaticFiles.FileExtensionContentTypeProvider();
+contentTypeProvider.Mappings[".webmanifest"] = "application/manifest+json";
+
 // Serve default files (index.html) and static uploads/assets
 app.UseDefaultFiles();
 app.UseStaticFiles(new StaticFileOptions
 {
+    ContentTypeProvider = contentTypeProvider,
     OnPrepareResponse = ctx =>
     {
         ctx.Context.Response.Headers["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0";
@@ -283,4 +287,4 @@ app.MapFallbackToFile("index.html", new StaticFileOptions
 });
 
 app.Run();
-// FaceStone Portal - Storage Department ready.
+// FaceStone Portal - Storage & Finance ready.

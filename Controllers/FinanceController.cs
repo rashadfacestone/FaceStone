@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
@@ -22,8 +22,9 @@ public class FinanceController : ControllerBase
 {
     private readonly FaceStoneDbContext _context;
     private readonly ILogger<FinanceController> _logger;
-
-    public FinanceController(FaceStoneDbContext context, ILogger<FinanceController> logger)
+    public FinanceController(
+        FaceStoneDbContext context, 
+        ILogger<FinanceController> logger)
     {
         _context = context;
         _logger = logger;
@@ -136,7 +137,7 @@ public class FinanceController : ControllerBase
                 else
                 {
                     // PO exists in Transportation but wasn't in PO table yet
-                    var supplier = !string.IsNullOrWhiteSpace(latestTrans.Source) ? latestTrans.Source.Trim() : "المورد الرئيسي للخرسانة";
+                    var supplier = !string.IsNullOrWhiteSpace(latestTrans.Source) ? latestTrans.Source.Trim() : "Ø§Ù„Ù…ÙˆØ±Ø¯ Ø§Ù„Ø±Ø¦ÙŠØ³ÙŠ Ù„Ù„Ø®Ø±Ø³Ø§Ù†Ø©";
                     var orderDate = firstTrans.TransactionDate;
                     var estimatedTonPrice = 1450.00m;
                     var estimatedPoQty = Math.Max(transSupplied * 1.2m, 100.0m);
@@ -206,7 +207,7 @@ public class FinanceController : ControllerBase
             foreach (var group in storageByPo)
             {
                 var poNum = group.Key;
-                var incomingSum = group.Where(s => s.ServiceType.Equals("إضافة", StringComparison.OrdinalIgnoreCase)).Sum(s => s.IncomingQuantity);
+                var incomingSum = group.Where(s => s.ServiceType.Equals("Ø¥Ø¶Ø§ÙØ©", StringComparison.OrdinalIgnoreCase)).Sum(s => s.IncomingQuantity);
 
                 if (poMap.TryGetValue(poNum, out var record))
                 {
@@ -227,40 +228,40 @@ public class FinanceController : ControllerBase
                 r.TonPrice = Math.Round(r.TonPrice, 2);
                 r.SuppliedQuantity = Math.Round(r.SuppliedQuantity, 3);
 
-                // 5. قيمة أمر الشراء = كمية أمر الشراء × سعر الطن
+                // 5. Ù‚ÙŠÙ…Ø© Ø£Ù…Ø± Ø§Ù„Ø´Ø±Ø§Ø¡ = ÙƒÙ…ÙŠØ© Ø£Ù…Ø± Ø§Ù„Ø´Ø±Ø§Ø¡ Ã— Ø³Ø¹Ø± Ø§Ù„Ø·Ù†
                 r.PoValue = Math.Round(r.PoQuantity * r.TonPrice, 2);
 
-                // 8. قيمة الكمية التي تم توريدها = الكمية التي تم توريدها × سعر الطن
+                // 8. Ù‚ÙŠÙ…Ø© Ø§Ù„ÙƒÙ…ÙŠØ© Ø§Ù„ØªÙŠ ØªÙ… ØªÙˆØ±ÙŠØ¯Ù‡Ø§ = Ø§Ù„ÙƒÙ…ÙŠØ© Ø§Ù„ØªÙŠ ØªÙ… ØªÙˆØ±ÙŠØ¯Ù‡Ø§ Ã— Ø³Ø¹Ø± Ø§Ù„Ø·Ù†
                 r.SuppliedValue = Math.Round(r.SuppliedQuantity * r.TonPrice, 2);
 
-                // 9. الكمية المتبقية = كمية أمر الشراء - الكمية التي تم توريدها
+                // 9. Ø§Ù„ÙƒÙ…ÙŠØ© Ø§Ù„Ù…ØªØ¨Ù‚ÙŠØ© = ÙƒÙ…ÙŠØ© Ø£Ù…Ø± Ø§Ù„Ø´Ø±Ø§Ø¡ - Ø§Ù„ÙƒÙ…ÙŠØ© Ø§Ù„ØªÙŠ ØªÙ… ØªÙˆØ±ÙŠØ¯Ù‡Ø§
                 r.RemainingQuantity = Math.Round(Math.Max(0m, r.PoQuantity - r.SuppliedQuantity), 3);
 
-                // 10. القيمة المتبقية = الكمية المتبقية × سعر الطن
+                // 10. Ø§Ù„Ù‚ÙŠÙ…Ø© Ø§Ù„Ù…ØªØ¨Ù‚ÙŠØ© = Ø§Ù„ÙƒÙ…ÙŠØ© Ø§Ù„Ù…ØªØ¨Ù‚ÙŠØ© Ã— Ø³Ø¹Ø± Ø§Ù„Ø·Ù†
                 r.RemainingValue = Math.Round(r.RemainingQuantity * r.TonPrice, 2);
 
-                // 12 & 13. الكمية المعتمدة والغير معتمدة
+                // 12 & 13. Ø§Ù„ÙƒÙ…ÙŠØ© Ø§Ù„Ù…Ø¹ØªÙ…Ø¯Ø© ÙˆØ§Ù„ØºÙŠØ± Ù…Ø¹ØªÙ…Ø¯Ø©
                 r.ApprovedQuantity = Math.Round(r.ApprovedQuantity, 3);
                 r.UnapprovedQuantity = Math.Round(Math.Max(0m, r.SuppliedQuantity - r.ApprovedQuantity), 3);
 
-                // 14. المبلغ المدفوع
+                // 14. Ø§Ù„Ù…Ø¨Ù„Øº Ø§Ù„Ù…Ø¯ÙÙˆØ¹
                 r.PaidAmount = Math.Round(r.PaidAmount, 2);
 
-                // 15. المبلغ المستحق = قيمة الكمية التي تم توريدها - المبلغ المدفوع
+                // 15. Ø§Ù„Ù…Ø¨Ù„Øº Ø§Ù„Ù…Ø³ØªØ­Ù‚ = Ù‚ÙŠÙ…Ø© Ø§Ù„ÙƒÙ…ÙŠØ© Ø§Ù„ØªÙŠ ØªÙ… ØªÙˆØ±ÙŠØ¯Ù‡Ø§ - Ø§Ù„Ù…Ø¨Ù„Øº Ø§Ù„Ù…Ø¯ÙÙˆØ¹
                 r.OutstandingAmount = Math.Round(Math.Max(0m, r.SuppliedValue - r.PaidAmount), 2);
 
-                // 16. حالة السداد
+                // 16. Ø­Ø§Ù„Ø© Ø§Ù„Ø³Ø¯Ø§Ø¯
                 if (r.PaidAmount <= 0)
                 {
-                    r.PaymentStatus = "غير مدفوع";
+                    r.PaymentStatus = "ØºÙŠØ± Ù…Ø¯ÙÙˆØ¹";
                 }
                 else if (r.PaidAmount > 0 && r.PaidAmount < r.SuppliedValue)
                 {
-                    r.PaymentStatus = "مدفوع جزئياً";
+                    r.PaymentStatus = "Ù…Ø¯ÙÙˆØ¹ Ø¬Ø²Ø¦ÙŠØ§Ù‹";
                 }
                 else
                 {
-                    r.PaymentStatus = "مدفوع بالكامل";
+                    r.PaymentStatus = "Ù…Ø¯ÙÙˆØ¹ Ø¨Ø§Ù„ÙƒØ§Ù…Ù„";
                 }
             }
 
@@ -283,7 +284,7 @@ public class FinanceController : ControllerBase
             var filterOptions = new FinanceFilterOptionsDto
             {
                 Suppliers = allRecords.Select(r => r.Supplier).Where(s => !string.IsNullOrWhiteSpace(s)).Distinct().OrderBy(s => s).ToList(),
-                PaymentStatuses = new List<string> { "غير مدفوع", "مدفوع جزئياً", "مدفوع بالكامل" },
+                PaymentStatuses = new List<string> { "ØºÙŠØ± Ù…Ø¯ÙÙˆØ¹", "Ù…Ø¯ÙÙˆØ¹ Ø¬Ø²Ø¦ÙŠØ§Ù‹", "Ù…Ø¯ÙÙˆØ¹ Ø¨Ø§Ù„ÙƒØ§Ù…Ù„" },
                 InvoiceNumbers = allRecords.Select(r => r.InvoiceNumber).Where(i => !string.IsNullOrWhiteSpace(i)).Select(i => i!).Distinct().OrderBy(i => i).ToList()
             };
 
@@ -362,7 +363,7 @@ public class FinanceController : ControllerBase
         {
             _logger.LogError(ex, "Error retrieving Finance management data.");
             return StatusCode(StatusCodes.Status500InternalServerError,
-                ApiResponse.Fail("حدث خطأ أثناء تحميل البيانات المالية. يرجى المحاولة لاحقاً."));
+                ApiResponse.Fail("Ø­Ø¯Ø« Ø®Ø·Ø£ Ø£Ø«Ù†Ø§Ø¡ ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ø¨ÙŠØ§Ù†Ø§Øª Ø§Ù„Ù…Ø§Ù„ÙŠØ©. ÙŠØ±Ø¬Ù‰ Ø§Ù„Ù…Ø­Ø§ÙˆÙ„Ø© Ù„Ø§Ø­Ù‚Ø§Ù‹."));
         }
     }
 
@@ -376,7 +377,7 @@ public class FinanceController : ControllerBase
     {
         if (string.IsNullOrWhiteSpace(poNumber))
         {
-            return BadRequest(ApiResponse.Fail("رقم أمر الشراء مطلوب."));
+            return BadRequest(ApiResponse.Fail("Ø±Ù‚Ù… Ø£Ù…Ø± Ø§Ù„Ø´Ø±Ø§Ø¡ Ù…Ø·Ù„ÙˆØ¨."));
         }
 
         var targetPo = poNumber.Trim();
@@ -415,12 +416,12 @@ public class FinanceController : ControllerBase
     {
         if (string.IsNullOrWhiteSpace(dto.PoNumber))
         {
-            return BadRequest(ApiResponse.Fail("رقم أمر الشراء مطلوب لتسجيل الدفعة."));
+            return BadRequest(ApiResponse.Fail("Ø±Ù‚Ù… Ø£Ù…Ø± Ø§Ù„Ø´Ø±Ø§Ø¡ Ù…Ø·Ù„ÙˆØ¨ Ù„ØªØ³Ø¬ÙŠÙ„ Ø§Ù„Ø¯ÙØ¹Ø©."));
         }
 
         if (dto.Amount <= 0)
         {
-            return BadRequest(ApiResponse.Fail("مبلغ الدفعة يجب أن يكون أكبر من الصفر."));
+            return BadRequest(ApiResponse.Fail("Ù…Ø¨Ù„Øº Ø§Ù„Ø¯ÙØ¹Ø© ÙŠØ¬Ø¨ Ø£Ù† ÙŠÙƒÙˆÙ† Ø£ÙƒØ¨Ø± Ù…Ù† Ø§Ù„ØµÙØ±."));
         }
 
         var poNum = dto.PoNumber.Trim();
@@ -462,6 +463,6 @@ public class FinanceController : ControllerBase
             CreatedAt = payment.CreatedAt
         };
 
-        return Ok(ApiResponse<FinancePaymentDto>.Ok(resultDto, "تم تسجيل الدفعة المالية بنجاح."));
+        return Ok(ApiResponse<FinancePaymentDto>.Ok(resultDto, "ØªÙ… ØªØ³Ø¬ÙŠÙ„ Ø§Ù„Ø¯ÙØ¹Ø© Ø§Ù„Ù…Ø§Ù„ÙŠØ© Ø¨Ù†Ø¬Ø§Ø­."));
     }
 }

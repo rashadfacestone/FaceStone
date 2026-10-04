@@ -159,39 +159,29 @@ public class ChatController : ControllerBase
             }
         }
 
-        // Determine target employee & conversation recipient
+        // Determine target recipient user
         var effectiveTargetId = request.GetEffectiveTargetEmployeeId();
-        Guid? recipientId = null;
-        string recipientName;
-        string? recipientUsername = null;
-        string? recipientRole = null;
-        Guid threadEmployeeId;
+        if (!effectiveTargetId.HasValue || effectiveTargetId.Value == Guid.Empty)
+        {
+            return BadRequest(ApiResponse.Fail("Please select a recipient before sending a message."));
+        }
 
-        if (isAccountant)
+        if (effectiveTargetId.Value == userId)
         {
-            if (!effectiveTargetId.HasValue || effectiveTargetId.Value == Guid.Empty)
-            {
-                return BadRequest(ApiResponse.Fail("Please select an employee conversation before sending a message."));
-            }
-            var targetEmp = await _context.Users.FindAsync(effectiveTargetId.Value);
-            if (targetEmp == null)
-            {
-                return NotFound(ApiResponse.Fail("Recipient employee was not found."));
-            }
-            recipientId = targetEmp.Id;
-            recipientName = targetEmp.FullName;
-            recipientUsername = targetEmp.Username;
-            recipientRole = targetEmp.Role;
-            threadEmployeeId = targetEmp.Id;
+            return BadRequest(ApiResponse.Fail("You cannot send a message to yourself."));
         }
-        else
+
+        var targetUser = await _context.Users.FindAsync(effectiveTargetId.Value);
+        if (targetUser == null)
         {
-            recipientId = null;
-            recipientName = "Accounting Desk";
-            recipientUsername = "accounting_team";
-            recipientRole = "Accountant";
-            threadEmployeeId = userId;
+            return NotFound(ApiResponse.Fail("Recipient user was not found."));
         }
+
+        Guid recipientId = targetUser.Id;
+        string recipientName = targetUser.FullName;
+        string? recipientUsername = targetUser.Username;
+        string? recipientRole = targetUser.Role;
+        Guid threadEmployeeId = targetUser.Id;
 
         // Branch by MessageType
         if (msgType == MessageTypes.LiveLocation)
@@ -254,7 +244,7 @@ public class ChatController : ControllerBase
                 SenderId = userId,
                 SenderName = fullName,
                 SenderUsername = username,
-                SenderRole = isAccountant ? "Accountant" : role,
+                SenderRole = role,
                 RecipientId = recipientId,
                 RecipientName = recipientName,
                 RecipientUsername = recipientUsername,
@@ -268,7 +258,7 @@ public class ChatController : ControllerBase
                 HasAttachment = false,
                 IsFromAccountant = isAccountant,
                 IsReadByAccountant = isAccountant,
-                IsReadByUser = !isAccountant,
+                IsReadByUser = false,
                 SentAt = DateTime.UtcNow,
                 ClientMessageId = request.ClientMessageId?.Trim()
             };
@@ -286,8 +276,12 @@ public class ChatController : ControllerBase
                 _logger.LogInformation("[LiveLocation] BROADCAST OnLiveLocationStarted MessageId: {MsgId}, SessionId: {SessionId}",
                     chatMsg.Id, session.Id);
 
-                await _hubContext.Clients.Group("Accountants").SendAsync("OnLiveLocationStarted", messageDto);
-                await _hubContext.Clients.Group($"Employee_{threadEmployeeId}").SendAsync("OnLiveLocationStarted", messageDto);
+                await _hubContext.Clients.Group($"Employee_{recipientId}").SendAsync("OnLiveLocationStarted", messageDto);
+                await _hubContext.Clients.Group($"Employee_{userId}").SendAsync("OnLiveLocationStarted", messageDto);
+                if (recipientRole == "Accountant" || recipientRole == "CEO")
+                {
+                    await _hubContext.Clients.Group("Accountants").SendAsync("OnLiveLocationStarted", messageDto);
+                }
             }
             catch (Exception ex)
             {
@@ -311,7 +305,7 @@ public class ChatController : ControllerBase
                 SenderId = userId,
                 SenderName = fullName,
                 SenderUsername = username,
-                SenderRole = isAccountant ? "Accountant" : role,
+                SenderRole = role,
                 RecipientId = recipientId,
                 RecipientName = recipientName,
                 RecipientUsername = recipientUsername,
@@ -323,7 +317,7 @@ public class ChatController : ControllerBase
                 HasAttachment = false,
                 IsFromAccountant = isAccountant,
                 IsReadByAccountant = isAccountant,
-                IsReadByUser = !isAccountant,
+                IsReadByUser = false,
                 SentAt = DateTime.UtcNow,
                 ClientMessageId = request.ClientMessageId?.Trim()
             };
@@ -335,15 +329,11 @@ public class ChatController : ControllerBase
 
             try
             {
-                if (isAccountant)
+                await _hubContext.Clients.Group($"Employee_{recipientId}").SendAsync("OnNewMessage", messageDto);
+                await _hubContext.Clients.Group($"Employee_{userId}").SendAsync("OnNewMessage", messageDto);
+                if (recipientRole == "Accountant" || recipientRole == "CEO")
                 {
-                    await _hubContext.Clients.Group($"Employee_{recipientId}").SendAsync("OnAccountantReply", messageDto);
-                    await _hubContext.Clients.Group("Accountants").SendAsync("OnAccountantReply", messageDto);
-                }
-                else
-                {
-                    await _hubContext.Clients.Group("Accountants").SendAsync("OnNewEmployeeMessage", messageDto);
-                    await _hubContext.Clients.Group($"Employee_{userId}").SendAsync("OnNewMessage", messageDto);
+                    await _hubContext.Clients.Group("Accountants").SendAsync("OnNewMessage", messageDto);
                 }
             }
             catch (Exception ex)
@@ -355,7 +345,8 @@ public class ChatController : ControllerBase
         }
         else if (msgType == MessageTypes.Text)
         {
-            if (string.IsNullOrWhiteSpace(request.Message) && (request.Attachment == null || request.Attachment.Length == 0))
+            var effectiveText = request.GetEffectiveMessage();
+            if (string.IsNullOrWhiteSpace(effectiveText) && (request.Attachment == null || request.Attachment.Length == 0))
             {
                 return BadRequest(ApiResponse.Fail("Please provide a message text or attach a file."));
             }
@@ -365,17 +356,17 @@ public class ChatController : ControllerBase
                 SenderId = userId,
                 SenderName = fullName,
                 SenderUsername = username,
-                SenderRole = isAccountant ? "Accountant" : role,
+                SenderRole = role,
                 RecipientId = recipientId,
                 RecipientName = recipientName,
                 RecipientUsername = recipientUsername,
                 RecipientRole = recipientRole,
-                MessageText = request.Message?.Trim() ?? string.Empty,
+                MessageText = effectiveText?.Trim() ?? string.Empty,
                 MessageType = MessageTypes.Text,
                 HasAttachment = (request.Attachment != null && request.Attachment.Length > 0),
                 IsFromAccountant = isAccountant,
                 IsReadByAccountant = isAccountant,
-                IsReadByUser = !isAccountant,
+                IsReadByUser = false,
                 SentAt = DateTime.UtcNow,
                 ClientMessageId = request.ClientMessageId?.Trim()
             };
@@ -433,15 +424,11 @@ public class ChatController : ControllerBase
 
             try
             {
-                if (isAccountant)
+                await _hubContext.Clients.Group($"Employee_{recipientId}").SendAsync("OnNewMessage", messageDto);
+                await _hubContext.Clients.Group($"Employee_{userId}").SendAsync("OnNewMessage", messageDto);
+                if (recipientRole == "Accountant" || recipientRole == "CEO")
                 {
-                    await _hubContext.Clients.Group($"Employee_{recipientId}").SendAsync("OnAccountantReply", messageDto);
-                    await _hubContext.Clients.Group("Accountants").SendAsync("OnAccountantReply", messageDto);
-                }
-                else
-                {
-                    await _hubContext.Clients.Group("Accountants").SendAsync("OnNewEmployeeMessage", messageDto);
-                    await _hubContext.Clients.Group($"Employee_{userId}").SendAsync("OnNewMessage", messageDto);
+                    await _hubContext.Clients.Group("Accountants").SendAsync("OnNewMessage", messageDto);
                 }
             }
             catch (Exception ex)
@@ -492,41 +479,31 @@ public class ChatController : ControllerBase
             }
         }
 
-        Guid? recipientId = null;
-        string recipientName;
-        string? recipientUsername = null;
-        string? recipientRole = null;
-
-        if (isAccountant)
+        var effectiveTargetId = request.GetEffectiveTargetId();
+        if (!effectiveTargetId.HasValue || effectiveTargetId.Value == Guid.Empty)
         {
-            if (!request.TargetEmployeeId.HasValue || request.TargetEmployeeId.Value == Guid.Empty)
-            {
-                return BadRequest(ApiResponse.Fail("Please select an employee conversation before sending location."));
-            }
-            var targetEmp = await _context.Users.FindAsync(request.TargetEmployeeId.Value);
-            if (targetEmp == null)
-            {
-                return NotFound(ApiResponse.Fail("Recipient employee was not found."));
-            }
-            recipientId = targetEmp.Id;
-            recipientName = targetEmp.FullName;
-            recipientUsername = targetEmp.Username;
-            recipientRole = targetEmp.Role;
+            return BadRequest(ApiResponse.Fail("Please select a recipient before sending location."));
         }
-        else
+        if (effectiveTargetId.Value == userId)
         {
-            recipientId = null;
-            recipientName = "Accounting Desk";
-            recipientUsername = "accounting_team";
-            recipientRole = "Accountant";
+            return BadRequest(ApiResponse.Fail("You cannot send a message to yourself."));
         }
+        var targetUser = await _context.Users.FindAsync(effectiveTargetId.Value);
+        if (targetUser == null)
+        {
+            return NotFound(ApiResponse.Fail("Recipient user was not found."));
+        }
+        Guid recipientId = targetUser.Id;
+        string recipientName = targetUser.FullName;
+        string? recipientUsername = targetUser.Username;
+        string? recipientRole = targetUser.Role;
 
         var chatMsg = new ChatMessage
         {
             SenderId = userId,
             SenderName = fullName,
             SenderUsername = username,
-            SenderRole = isAccountant ? "Accountant" : role,
+            SenderRole = role,
             RecipientId = recipientId,
             RecipientName = recipientName,
             RecipientUsername = recipientUsername,
@@ -538,7 +515,7 @@ public class ChatController : ControllerBase
             HasAttachment = false,
             IsFromAccountant = isAccountant,
             IsReadByAccountant = isAccountant,
-            IsReadByUser = !isAccountant,
+            IsReadByUser = false,
             SentAt = DateTime.UtcNow,
             ClientMessageId = request.ClientMessageId?.Trim()
         };
@@ -551,15 +528,11 @@ public class ChatController : ControllerBase
         // Real-Time Broadcast via SignalR
         try
         {
-            if (isAccountant)
+            await _hubContext.Clients.Group($"Employee_{recipientId}").SendAsync("OnNewMessage", messageDto);
+            await _hubContext.Clients.Group($"Employee_{userId}").SendAsync("OnNewMessage", messageDto);
+            if (recipientRole == "Accountant" || recipientRole == "CEO")
             {
-                await _hubContext.Clients.Group($"Employee_{recipientId}").SendAsync("OnAccountantReply", messageDto);
-                await _hubContext.Clients.Group("Accountants").SendAsync("OnAccountantReply", messageDto);
-            }
-            else
-            {
-                await _hubContext.Clients.Group("Accountants").SendAsync("OnNewEmployeeMessage", messageDto);
-                await _hubContext.Clients.Group($"Employee_{userId}").SendAsync("OnNewMessage", messageDto);
+                await _hubContext.Clients.Group("Accountants").SendAsync("OnNewMessage", messageDto);
             }
         }
         catch (Exception ex)
@@ -601,37 +574,25 @@ public class ChatController : ControllerBase
         _logger.LogInformation("[LiveLocation] START User: {UserId}, Lat: {Lat}, Lng: {Lng}, Duration: {Duration}", 
             userId, request.Latitude, request.Longitude, duration);
 
-        Guid? recipientId = null;
-        string recipientName;
-        string? recipientUsername = null;
-        string? recipientRole = null;
-        Guid threadEmployeeId;
-
-        if (isAccountant)
+        var effectiveTargetId = request.GetEffectiveTargetId();
+        if (!effectiveTargetId.HasValue || effectiveTargetId.Value == Guid.Empty)
         {
-            if (!request.TargetEmployeeId.HasValue || request.TargetEmployeeId.Value == Guid.Empty)
-            {
-                return BadRequest(ApiResponse.Fail("Please select an employee conversation before starting live location."));
-            }
-            var targetEmp = await _context.Users.FindAsync(request.TargetEmployeeId.Value);
-            if (targetEmp == null)
-            {
-                return NotFound(ApiResponse.Fail("Recipient employee was not found."));
-            }
-            recipientId = targetEmp.Id;
-            recipientName = targetEmp.FullName;
-            recipientUsername = targetEmp.Username;
-            recipientRole = targetEmp.Role;
-            threadEmployeeId = targetEmp.Id;
+            return BadRequest(ApiResponse.Fail("Please select a recipient before starting live location."));
         }
-        else
+        if (effectiveTargetId.Value == userId)
         {
-            recipientId = null;
-            recipientName = "Accounting Desk";
-            recipientUsername = "accounting_team";
-            recipientRole = "Accountant";
-            threadEmployeeId = userId;
+            return BadRequest(ApiResponse.Fail("You cannot send a message to yourself."));
         }
+        var targetUser = await _context.Users.FindAsync(effectiveTargetId.Value);
+        if (targetUser == null)
+        {
+            return NotFound(ApiResponse.Fail("Recipient user was not found."));
+        }
+        Guid recipientId = targetUser.Id;
+        string recipientName = targetUser.FullName;
+        string? recipientUsername = targetUser.Username;
+        string? recipientRole = targetUser.Role;
+        Guid threadEmployeeId = targetUser.Id;
 
         // Deactivate any prior active live sessions from this user in this conversation
         var priorActive = await _context.LiveLocationSessions
@@ -669,7 +630,7 @@ public class ChatController : ControllerBase
             SenderId = userId,
             SenderName = fullName,
             SenderUsername = username,
-            SenderRole = isAccountant ? "Accountant" : role,
+            SenderRole = role,
             RecipientId = recipientId,
             RecipientName = recipientName,
             RecipientUsername = recipientUsername,
@@ -683,7 +644,7 @@ public class ChatController : ControllerBase
             HasAttachment = false,
             IsFromAccountant = isAccountant,
             IsReadByAccountant = isAccountant,
-            IsReadByUser = !isAccountant,
+            IsReadByUser = false,
             SentAt = DateTime.UtcNow,
             ClientMessageId = request.ClientMessageId?.Trim()
         };
@@ -704,9 +665,12 @@ public class ChatController : ControllerBase
             _logger.LogInformation("[LiveLocation] BROADCAST OnLiveLocationStarted MessageId: {MsgId}, SessionId: {SessionId}", 
                 chatMsg.Id, liveSession.Id);
 
-            // Send dedicated OnLiveLocationStarted event - NEVER broadcast as normal text message
-            await _hubContext.Clients.Group("Accountants").SendAsync("OnLiveLocationStarted", messageDto);
-            await _hubContext.Clients.Group($"Employee_{threadEmployeeId}").SendAsync("OnLiveLocationStarted", messageDto);
+            await _hubContext.Clients.Group($"Employee_{recipientId}").SendAsync("OnLiveLocationStarted", messageDto);
+            await _hubContext.Clients.Group($"Employee_{userId}").SendAsync("OnLiveLocationStarted", messageDto);
+            if (recipientRole == "Accountant" || recipientRole == "CEO")
+            {
+                await _hubContext.Clients.Group("Accountants").SendAsync("OnLiveLocationStarted", messageDto);
+            }
         }
         catch (Exception ex)
         {
@@ -880,21 +844,114 @@ public class ChatController : ControllerBase
     }
 
     /// <summary>
-    /// Retrieve conversation threads across all employees (Accountant & CEO only).
-    /// Optimized with single batch queries and indexes to eliminate N+1 latency.
+    /// Search FaceStone users for starting new 1-to-1 conversations.
+    /// Accessible to all authenticated users.
+    /// </summary>
+    [HttpGet("users")]
+    [ProducesResponseType(typeof(ApiResponse<List<UserDto>>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> SearchUsers([FromQuery] string? search)
+    {
+        var (userId, _, _, _, _) = GetCurrentUser();
+        if (userId == Guid.Empty)
+        {
+            return Unauthorized(ApiResponse.Fail("Invalid user token."));
+        }
+
+        var query = _context.Users.AsNoTracking().Where(u => u.Id != userId);
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var s = search.Trim().ToLower();
+            query = query.Where(u =>
+                u.FullName.ToLower().Contains(s) ||
+                u.Username.ToLower().Contains(s) ||
+                u.Email.ToLower().Contains(s) ||
+                u.Role.ToLower().Contains(s));
+        }
+
+        var users = await query
+            .OrderBy(u => u.FullName)
+            .Take(50)
+            .Select(u => new UserDto
+            {
+                Id = u.Id,
+                FullName = u.FullName,
+                Username = u.Username,
+                Role = u.Role,
+                Email = u.Email,
+                PhoneNumber = u.PhoneNumber,
+                CreatedAt = u.CreatedAt
+            })
+            .ToListAsync();
+
+        return Ok(ApiResponse<List<UserDto>>.Ok(users));
+    }
+
+    /// <summary>
+    /// Retrieve conversation threads for the authenticated user.
+    /// Supports user-to-user private conversations with unread counters and latest message snippets.
     /// </summary>
     [HttpGet("conversations")]
-    [Authorize(Roles = "Accountant,CEO")]
     [ProducesResponseType(typeof(ApiResponse<ConversationsListResponseDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetConversations()
     {
-        var employees = await _context.Users
+        var (userId, _, _, role, isAccountant) = GetCurrentUser();
+        if (userId == Guid.Empty)
+        {
+            return Unauthorized(ApiResponse.Fail("Invalid user token."));
+        }
+
+        // 1. Identify distinct partner user IDs who have exchanged messages with this user
+        var sentToPartners = await _context.ChatMessages
             .AsNoTracking()
-            .Where(u => u.Role != "Accountant" && u.Role != "CEO")
-            .OrderBy(u => u.FullName)
+            .Where(m => m.SenderId == userId && m.RecipientId != null && m.RecipientId != userId)
+            .Select(m => m.RecipientId!.Value)
+            .Distinct()
             .ToListAsync();
 
-        if (employees.Count == 0)
+        var receivedFromPartners = await _context.ChatMessages
+            .AsNoTracking()
+            .Where(m => m.RecipientId == userId && m.SenderId != null && m.SenderId != userId)
+            .Select(m => m.SenderId!.Value)
+            .Distinct()
+            .ToListAsync();
+
+        var partnerIdsSet = sentToPartners.Concat(receivedFromPartners).ToHashSet();
+
+        // Include legacy messages for accountants / CEOs if any
+        if (isAccountant)
+        {
+            var legacySenders = await _context.ChatMessages
+                .AsNoTracking()
+                .Where(m => m.RecipientId == null && m.SenderId != null && m.SenderId != userId)
+                .Select(m => m.SenderId!.Value)
+                .Distinct()
+                .ToListAsync();
+
+            foreach (var ls in legacySenders)
+            {
+                partnerIdsSet.Add(ls);
+            }
+        }
+
+        // Also if the list is empty and user is an accountant, show default employee accounts to start chat with
+        if (partnerIdsSet.Count == 0 && isAccountant)
+        {
+            var defaultPartners = await _context.Users
+                .AsNoTracking()
+                .Where(u => u.Id != userId)
+                .Take(10)
+                .Select(u => u.Id)
+                .ToListAsync();
+            foreach (var dp in defaultPartners) partnerIdsSet.Add(dp);
+        }
+
+        var partnerUsers = await _context.Users
+            .AsNoTracking()
+            .Where(u => partnerIdsSet.Contains(u.Id))
+            .ToDictionaryAsync(u => u.Id);
+
+        if (partnerUsers.Count == 0)
         {
             return Ok(ApiResponse<ConversationsListResponseDto>.Ok(new ConversationsListResponseDto
             {
@@ -903,68 +960,62 @@ public class ChatController : ControllerBase
             }));
         }
 
-        var employeeIds = employees.Select(e => e.Id).ToHashSet();
-
-        // 1. Single batch query for unread counts grouped by sender
+        // 2. Fetch unread counts grouped by partner (messages sent TO userId where not read)
         var unreadCounts = await _context.ChatMessages
             .AsNoTracking()
-            .Where(m => !m.IsFromAccountant && !m.IsReadByAccountant && m.SenderId.HasValue && employeeIds.Contains(m.SenderId.Value))
+            .Where(m => m.RecipientId == userId && !m.IsReadByUser && m.SenderId.HasValue && partnerIdsSet.Contains(m.SenderId.Value))
             .GroupBy(m => m.SenderId!.Value)
-            .Select(g => new { EmployeeId = g.Key, Count = g.Count() })
-            .ToDictionaryAsync(x => x.EmployeeId, x => x.Count);
+            .Select(g => new { PartnerId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.PartnerId, x => x.Count);
 
-        // 2. Fetch latest messages for each active employee thread in a single indexed query
-        List<ChatMessage> latestMessagesRaw;
-        if (_context.Database.IsSqlServer())
+        if (isAccountant)
         {
-            latestMessagesRaw = await _context.ChatMessages
-                .FromSqlRaw(@"
-                    SELECT m.* FROM (
-                        SELECT *, ROW_NUMBER() OVER(
-                            PARTITION BY CASE WHEN IsFromAccountant = 1 THEN RecipientId ELSE SenderId END 
-                            ORDER BY SentAt DESC
-                        ) as rn
-                        FROM ChatMessages
-                    ) m
-                    WHERE m.rn = 1
-                ")
-                .Include(m => m.Attachments)
+            var legacyUnread = await _context.ChatMessages
                 .AsNoTracking()
-                .ToListAsync();
-        }
-        else
-        {
-            latestMessagesRaw = await _context.ChatMessages
-                .AsNoTracking()
-                .Include(m => m.Attachments)
-                .OrderByDescending(m => m.SentAt)
-                .ToListAsync();
-        }
+                .Where(m => m.RecipientId == null && !m.IsFromAccountant && !m.IsReadByAccountant && m.SenderId.HasValue && partnerIdsSet.Contains(m.SenderId.Value))
+                .GroupBy(m => m.SenderId!.Value)
+                .Select(g => new { PartnerId = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.PartnerId, x => x.Count);
 
-        var latestMessagesByEmployee = latestMessagesRaw
-            .Select(m => new
+            foreach (var kvp in legacyUnread)
             {
-                Message = m,
-                PartnerId = m.IsFromAccountant ? (m.RecipientId ?? Guid.Empty) : (m.SenderId ?? Guid.Empty)
-            })
-            .Where(x => x.PartnerId != Guid.Empty && employeeIds.Contains(x.PartnerId))
-            .GroupBy(x => x.PartnerId)
-            .ToDictionary(g => g.Key, g => g.First().Message);
+                if (unreadCounts.TryGetValue(kvp.Key, out var existing))
+                {
+                    unreadCounts[kvp.Key] = existing + kvp.Value;
+                }
+                else
+                {
+                    unreadCounts[kvp.Key] = kvp.Value;
+                }
+            }
+        }
 
-        var summaries = new List<ConversationSummaryDto>(employees.Count);
+        // 3. Fetch latest messages for each partner
+        var allRelevantMessages = await _context.ChatMessages
+            .AsNoTracking()
+            .Include(m => m.Attachments)
+            .Where(m => (m.SenderId == userId && m.RecipientId != null && partnerIdsSet.Contains(m.RecipientId.Value)) ||
+                        (m.RecipientId == userId && m.SenderId != null && partnerIdsSet.Contains(m.SenderId.Value)) ||
+                        (isAccountant && m.RecipientId == null && m.SenderId != null && partnerIdsSet.Contains(m.SenderId.Value)))
+            .OrderByDescending(m => m.SentAt)
+            .ToListAsync();
+
+        var latestMessagesByPartner = allRelevantMessages
+            .GroupBy(m => (m.SenderId == userId) ? (m.RecipientId ?? Guid.Empty) : (m.SenderId ?? Guid.Empty))
+            .Where(g => g.Key != Guid.Empty && partnerUsers.ContainsKey(g.Key))
+            .ToDictionary(g => g.Key, g => g.First());
+
+        var summaries = new List<ConversationSummaryDto>(partnerUsers.Count);
         int totalUnread = 0;
 
-        foreach (var emp in employees)
+        foreach (var (partnerId, partner) in partnerUsers)
         {
-            ChatMessage? lastMsg = null;
-            latestMessagesByEmployee.TryGetValue(emp.Id, out lastMsg);
-            unreadCounts.TryGetValue(emp.Id, out var unreadCount);
-
+            latestMessagesByPartner.TryGetValue(partnerId, out var lastMsg);
+            unreadCounts.TryGetValue(partnerId, out var unreadCount);
             totalUnread += unreadCount;
 
             string? attType = lastMsg?.Attachments?.FirstOrDefault()?.FileType;
-
-            string previewText = "New conversation";
+            string previewText = "محادثة جديدة";
             if (lastMsg != null)
             {
                 var msgType = lastMsg.MessageType ?? "";
@@ -972,11 +1023,11 @@ public class ChatController : ControllerBase
                     msgType.Equals("LIVELOCATION", StringComparison.OrdinalIgnoreCase) || 
                     lastMsg.LiveSessionId.HasValue)
                 {
-                    previewText = "📍 Live Location";
+                    previewText = "📍 موقع مباشر";
                 }
                 else if (msgType.Equals("LOCATION", StringComparison.OrdinalIgnoreCase))
                 {
-                    previewText = "📍 Location";
+                    previewText = "📍 موقع جغرافي";
                 }
                 else if (!string.IsNullOrEmpty(lastMsg.MessageText))
                 {
@@ -984,18 +1035,18 @@ public class ChatController : ControllerBase
                 }
                 else if (lastMsg.HasAttachment)
                 {
-                    previewText = "[Attachment]";
+                    previewText = "[مرفق]";
                 }
             }
 
             summaries.Add(new ConversationSummaryDto
             {
-                EmployeeId = emp.Id,
-                FullName = emp.FullName,
-                Username = emp.Username,
-                Role = emp.Role,
-                Email = emp.Email,
-                PhoneNumber = emp.PhoneNumber,
+                EmployeeId = partner.Id,
+                FullName = partner.FullName,
+                Username = partner.Username,
+                Role = partner.Role,
+                Email = partner.Email,
+                PhoneNumber = partner.PhoneNumber,
                 LastMessageText = previewText,
                 LastMessageTime = lastMsg?.SentAt,
                 UnreadCount = unreadCount,
@@ -1010,39 +1061,53 @@ public class ChatController : ControllerBase
             .ThenBy(c => c.FullName)
             .ToList();
 
-        var result = new ConversationsListResponseDto
+        return Ok(ApiResponse<ConversationsListResponseDto>.Ok(new ConversationsListResponseDto
         {
             TotalUnread = totalUnread,
             Conversations = sorted
-        };
-
-        return Ok(ApiResponse<ConversationsListResponseDto>.Ok(result));
+        }));
     }
 
     /// <summary>
-    /// Retrieve messages for a specific employee thread and mark unread messages as read (Accountant & CEO only).
+    /// Retrieve messages for a specific partner conversation and mark unread messages as read.
+    /// Strictly authorized: returns only the messages exchanged between authenticated user and the partner.
     /// </summary>
-    [HttpGet("conversations/{employeeId}")]
-    [Authorize(Roles = "Accountant,CEO")]
+    [HttpGet("conversations/{employeeId:guid}")]
     [ProducesResponseType(typeof(ApiResponse<ConversationDetailResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetConversationMessages(Guid employeeId)
     {
-        var employee = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == employeeId);
-        if (employee == null)
+        var (userId, _, _, _, isAccountant) = GetCurrentUser();
+        if (userId == Guid.Empty)
         {
-            return NotFound(ApiResponse.Fail("Employee not found."));
+            return Unauthorized(ApiResponse.Fail("Invalid user token."));
         }
 
-        // Fast atomic update for unread messages without entity tracking overhead
-        await _context.ChatMessages
-            .Where(m => m.SenderId == employeeId && !m.IsFromAccountant && !m.IsReadByAccountant)
-            .ExecuteUpdateAsync(s => s.SetProperty(m => m.IsReadByAccountant, true));
+        var partner = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == employeeId);
+        if (partner == null)
+        {
+            return NotFound(ApiResponse.Fail("User not found."));
+        }
 
+        // Fast atomic update: Mark messages sent by partner to current user as read
+        await _context.ChatMessages
+            .Where(m => m.SenderId == employeeId && m.RecipientId == userId && !m.IsReadByUser)
+            .ExecuteUpdateAsync(s => s.SetProperty(m => m.IsReadByUser, true));
+
+        if (isAccountant)
+        {
+            await _context.ChatMessages
+                .Where(m => m.SenderId == employeeId && !m.IsFromAccountant && !m.IsReadByAccountant)
+                .ExecuteUpdateAsync(s => s.SetProperty(m => m.IsReadByAccountant, true));
+        }
+
+        // Strictly fetch messages between current user and partner (plus legacy accounting messages if accountant)
         var rawMessages = await _context.ChatMessages
             .AsNoTracking()
             .Include(m => m.Attachments)
-            .Where(m => m.SenderId == employeeId || m.RecipientId == employeeId)
+            .Where(m => (m.SenderId == userId && m.RecipientId == employeeId) ||
+                        (m.SenderId == employeeId && m.RecipientId == userId) ||
+                        (isAccountant && m.SenderId == employeeId && m.RecipientId == null))
             .OrderBy(m => m.SentAt)
             .ToListAsync();
 
@@ -1087,13 +1152,13 @@ public class ChatController : ControllerBase
         {
             Employee = new UserDto
             {
-                Id = employee.Id,
-                FullName = employee.FullName,
-                Username = employee.Username,
-                Role = employee.Role,
-                Email = employee.Email,
-                PhoneNumber = employee.PhoneNumber,
-                CreatedAt = employee.CreatedAt
+                Id = partner.Id,
+                FullName = partner.FullName,
+                Username = partner.Username,
+                Role = partner.Role,
+                Email = partner.Email,
+                PhoneNumber = partner.PhoneNumber,
+                CreatedAt = partner.CreatedAt
             },
             Messages = dtos
         };
@@ -1172,6 +1237,10 @@ public class ChatController : ControllerBase
     public async Task<IActionResult> PollChatUpdates([FromQuery] Guid? activeEmployeeId, [FromQuery] string? after)
     {
         var (userId, _, _, _, isAccountant) = GetCurrentUser();
+        if (userId == Guid.Empty)
+        {
+            return Unauthorized(ApiResponse.Fail("Invalid user token."));
+        }
 
         DateTime since = DateTime.UtcNow.AddSeconds(-8);
         if (!string.IsNullOrEmpty(after) && DateTime.TryParse(after, null, System.Globalization.DateTimeStyles.RoundtripKind, out var parsed))
@@ -1179,103 +1248,52 @@ public class ChatController : ControllerBase
             since = parsed.ToUniversalTime();
         }
 
-        if (isAccountant)
+        var newMessagesRaw = await _context.ChatMessages
+            .AsNoTracking()
+            .Include(m => m.Attachments)
+            .Where(m => (m.RecipientId == userId || m.SenderId == userId || (isAccountant && m.RecipientId == null)) && m.SentAt > since)
+            .OrderBy(m => m.SentAt)
+            .ToListAsync();
+
+        if (activeEmployeeId.HasValue && activeEmployeeId.Value != Guid.Empty)
         {
-            var newBroadcastsRaw = await _context.ChatMessages
-                .AsNoTracking()
-                .Include(m => m.Attachments)
-                .Where(m => !m.IsFromAccountant && m.SentAt > since)
-                .OrderBy(m => m.SentAt)
-                .ToListAsync();
-
-            var activeMessagesRaw = new List<ChatMessage>();
-            if (activeEmployeeId.HasValue)
-            {
-                activeMessagesRaw = await _context.ChatMessages
-                    .AsNoTracking()
-                    .Include(m => m.Attachments)
-                    .Where(m => (m.SenderId == activeEmployeeId.Value || m.RecipientId == activeEmployeeId.Value) && m.SentAt > since)
-                    .OrderBy(m => m.SentAt)
-                    .ToListAsync();
-
-                await _context.ChatMessages
-                    .Where(m => m.SenderId == activeEmployeeId.Value && !m.IsFromAccountant && !m.IsReadByAccountant)
-                    .ExecuteUpdateAsync(s => s.SetProperty(m => m.IsReadByAccountant, true));
-            }
-
-            var pollMsgIds = newBroadcastsRaw.Concat(activeMessagesRaw)
-                .Where(m => m.LiveSessionId.HasValue)
-                .Select(m => m.LiveSessionId!.Value)
-                .Distinct()
-                .ToList();
-
-            var pollLiveSessions = pollMsgIds.Any()
-                ? await _context.LiveLocationSessions
-                    .AsNoTracking()
-                    .Where(s => pollMsgIds.Contains(s.Id))
-                    .ToDictionaryAsync(s => s.Id)
-                : new Dictionary<Guid, LiveLocationSession>();
-
-            var newBroadcasts = newBroadcastsRaw.Select(m => 
-                MapToDto(m, m.Attachments.FirstOrDefault(), m.LiveSessionId.HasValue && pollLiveSessions.TryGetValue(m.LiveSessionId.Value, out var s) ? s : null)
-            ).ToList();
-
-            var activeMessages = activeMessagesRaw.Select(m => 
-                MapToDto(m, m.Attachments.FirstOrDefault(), m.LiveSessionId.HasValue && pollLiveSessions.TryGetValue(m.LiveSessionId.Value, out var s) ? s : null)
-            ).ToList();
-
-            var totalUnread = await _context.ChatMessages
-                .AsNoTracking()
-                .CountAsync(m => !m.IsFromAccountant && !m.IsReadByAccountant);
-
-            var result = new PollChatResponseDto
-            {
-                IsAccountant = true,
-                ServerTime = DateTime.UtcNow.ToString("o"),
-                TotalUnread = totalUnread,
-                NewBroadcasts = newBroadcasts,
-                ActiveMessages = activeMessages
-            };
-
-            return Ok(ApiResponse<PollChatResponseDto>.Ok(result));
-        }
-        else
-        {
-            var newMessagesRaw = await _context.ChatMessages
-                .AsNoTracking()
-                .Include(m => m.Attachments)
-                .Where(m => (m.RecipientId == userId || m.SenderId == userId) && m.SentAt > since)
-                .OrderBy(m => m.SentAt)
-                .ToListAsync();
-
             await _context.ChatMessages
-                .Where(m => m.RecipientId == userId && m.IsFromAccountant && !m.IsReadByUser)
+                .Where(m => m.SenderId == activeEmployeeId.Value && m.RecipientId == userId && !m.IsReadByUser)
                 .ExecuteUpdateAsync(s => s.SetProperty(m => m.IsReadByUser, true));
-
-            var pollMsgIds = newMessagesRaw
-                .Where(m => m.LiveSessionId.HasValue)
-                .Select(m => m.LiveSessionId!.Value)
-                .Distinct()
-                .ToList();
-
-            var pollLiveSessions = pollMsgIds.Any()
-                ? await _context.LiveLocationSessions
-                    .AsNoTracking()
-                    .Where(s => pollMsgIds.Contains(s.Id))
-                    .ToDictionaryAsync(s => s.Id)
-                : new Dictionary<Guid, LiveLocationSession>();
-
-            var result = new PollChatResponseDto
-            {
-                IsAccountant = false,
-                ServerTime = DateTime.UtcNow.ToString("o"),
-                NewMessages = newMessagesRaw.Select(m => 
-                    MapToDto(m, m.Attachments.FirstOrDefault(), m.LiveSessionId.HasValue && pollLiveSessions.TryGetValue(m.LiveSessionId.Value, out var s) ? s : null)
-                ).ToList()
-            };
-
-            return Ok(ApiResponse<PollChatResponseDto>.Ok(result));
         }
+
+        var pollMsgIds = newMessagesRaw
+            .Where(m => m.LiveSessionId.HasValue)
+            .Select(m => m.LiveSessionId!.Value)
+            .Distinct()
+            .ToList();
+
+        var pollLiveSessions = pollMsgIds.Any()
+            ? await _context.LiveLocationSessions
+                .AsNoTracking()
+                .Where(s => pollMsgIds.Contains(s.Id))
+                .ToDictionaryAsync(s => s.Id)
+            : new Dictionary<Guid, LiveLocationSession>();
+
+        var totalUnread = await _context.ChatMessages
+            .AsNoTracking()
+            .CountAsync(m => m.RecipientId == userId && !m.IsReadByUser);
+
+        var dtos = newMessagesRaw.Select(m => 
+            MapToDto(m, m.Attachments.FirstOrDefault(), m.LiveSessionId.HasValue && pollLiveSessions.TryGetValue(m.LiveSessionId.Value, out var s) ? s : null)
+        ).ToList();
+
+        var result = new PollChatResponseDto
+        {
+            IsAccountant = isAccountant,
+            ServerTime = DateTime.UtcNow.ToString("o"),
+            TotalUnread = totalUnread,
+            NewMessages = dtos,
+            ActiveMessages = dtos,
+            NewBroadcasts = dtos
+        };
+
+        return Ok(ApiResponse<PollChatResponseDto>.Ok(result));
     }
 
     /// <summary>
@@ -1303,12 +1321,10 @@ public class ChatController : ControllerBase
             return NotFound(ApiResponse.Fail("Attachment was not found."));
         }
 
-        // Strict Authorization:
-        // Accountants and CEOs can view all attachments.
-        // Employees can only view attachments for messages they sent or received.
-        bool isAuthorized = isAccountant || 
-                            attachment.Message.SenderId == userId || 
-                            attachment.Message.RecipientId == userId;
+        // Strict Authorization: Only conversation participants can view attachments (plus accountants for legacy accounting desk messages)
+        bool isAuthorized = attachment.Message.SenderId == userId || 
+                            attachment.Message.RecipientId == userId ||
+                            (isAccountant && (attachment.Message.IsFromAccountant || attachment.Message.RecipientId == null));
 
         if (!isAuthorized)
         {
@@ -1352,9 +1368,9 @@ public class ChatController : ControllerBase
             return NotFound(ApiResponse.Fail("Attachment was not found."));
         }
 
-        bool isAuthorized = isAccountant || 
-                            attachment.Message.SenderId == userId || 
-                            attachment.Message.RecipientId == userId;
+        bool isAuthorized = attachment.Message.SenderId == userId || 
+                            attachment.Message.RecipientId == userId ||
+                            (isAccountant && (attachment.Message.IsFromAccountant || attachment.Message.RecipientId == null));
 
         if (!isAuthorized)
         {

@@ -1,60 +1,27 @@
 /**
- * FaceStone Transportation Department Management - Arabic RTL Localization
- * Handles Transaction Entry, Auto Weight Calculations, Validation, and API Persistence.
+ * FaceStone Transportation Department Management - 4-Section Ordered Workflow
+ * Strictly adheres to FaceStone business requirements:
+ * 1. الميزان (Internal & External Weighbridge, Departure/Arrival times entered ONLY here, Shipping Time calculation box, mandatory Attachment)
+ * 2. يومية التوريد (Sequential Transaction Number per PO, Shipment Date, read-only weights from Section 1, Driver Phone, read-only Departure & Arrival times, Source, PO, mandatory Attachment)
+ * 3. بوليصة الشحن (Company, Destination, Shipping Date, Quantity = Net Weight, Material Type powder/slurry, Supervisors, Plate, Driver, Recipient Name & Title, Delivery Status Checklist, Receiving Date, read-only Shipping Time, mandatory Attachment)
+ * 4. اكرامية / ملاحظات (Decimal Ikramiya, Notes, Submit & Clear)
  * 
- * NOTE: Functional logic, formulas, API endpoints, DTO models, and stored database 
- * values remain completely preserved. Only visible UI text and direction are localized to Arabic.
+ * NOTE: Total Quantity and Remaining Quantity are NEVER displayed on this page.
  */
-
 (function () {
   'use strict';
-
-  // Localization Dictionary for Dropdown Display Text
-  const ARABIC_LABELS = {
-    // Material Types
-    'Ready-Mix Concrete (C25/30)': 'خرسانة جاهزة (C25/30)',
-    'Reinforced Concrete Mix (C35/45)': 'خرسانة مسلحة عالية المقاومة (C35/45)',
-    'High-Performance Concrete (HPC)': 'خرسانة فائقة الأداء (HPC)',
-    'Portland Cement (CEM I 42.5N)': 'أسمنت بورتلاندي عادي (CEM I 42.5N)',
-    'Aggregate & Gravel (Coarse 20mm)': 'سن / ركام خشن (20 مم)',
-    'Fine Sand (Silica / Concrete Sand)': 'رمل ناعم (رمل سيليكا / خرسانة)',
-    'Fly Ash / Silica Fume Slurry': 'خبث أفران / بودرة سيليكا',
-    'Precast Concrete Elements': 'عناصر خرسانية مسبقة الصب',
-
-    // Destinations
-    'Factory Sector A - Batching Plant 1': 'قطاع المصنع أ - محطة الخلط 1',
-    'Factory Sector B - Precast Yard': 'قطاع المصنع ب - ساحة مسبق الصب',
-    'Factory Sector C - Silos & Aggregate Storage': 'قطاع المصنع ج - صوامع وتخزين الركام',
-    'New Cairo Construction Site - Zone 4': 'موقع القاهرة الجديدة - المنطقة 4',
-    'New Administrative Capital - Tower Site A': 'العاصمة الإدارية الجديدة - موقع الأبراج أ',
-    '6th of October Industrial Complex': 'مجمع 6 أكتوبر الصناعي',
-    'Ain Sokhna Port Logistics Hub': 'ميناء العين السخنة - المركز اللوجستي',
-
-    // Transaction Statuses
-    'Pending': 'قيد الانتظار',
-    'In Transit': 'في الطريق / جاري النقل',
-    'Entered Factory': 'دخلت المصنع',
-    'Under Inspection': 'قيد الفحص والميزان',
-    'Completed': 'مكتملة / تم التفريغ',
-    'Cancelled': 'ملغاة',
-
-    // Receiving Statuses
-    'Approved / Accepted': 'مقبول / معتمد',
-    'Partially Accepted': 'قبول جزئي',
-    'Rejected': 'مرفوض',
-    'Under Quality Test': 'قيد اختبارات الجودة'
-  };
-
-  function getArabicText(str) {
-    if (!str) return '';
-    return ARABIC_LABELS[str] || str;
-  }
 
   class TransportationManager {
     constructor() {
       this.isSubmitting = false;
-      this.initialized = false;
       this.config = null;
+      this.currentPo = null;
+
+      // Section file attachments
+      this.wbAttachmentFile = null;
+      this.dsAttachmentFile = null;
+      this.bolAttachmentFile = null;
+
       this.init();
     }
 
@@ -70,39 +37,145 @@
       this.pageRoot = document.getElementById('transportation-page-root');
       if (!this.pageRoot) return;
 
-      // Header Elements
+      // Steps
+      this.stepPoEntry = document.getElementById('trans-step-po-entry');
+      this.stepForm = document.getElementById('trans-step-form');
+      this.stepSuccess = document.getElementById('trans-step-success');
+
+      // User pill & Nav
       this.btnBackToDepts = document.getElementById('trans-back-to-departments-btn');
       this.userNameEl = document.getElementById('trans-user-name');
       this.userRoleEl = document.getElementById('trans-user-role');
       this.userAvatarEl = document.getElementById('trans-user-avatar');
 
-      // Form Elements
+      // Step 1: PO Entry
+      this.poLookupForm = document.getElementById('trans-po-lookup-form');
+      this.poEntryInput = document.getElementById('trans-po-entry-input');
+      this.poContinueBtn = document.getElementById('trans-po-continue-btn');
+      this.poSpinner = document.getElementById('trans-po-spinner');
+      this.poContinueText = document.getElementById('trans-po-continue-text');
+      this.poErrorAlert = document.getElementById('trans-po-error-alert');
+      this.poErrorTitle = document.getElementById('trans-po-error-title');
+      this.poErrorDesc = document.getElementById('trans-po-error-desc');
+      this.poErrorClose = document.getElementById('trans-po-error-close');
+
+      // Step 2: Form Header & Summary Bar
+      this.btnChangePo = document.getElementById('trans-btn-change-po');
+      this.verifiedPoBadge = document.getElementById('trans-verified-po-badge');
+      this.summaryPo = document.getElementById('trans-summary-po');
+      this.summarySupplier = document.getElementById('trans-summary-supplier');
+      this.summaryDestination = document.getElementById('trans-summary-destination');
+      this.summarySource = document.getElementById('trans-summary-source');
+
+      // Form Container & Alert
       this.form = document.getElementById('trans-entry-form');
-      this.txNumberInput = document.getElementById('trans-number-input');
+      this.alertBanner = document.getElementById('trans-form-alert');
+      this.alertIcon = document.getElementById('trans-alert-icon');
+      this.alertTitle = document.getElementById('trans-alert-title');
+      this.alertDesc = document.getElementById('trans-alert-desc');
+      this.alertCloseBtn = document.getElementById('trans-alert-close');
+
+      // ==============================================================
+      // 1. SECTION 1: الميزان
+      // ==============================================================
+      // 1.1 Internal Weighbridge
+      this.wbInternalCodeInput = document.getElementById('trans-wb-internal-code');
+      this.wbIntLoaded = document.getElementById('trans-wb-int-loaded');
+      this.wbIntEmpty = document.getElementById('trans-wb-int-empty');
+      this.wbIntNet = document.getElementById('trans-wb-int-net');
+      this.wbIntEmptyTime = document.getElementById('trans-wb-int-empty-time');
+      this.wbIntLoadedTime = document.getElementById('trans-wb-int-loaded-time');
+
+      // 1.2 External Weighbridge
+      this.wbExternalCodeInput = document.getElementById('trans-wb-external-code');
+      this.wbExtLoaded = document.getElementById('trans-wb-ext-loaded');
+      this.wbExtEmpty = document.getElementById('trans-wb-ext-empty');
+      this.wbExtNet = document.getElementById('trans-wb-ext-net');
+      this.wbExtEmptyTime = document.getElementById('trans-wb-ext-empty-time');
+      this.wbExtLoadedTime = document.getElementById('trans-wb-ext-loaded-time');
+
+      // Movement & Shipment Dates (Derived automatically from Weighbridge Timestamps)
       this.txDateInput = document.getElementById('trans-date-input');
-      this.poInput = document.getElementById('trans-po-input');
-      this.statusSelect = document.getElementById('trans-status-select');
+      this.departureDisplay = document.getElementById('trans-departure-display');
+      this.arrivalDisplay = document.getElementById('trans-arrival-display');
 
-      this.carInput = document.getElementById('trans-car-input');
-      this.driverInput = document.getElementById('trans-driver-input');
-      this.sourceInput = document.getElementById('trans-source-input');
-      this.destinationSelect = document.getElementById('trans-destination-select');
+      // Shipping Time Box
+      this.shippingTimeDisplay = document.getElementById('trans-shipping-time-display');
+      this.shippingTimeError = document.getElementById('trans-shipping-time-error');
 
-      this.materialSelect = document.getElementById('trans-material-select');
-      this.weightBeforeInput = document.getElementById('trans-weight-before-input');
-      this.weightEnterInput = document.getElementById('trans-weight-enter-input');
-      this.weightExitInput = document.getElementById('trans-weight-exit-input');
+      // Section 1 Attachment: Weighbridge
+      this.wbAttachmentInput = document.getElementById('trans-wb-attachment-input');
+      this.wbDropzone = document.getElementById('trans-wb-dropzone');
+      this.wbPlaceholder = document.getElementById('trans-wb-placeholder');
+      this.wbFilePreview = document.getElementById('trans-wb-file-preview');
+      this.wbFileName = document.getElementById('trans-wb-file-name');
+      this.wbFileSize = document.getElementById('trans-wb-file-size');
+      this.wbRemoveBtn = document.getElementById('trans-wb-remove-btn');
+      this.wbAttachmentError = document.getElementById('trans-wb-attachment-error');
 
-      this.expectedWeightDisplay = document.getElementById('trans-expected-weight-display');
+      // ==============================================================
+      // 2. SECTION 2: يومية التوريد
+      // ==============================================================
+      this.txNumberInput = document.getElementById('trans-number-input');
+      this.dailyShipDateDisplay = document.getElementById('trans-daily-ship-date-display');
+      this.internalNetDisplay = document.getElementById('trans-internal-net-display');
+      this.externalNetDisplay = document.getElementById('trans-external-net-display');
       this.netWeightDisplay = document.getElementById('trans-net-weight-display');
-      this.weightWarningEl = document.getElementById('trans-weight-warning');
-      this.weightWarningText = document.getElementById('trans-weight-warning-text');
+      this.wasteDisplay = document.getElementById('trans-waste-display');
+      this.driverPhoneInput = document.getElementById('trans-driver-phone-input');
+      this.dailyDepartureDisplay = document.getElementById('trans-daily-departure-display');
+      this.dailyArrivalDisplay = document.getElementById('trans-daily-arrival-display');
+      this.sourceDisplay = document.getElementById('trans-source-display');
+      this.dailyPoDisplay = document.getElementById('trans-daily-po-display');
 
-      this.receivingStatusSelect = document.getElementById('trans-receiving-status-select');
+      // Section 2 Attachment: Daily Supply
+      this.dsAttachmentInput = document.getElementById('trans-ds-attachment-input');
+      this.dsDropzone = document.getElementById('trans-ds-dropzone');
+      this.dsPlaceholder = document.getElementById('trans-ds-placeholder');
+      this.dsFilePreview = document.getElementById('trans-ds-file-preview');
+      this.dsFileName = document.getElementById('trans-ds-file-name');
+      this.dsFileSize = document.getElementById('trans-ds-file-size');
+      this.dsRemoveBtn = document.getElementById('trans-ds-remove-btn');
+      this.dsAttachmentError = document.getElementById('trans-ds-attachment-error');
+
+      // ==============================================================
+      // 3. SECTION 3: بوليصة الشحن
+      // ==============================================================
+      this.companyInput = document.getElementById('trans-company-input');
+      this.destinationInput = document.getElementById('trans-destination-input');
+      this.shipDateDisplay = document.getElementById('trans-ship-date-display');
+      this.quantityDisplay = document.getElementById('trans-quantity-display');
+      this.materialSelect = document.getElementById('trans-material-select');
+      this.shipSupSelect = document.getElementById('trans-ship-sup-select');
+      this.deptSupSelect = document.getElementById('trans-dept-sup-select');
+      this.carInput = document.getElementById('trans-car-input');
+      this.driverSelect = document.getElementById('trans-driver-select');
+      this.recNameInput = document.getElementById('trans-rec-name-input');
+      this.recTitleSelect = document.getElementById('trans-rec-title-select');
+      this.statusSafeCheckbox = document.getElementById('trans-status-safe');
+      this.statusIntactCheckbox = document.getElementById('trans-status-intact');
+      this.recStatusError = document.getElementById('trans-rec-status-error');
+      this.recDateInput = document.getElementById('trans-rec-date-input');
+      this.bolShippingTimeDisplay = document.getElementById('trans-bol-shipping-time-display');
+
+      // Section 3 Attachment: Bill of Lading
+      this.bolAttachmentInput = document.getElementById('trans-bol-attachment-input');
+      this.bolDropzone = document.getElementById('trans-bol-dropzone');
+      this.bolPlaceholder = document.getElementById('trans-bol-placeholder');
+      this.bolFilePreview = document.getElementById('trans-bol-file-preview');
+      this.bolFileName = document.getElementById('trans-bol-file-name');
+      this.bolFileSize = document.getElementById('trans-bol-file-size');
+      this.bolRemoveBtn = document.getElementById('trans-bol-remove-btn');
+      this.bolAttachmentError = document.getElementById('trans-bol-attachment-error');
+
+      // ==============================================================
+      // 4. SECTION 4: اكرامية / ملاحظات
+      // ==============================================================
+      this.custodyInput = document.getElementById('trans-custody-input');
+      this.ikramiyaInput = document.getElementById('trans-ikramiya-input');
       this.notesInput = document.getElementById('trans-notes-input');
-      this.submissionDateDisplay = document.getElementById('trans-submission-date-display');
 
-      // Buttons
+      // Actions
       this.submitBtn = document.getElementById('trans-submit-btn');
       this.submitIcon = document.getElementById('trans-submit-icon');
       this.submitSpinner = document.getElementById('trans-submit-spinner');
@@ -110,666 +183,1021 @@
       this.clearBtn = document.getElementById('trans-clear-btn');
       this.refreshBtn = document.getElementById('trans-refresh-btn');
 
-      // Alert Banner
-      this.alertBanner = document.getElementById('trans-form-alert');
-      this.alertIcon = document.getElementById('trans-alert-icon');
-      this.alertTitle = document.getElementById('trans-alert-title');
-      this.alertDesc = document.getElementById('trans-alert-desc');
-      this.alertCloseBtn = document.getElementById('trans-alert-close');
-
       // Confirmation Modal
       this.confirmModal = document.getElementById('trans-confirm-modal');
       this.confirmCancelBtn = document.getElementById('trans-confirm-cancel-btn');
       this.confirmProceedBtn = document.getElementById('trans-confirm-proceed-btn');
 
-      // Table Body
+      // Success Step Elements
+      this.successTxNumber = document.getElementById('trans-success-tx-number');
+      this.successPoNumber = document.getElementById('trans-success-po-number');
+      this.successCompany = document.getElementById('trans-success-company');
+      this.successDestination = document.getElementById('trans-success-destination');
+      this.successMaterial = document.getElementById('trans-success-material');
+      this.successIntWeight = document.getElementById('trans-success-int-weight');
+      this.successExtWeight = document.getElementById('trans-success-ext-weight');
+      this.successNetWeight = document.getElementById('trans-success-net-weight');
+      this.successWaste = document.getElementById('trans-success-waste');
+      this.successShippingTime = document.getElementById('trans-success-shipping-time');
+      this.btnNewPo = document.getElementById('trans-btn-new-po');
+      this.btnViewRecentFromSuccess = document.getElementById('trans-btn-view-recent-from-success');
+
+      // Recent Transactions Table
       this.recentTableBody = document.getElementById('trans-recent-tbody');
 
-      this.attachEventListeners();
-      this.setDefaultDateTime();
-      this.startLiveClock();
+      this.bindEvents();
+      this.setupAttachmentHandlers();
       this.loadConfig();
-      this.loadRecentTransactions();
-      this.initialized = true;
     }
 
-    attachEventListeners() {
-      // Back to departments
+    bindEvents() {
+      // Step 1: PO Lookup
+      this.poLookupForm?.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.handlePoLookup();
+      });
+
+      this.poErrorClose?.addEventListener('click', () => {
+        if (this.poErrorAlert) this.poErrorAlert.style.display = 'none';
+      });
+
+      // Quick PO Chips
+      document.querySelectorAll('.trans-po-chip').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const po = btn.getAttribute('data-po');
+          if (this.poEntryInput && po) {
+            this.poEntryInput.value = po;
+            this.handlePoLookup();
+          }
+        });
+      });
+
+      // Change PO button
+      this.btnChangePo?.addEventListener('click', () => {
+        this.showPoEntryStep();
+      });
+
+      // Navigation back to departments
       this.btnBackToDepts?.addEventListener('click', () => {
-        if (window.ChatApp && typeof window.ChatApp.showDepartmentSelectionView === 'function') {
-          window.ChatApp.showDepartmentSelectionView();
-        } else {
-          window.location.href = '/departments';
+        if (window.ChatApp?.showView) {
+          window.ChatApp.showView('departments');
         }
       });
 
-      // Weight inputs change & input events for real-time calculations
-      const weightInputs = [this.weightBeforeInput, this.weightEnterInput, this.weightExitInput];
-      weightInputs.forEach(input => {
-        if (!input) return;
-        input.addEventListener('input', () => {
-          this.recalculateWeights();
-          this.clearFieldError(input);
-        });
-        input.addEventListener('change', () => {
-          this.recalculateWeights();
-        });
+      // Weight inputs in Section 1 (ONLY location for weight input)
+      [this.wbIntLoaded, this.wbIntEmpty, this.wbExtLoaded, this.wbExtEmpty].forEach(input => {
+        input?.addEventListener('input', () => this.recalculateAllWeights());
       });
 
-      // Clear field errors on user interaction
-      const allInputs = [
-        this.txNumberInput, this.txDateInput, this.poInput, this.statusSelect,
-        this.carInput, this.driverInput, this.sourceInput, this.destinationSelect,
-        this.materialSelect, this.receivingStatusSelect, this.notesInput
-      ];
-
-      allInputs.forEach(el => {
-        if (!el) return;
-        el.addEventListener('input', () => this.clearFieldError(el));
-        el.addEventListener('change', () => this.clearFieldError(el));
+      // Movement & Shipment Dates: Populating Sections 2 & 3
+      this.txDateInput?.addEventListener('input', () => {
+        const val = this.formatDateTimeDisplay(this.txDateInput.value);
+        if (this.dailyShipDateDisplay) this.dailyShipDateDisplay.value = val;
+        if (this.shipDateDisplay) this.shipDateDisplay.value = val;
       });
 
-      // Form submit
+      // Weighbridge Timestamps auto-deriving Departure, Arrival, and Shipping Time
+      const onIntLoadedChange = () => {
+        const val = this.formatDateTimeDisplay(this.wbIntLoadedTime.value);
+        if (this.departureDisplay) this.departureDisplay.value = val;
+        if (this.dailyDepartureDisplay) this.dailyDepartureDisplay.value = val;
+        this.recalculateShippingTime();
+      };
+      this.wbIntLoadedTime?.addEventListener('input', onIntLoadedChange);
+      this.wbIntLoadedTime?.addEventListener('change', onIntLoadedChange);
+
+      const onExtLoadedChange = () => {
+        const val = this.formatDateTimeDisplay(this.wbExtLoadedTime.value);
+        if (this.arrivalDisplay) this.arrivalDisplay.value = val;
+        if (this.dailyArrivalDisplay) this.dailyArrivalDisplay.value = val;
+        this.recalculateShippingTime();
+      };
+      this.wbExtLoadedTime?.addEventListener('input', onExtLoadedChange);
+      this.wbExtLoadedTime?.addEventListener('change', onExtLoadedChange);
+
+      // Form Submission
       this.form?.addEventListener('submit', (e) => {
         e.preventDefault();
-        this.handleSubmit();
+        this.handleFormSubmit();
       });
 
-      // Clear button
+      // Form Clear
       this.clearBtn?.addEventListener('click', () => {
-        if (this.hasFormData()) {
-          this.showClearConfirmation();
+        if (this.confirmModal) {
+          this.confirmModal.style.display = 'flex';
         } else {
-          this.resetForm();
+          this.resetFormKeepPo();
         }
       });
-
-      // Confirmation modal
       this.confirmCancelBtn?.addEventListener('click', () => {
-        this.hideClearConfirmation();
+        if (this.confirmModal) this.confirmModal.style.display = 'none';
       });
-
       this.confirmProceedBtn?.addEventListener('click', () => {
-        this.hideClearConfirmation();
-        this.resetForm();
+        if (this.confirmModal) this.confirmModal.style.display = 'none';
+        this.resetFormKeepPo();
       });
 
-      // Alert close button
+      // Alert close
       this.alertCloseBtn?.addEventListener('click', () => {
         this.hideAlert();
       });
 
-      // Refresh recent transactions
+      // Refresh recent table
       this.refreshBtn?.addEventListener('click', () => {
         this.loadRecentTransactions();
       });
-    }
 
-    /**
-     * Automatic Weight Calculations:
-     * Expected Weight = Weight Before Loading - Weight When Exiting Factory
-     * Net Weight = Weight When Entering Factory - Weight When Exiting Factory
-     */
-    recalculateWeights() {
-      const beforeStr = this.weightBeforeInput?.value?.trim() || '';
-      const enterStr = this.weightEnterInput?.value?.trim() || '';
-      const exitStr = this.weightExitInput?.value?.trim() || '';
-
-      const beforeVal = parseFloat(beforeStr);
-      const enterVal = parseFloat(enterStr);
-      const exitVal = parseFloat(exitStr);
-
-      const hasBefore = !isNaN(beforeVal) && beforeStr !== '';
-      const hasEnter = !isNaN(enterVal) && enterStr !== '';
-      const hasExit = !isNaN(exitVal) && exitStr !== '';
-
-      let warningMsg = null;
-
-      // 1. Calculate Expected Weight (Before Loading - Exit Factory)
-      if (hasBefore && hasExit) {
-        const expected = beforeVal - exitVal;
-        if (this.expectedWeightDisplay) {
-          this.expectedWeightDisplay.value = expected.toFixed(3);
+      // Success Actions
+      this.btnNewPo?.addEventListener('click', () => {
+        this.showPoEntryStep();
+      });
+      this.btnViewRecentFromSuccess?.addEventListener('click', () => {
+        const recentSec = document.getElementById('trans-recent-section');
+        if (recentSec) {
+          recentSec.scrollIntoView({ behavior: 'smooth' });
         }
-        if (exitVal > beforeVal) {
-          warningMsg = `وزن خروج المصنع (${exitVal.toFixed(3)} طن) لا يمكن أن يتجاوز الوزن قبل التحميل (${beforeVal.toFixed(3)} طن).`;
-        }
-      } else {
-        if (this.expectedWeightDisplay) {
-          this.expectedWeightDisplay.value = '0.000';
-        }
-      }
-
-      // 2. Calculate Net Weight (Enter Factory - Exit Factory)
-      if (hasEnter && hasExit) {
-        const net = enterVal - exitVal;
-        if (this.netWeightDisplay) {
-          this.netWeightDisplay.value = net.toFixed(3);
-        }
-        if (exitVal > enterVal) {
-          warningMsg = `وزن خروج المصنع (${exitVal.toFixed(3)} طن) لا يمكن أن يتجاوز وزن دخول المصنع (${enterVal.toFixed(3)} طن).`;
-        }
-      } else {
-        if (this.netWeightDisplay) {
-          this.netWeightDisplay.value = '0.000';
-        }
-      }
-
-      // 3. Display or hide weight logic warning
-      if (warningMsg) {
-        this.showWeightWarning(warningMsg);
-      } else {
-        this.hideWeightWarning();
-      }
-    }
-
-    showWeightWarning(msg) {
-      if (this.weightWarningEl && this.weightWarningText) {
-        this.weightWarningText.textContent = msg;
-        this.weightWarningEl.style.display = 'flex';
-      }
-    }
-
-    hideWeightWarning() {
-      if (this.weightWarningEl) {
-        this.weightWarningEl.style.display = 'none';
-      }
-    }
-
-    /**
-     * Set default local date-time in the date picker
-     */
-    setDefaultDateTime() {
-      if (this.txDateInput && !this.txDateInput.value) {
-        const now = new Date();
-        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-        this.txDateInput.value = now.toISOString().slice(0, 16);
-      }
-    }
-
-    startLiveClock() {
-      const updateClock = () => {
-        if (!this.submissionDateDisplay) return;
-        const now = new Date();
-        const dateStr = now.toLocaleDateString('ar-EG', {
-          year: 'numeric', month: 'short', day: 'numeric'
-        });
-        const timeStr = now.toLocaleTimeString('ar-EG', {
-          hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true
-        });
-        this.submissionDateDisplay.value = `${dateStr} - ${timeStr} (توقيت الخادم)`;
-      };
-
-      updateClock();
-      setInterval(updateClock, 1000);
-    }
-
-    /**
-     * Load configurable options from server and populate dropdowns
-     * NOTE: Dropdown values sent to API remain English constants, visible labels are Arabic.
-     */
-    async loadConfig() {
-      try {
-        const res = await ChatApi.getTransportationConfig();
-        if (res.success && res.data) {
-          this.config = res.data;
-          this.populateSelect(this.materialSelect, res.data.materialTypes, '-- اختر نوع الخامة --');
-          this.populateSelect(this.destinationSelect, res.data.destinations, '-- اختر الوجهة --');
-          this.populateSelect(this.statusSelect, res.data.transactionStatuses, '-- اختر حالة النقلة --');
-          this.populateSelect(this.receivingStatusSelect, res.data.receivingStatuses, '-- اختر حالة الاستلام / الاعتماد --');
-        } else {
-          this.populateFallbackOptions();
-        }
-      } catch (err) {
-        console.warn('Could not load transportation config from API, using defaults:', err);
-        this.populateFallbackOptions();
-      }
-    }
-
-    populateSelect(selectEl, items, placeholderText) {
-      if (!selectEl || !Array.isArray(items)) return;
-      const currentValue = selectEl.value;
-      selectEl.innerHTML = `<option value="" disabled ${!currentValue ? 'selected' : ''}>${placeholderText}</option>`;
-      items.forEach(item => {
-        const opt = document.createElement('option');
-        opt.value = item; // Preserves backend API enum value
-        opt.textContent = getArabicText(item); // Displays Arabic text to user
-        if (currentValue && currentValue === item) {
-          opt.selected = true;
-        }
-        selectEl.appendChild(opt);
       });
     }
 
-    populateFallbackOptions() {
-      const materials = [
-        'Ready-Mix Concrete (C25/30)',
-        'Reinforced Concrete Mix (C35/45)',
-        'High-Performance Concrete (HPC)',
-        'Portland Cement (CEM I 42.5N)',
-        'Aggregate & Gravel (Coarse 20mm)',
-        'Fine Sand (Silica / Concrete Sand)',
-        'Fly Ash / Silica Fume Slurry',
-        'Precast Concrete Elements'
-      ];
-      const destinations = [
-        'Factory Sector A - Batching Plant 1',
-        'Factory Sector B - Precast Yard',
-        'Factory Sector C - Silos & Aggregate Storage',
-        'New Cairo Construction Site - Zone 4',
-        'New Administrative Capital - Tower Site A',
-        '6th of October Industrial Complex',
-        'Ain Sokhna Port Logistics Hub'
-      ];
-      const txStatuses = [
-        'Pending',
-        'In Transit',
-        'Entered Factory',
-        'Under Inspection',
-        'Completed',
-        'Cancelled'
-      ];
-      const recvStatuses = [
-        'Pending',
-        'Approved / Accepted',
-        'Partially Accepted',
-        'Rejected',
-        'Under Quality Test'
-      ];
+    setupAttachmentHandlers() {
+      // 1. Weighbridge Attachment
+      this.setupSingleAttachment(
+        this.wbAttachmentInput,
+        this.wbDropzone,
+        this.wbPlaceholder,
+        this.wbFilePreview,
+        this.wbFileName,
+        this.wbFileSize,
+        this.wbRemoveBtn,
+        this.wbAttachmentError,
+        (file) => { this.wbAttachmentFile = file; }
+      );
 
-      this.populateSelect(this.materialSelect, materials, '-- اختر نوع الخامة --');
-      this.populateSelect(this.destinationSelect, destinations, '-- اختر الوجهة --');
-      this.populateSelect(this.statusSelect, txStatuses, '-- اختر حالة النقلة --');
-      this.populateSelect(this.receivingStatusSelect, recvStatuses, '-- اختر حالة الاستلام / الاعتماد --');
-    }
+      // 2. Daily Supply Attachment
+      this.setupSingleAttachment(
+        this.dsAttachmentInput,
+        this.dsDropzone,
+        this.dsPlaceholder,
+        this.dsFilePreview,
+        this.dsFileName,
+        this.dsFileSize,
+        this.dsRemoveBtn,
+        this.dsAttachmentError,
+        (file) => { this.dsAttachmentFile = file; }
+      );
 
-    /**
-     * Check if form currently has user-entered data
-     */
-    hasFormData() {
-      return !!(
-        this.txNumberInput?.value?.trim() ||
-        this.poInput?.value?.trim() ||
-        this.carInput?.value?.trim() ||
-        this.driverInput?.value?.trim() ||
-        this.sourceInput?.value?.trim() ||
-        this.materialSelect?.value ||
-        this.weightBeforeInput?.value?.trim() ||
-        this.weightEnterInput?.value?.trim() ||
-        this.weightExitInput?.value?.trim() ||
-        this.destinationSelect?.value ||
-        this.statusSelect?.value ||
-        this.receivingStatusSelect?.value ||
-        this.notesInput?.value?.trim()
+      // 3. Bill of Lading Attachment
+      this.setupSingleAttachment(
+        this.bolAttachmentInput,
+        this.bolDropzone,
+        this.bolPlaceholder,
+        this.bolFilePreview,
+        this.bolFileName,
+        this.bolFileSize,
+        this.bolRemoveBtn,
+        this.bolAttachmentError,
+        (file) => { this.bolAttachmentFile = file; }
       );
     }
 
-    showClearConfirmation() {
-      if (this.confirmModal) {
-        this.confirmModal.style.display = 'flex';
+    setupSingleAttachment(inputEl, dropzoneEl, placeholderEl, previewEl, nameEl, sizeEl, removeBtnEl, errorEl, setFileCallback) {
+      if (!inputEl) return;
+
+      const allowedExts = ['.pdf', '.jpg', '.jpeg'];
+      const maxSizeBytes = 25 * 1024 * 1024; // 25 MB
+
+      const handleSelectedFile = (file) => {
+        if (!file) return;
+
+        if (errorEl) {
+          errorEl.textContent = '';
+          errorEl.style.display = 'none';
+        }
+
+        const ext = '.' + file.name.split('.').pop().toLowerCase();
+        if (!allowedExts.includes(ext)) {
+          if (errorEl) {
+            errorEl.textContent = 'نوع الملف غير مدعوم. الملفات المسموحة فقط: PDF, JPG, JPEG.';
+            errorEl.style.display = 'block';
+          }
+          return;
+        }
+
+        if (file.size > maxSizeBytes) {
+          if (errorEl) {
+            errorEl.textContent = 'حجم الملف يتجاوز الحد الأقصى المسموح (25 ميجابايت).';
+            errorEl.style.display = 'block';
+          }
+          return;
+        }
+
+        setFileCallback(file);
+
+        if (nameEl) nameEl.textContent = file.name;
+        if (sizeEl) sizeEl.textContent = this.formatFileSize(file.size);
+        if (placeholderEl) placeholderEl.style.display = 'none';
+        if (previewEl) previewEl.style.display = 'flex';
+      };
+
+      inputEl.addEventListener('change', () => {
+        if (inputEl.files && inputEl.files[0]) {
+          handleSelectedFile(inputEl.files[0]);
+        }
+      });
+
+      removeBtnEl?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        inputEl.value = '';
+        setFileCallback(null);
+        if (placeholderEl) placeholderEl.style.display = 'flex';
+        if (previewEl) previewEl.style.display = 'none';
+        if (errorEl) {
+          errorEl.textContent = '';
+          errorEl.style.display = 'none';
+        }
+      });
+
+      // Drag & Drop
+      if (dropzoneEl) {
+        ['dragenter', 'dragover'].forEach(eventName => {
+          dropzoneEl.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropzoneEl.classList.add('dragover');
+          });
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+          dropzoneEl.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropzoneEl.classList.remove('dragover');
+          });
+        });
+
+        dropzoneEl.addEventListener('drop', (e) => {
+          if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
+            inputEl.files = e.dataTransfer.files;
+            handleSelectedFile(e.dataTransfer.files[0]);
+          }
+        });
       }
     }
 
-    hideClearConfirmation() {
-      if (this.confirmModal) {
-        this.confirmModal.style.display = 'none';
+    formatFileSize(bytes) {
+      if (bytes < 1024) return `${bytes} B`;
+      if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+      return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+    }
+
+    async loadConfig() {
+      try {
+        const res = await window.ChatApi?.getTransportationConfig();
+        if (res && res.success && res.data) {
+          this.config = res.data;
+          this.populateDropdowns(res.data);
+        }
+      } catch (err) {
+        console.error('Failed to load transportation config:', err);
       }
     }
 
-    resetForm() {
-      if (this.form) {
-        this.form.reset();
+    populateDropdowns(cfg) {
+      if (this.driverSelect) {
+        const currentVal = this.driverSelect.value;
+        this.driverSelect.innerHTML = '<option value="" disabled selected>-- اختر السائق من السجلات المعتمدة --</option>';
+        if (cfg.drivers && cfg.drivers.length > 0) {
+          cfg.drivers.forEach(d => {
+            const opt = document.createElement('option');
+            opt.value = d;
+            opt.textContent = d;
+            this.driverSelect.appendChild(opt);
+          });
+        }
+        if (currentVal) this.driverSelect.value = currentVal;
       }
-      this.clearAllFieldErrors();
-      this.hideWeightWarning();
-      if (this.expectedWeightDisplay) this.expectedWeightDisplay.value = '0.000';
-      if (this.netWeightDisplay) this.netWeightDisplay.value = '0.000';
-      this.setDefaultDateTime();
+    }
+
+    showPoEntryStep() {
+      if (this.stepPoEntry) this.stepPoEntry.style.display = 'block';
+      if (this.stepForm) this.stepForm.style.display = 'none';
+      if (this.stepSuccess) this.stepSuccess.style.display = 'none';
+      if (this.poErrorAlert) this.poErrorAlert.style.display = 'none';
+      if (this.poEntryInput) {
+        this.poEntryInput.value = '';
+        setTimeout(() => this.poEntryInput.focus(), 100);
+      }
+    }
+
+    showFormStep(poData) {
+      this.currentPo = poData;
+      if (this.stepPoEntry) this.stepPoEntry.style.display = 'none';
+      if (this.stepSuccess) this.stepSuccess.style.display = 'none';
+      if (this.stepForm) this.stepForm.style.display = 'block';
+
+      const companyName = poData.companyName || poData.supplier || 'FaceStone Partner';
+      const destination = poData.destination || 'Cairo Factory';
+
+      // Summary Bar (Strictly NO Total Quantity and NO Remaining Quantity)
+      if (this.summaryPo) this.summaryPo.textContent = poData.poNumber;
+      if (this.summarySupplier) this.summarySupplier.textContent = companyName;
+      if (this.summaryDestination) this.summaryDestination.textContent = destination;
+      if (this.verifiedPoBadge) this.verifiedPoBadge.textContent = poData.poNumber;
+
+      // Section 2: Daily Supply PO display
+      if (this.dailyPoDisplay) this.dailyPoDisplay.value = poData.poNumber;
+
+      // Section 3: Prepopulated & Read-only PO fields
+      if (this.companyInput) this.companyInput.value = companyName;
+      if (this.destinationInput) this.destinationInput.value = destination;
+
+      // Source fixed
+      if (this.sourceDisplay) this.sourceDisplay.value = 'Face stone (Full Concrete Solutions)';
+
+      // Auto-generate Transaction Number & Weighbridge Codes PER PO
+      this.assignNextTransactionAndCodes(poData);
+
+      // Set default current timestamps
+      this.setDefaultTimestamps();
+
+      // Recalculate weights
+      this.recalculateAllWeights();
       this.hideAlert();
     }
 
-    clearFieldError(element) {
-      if (!element) return;
-      element.classList.remove('input-invalid');
-      const group = element.closest('.trans-form-group');
-      if (group) {
-        group.classList.remove('has-error');
-        const errSpan = group.querySelector('.trans-field-error');
-        if (errSpan) {
-          errSpan.textContent = '';
-        }
+    assignNextTransactionAndCodes(poData) {
+      const nextNum = poData?.nextTransactionNumber || 1;
+      if (this.txNumberInput) {
+        this.txNumberInput.value = nextNum;
+      }
+
+      // Requirements 1, 1A, 1B: Weighbridge Reference numbers must be entered MANUALLY by employee.
+      // Must NOT be generated or driven automatically by the system.
+      if (this.wbInternalCodeInput) this.wbInternalCodeInput.value = '';
+      if (this.wbExternalCodeInput) this.wbExternalCodeInput.value = '';
+    }
+
+    setDefaultTimestamps() {
+      const now = new Date();
+      const pad = (n) => String(n).padStart(2, '0');
+      const nowLocal = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+
+      if (this.txDateInput && !this.txDateInput.value) {
+        this.txDateInput.value = nowLocal;
+      }
+
+      const formatted = this.formatDateTimeDisplay(this.txDateInput?.value || nowLocal);
+      if (this.dailyShipDateDisplay) this.dailyShipDateDisplay.value = formatted;
+      if (this.shipDateDisplay) this.shipDateDisplay.value = formatted;
+
+      // Default weighbridge times
+      if (this.wbIntEmptyTime && !this.wbIntEmptyTime.value) {
+        this.wbIntEmptyTime.value = nowLocal;
+      }
+      if (this.wbIntLoadedTime && !this.wbIntLoadedTime.value) {
+        this.wbIntLoadedTime.value = nowLocal;
+      }
+      if (this.wbExtLoadedTime && !this.wbExtLoadedTime.value) {
+        this.wbExtLoadedTime.value = nowLocal;
+      }
+
+      // Derive initial Departure & Arrival times from Loaded Timestamps
+      const depStr = this.formatDateTimeDisplay(this.wbIntLoadedTime?.value || nowLocal);
+      if (this.departureDisplay) this.departureDisplay.value = depStr;
+      if (this.dailyDepartureDisplay) this.dailyDepartureDisplay.value = depStr;
+
+      const arrStr = this.formatDateTimeDisplay(this.wbExtLoadedTime?.value || nowLocal);
+      if (this.arrivalDisplay) this.arrivalDisplay.value = arrStr;
+      if (this.dailyArrivalDisplay) this.dailyArrivalDisplay.value = arrStr;
+    }
+
+    formatDateTimeDisplay(dtString) {
+      if (!dtString) return '—';
+      try {
+        const d = new Date(dtString);
+        return d.toLocaleString('ar-EG', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+      } catch {
+        return dtString;
       }
     }
 
-    setFieldError(element, message) {
-      if (!element) return;
-      element.classList.add('input-invalid');
-      const group = element.closest('.trans-form-group');
-      if (group) {
-        group.classList.add('has-error');
-        const errSpan = group.querySelector('.trans-field-error');
-        if (errSpan) {
-          errSpan.textContent = message;
+    async handlePoLookup() {
+      const poNum = this.poEntryInput?.value?.trim();
+      if (!poNum) {
+        this.showPoError('رقم أمر الشراء مطلوب', 'يرجى إدخال رقم أمر الشراء للمتابعة.');
+        return;
+      }
+
+      this.setPoLookupLoading(true);
+      if (this.poErrorAlert) this.poErrorAlert.style.display = 'none';
+
+      try {
+        const res = await window.ChatApi?.getTransportationPurchaseOrder(poNum);
+        if (res && res.success && res.data) {
+          this.showFormStep(res.data);
+        } else {
+          const msg = res?.message || 'Purchase Order not found.';
+          if (msg.includes('no remaining quantity') || msg.includes('الكمية المتبقية')) {
+            this.showPoError('This Purchase Order has no remaining quantity.', 'هذا الأمر مستنفد بالكامل ولا توجد به كمية متبقية قابلة للتوريد.');
+          } else {
+            this.showPoError('Purchase Order not found.', 'أمر الشراء غير مسجل في قاعدة البيانات. يرجى التحقق من الرقم والمحاولة مرة أخرى.');
+          }
         }
+      } catch (err) {
+        console.error('Error looking up PO:', err);
+        this.showPoError('Purchase Order not found.', 'أمر الشراء غير مسجل في قاعدة البيانات.');
+      } finally {
+        this.setPoLookupLoading(false);
       }
     }
 
-    clearAllFieldErrors() {
-      const inputs = this.form?.querySelectorAll('.trans-input, .trans-select, .trans-textarea') || [];
-      inputs.forEach(el => el.classList.remove('input-invalid'));
-      const groups = this.form?.querySelectorAll('.trans-form-group') || [];
-      groups.forEach(g => {
-        g.classList.remove('has-error');
-        const errSpan = g.querySelector('.trans-field-error');
-        if (errSpan) errSpan.textContent = '';
-      });
+    showPoError(title, desc) {
+      if (this.poErrorTitle) this.poErrorTitle.textContent = title;
+      if (this.poErrorDesc) this.poErrorDesc.textContent = desc;
+      if (this.poErrorAlert) this.poErrorAlert.style.display = 'flex';
+      this.poEntryInput?.focus();
+    }
+
+    setPoLookupLoading(isLoading) {
+      if (this.poContinueBtn) this.poContinueBtn.disabled = isLoading;
+      if (this.poSpinner) this.poSpinner.style.display = isLoading ? 'inline-block' : 'none';
+      if (this.poContinueText) this.poContinueText.textContent = isLoading ? 'جاري التحقق...' : 'Continue';
     }
 
     /**
-     * Validate all fields according to business rules with Arabic messages
+     * Weight Calculations (Driven strictly and exclusively from Section 1: الميزان)
+     * Internal Net Weight = Internal Loaded - Internal Empty
+     * External Net Weight = External Loaded - External Empty
+     * Net Weight (الوزن الصافي) = MIN(Internal Net, External Net)
+     * Waste (كمية هالك) = ABS(Internal Net - External Net)
+     * Quantity in Bill of Lading (الكمية) = Net Weight
      */
+    recalculateAllWeights() {
+      const intLoaded = parseFloat(this.wbIntLoaded?.value);
+      const intEmpty = parseFloat(this.wbIntEmpty?.value);
+      const extLoaded = parseFloat(this.wbExtLoaded?.value);
+      const extEmpty = parseFloat(this.wbExtEmpty?.value);
+
+      const hasIntLoaded = !isNaN(intLoaded) && intLoaded > 0;
+      const hasIntEmpty = !isNaN(intEmpty) && intEmpty > 0;
+      const hasExtLoaded = !isNaN(extLoaded) && extLoaded > 0;
+      const hasExtEmpty = !isNaN(extEmpty) && extEmpty > 0;
+
+      // 1. Internal Net Weight
+      let intNet = 0;
+      if (hasIntLoaded && hasIntEmpty) {
+        intNet = intLoaded - intEmpty;
+        const valStr = intNet.toFixed(3);
+        if (this.wbIntNet) this.wbIntNet.value = valStr;
+        if (this.internalNetDisplay) this.internalNetDisplay.value = valStr;
+      } else {
+        if (this.wbIntNet) this.wbIntNet.value = '0.000';
+        if (this.internalNetDisplay) this.internalNetDisplay.value = '0.000';
+      }
+
+      // 2. External Net Weight
+      let extNet = 0;
+      if (hasExtLoaded && hasExtEmpty) {
+        extNet = extLoaded - extEmpty;
+        const valStr = extNet.toFixed(3);
+        if (this.wbExtNet) this.wbExtNet.value = valStr;
+        if (this.externalNetDisplay) this.externalNetDisplay.value = valStr;
+      } else {
+        if (this.wbExtNet) this.wbExtNet.value = '0.000';
+        if (this.externalNetDisplay) this.externalNetDisplay.value = '0.000';
+      }
+
+      // 3. Net Weight and Waste Quantity
+      if (hasIntLoaded && hasIntEmpty && hasExtLoaded && hasExtEmpty) {
+        let waste = 0;
+        let netWeight = 0;
+
+        if (intNet === extNet) {
+          waste = 0;
+          netWeight = intNet;
+        } else {
+          waste = Math.abs(intNet - extNet);
+          netWeight = Math.min(intNet, extNet);
+        }
+
+        if (this.wasteDisplay) this.wasteDisplay.value = waste.toFixed(3);
+        if (this.netWeightDisplay) this.netWeightDisplay.value = netWeight.toFixed(3);
+        if (this.quantityDisplay) this.quantityDisplay.value = netWeight.toFixed(3);
+      } else {
+        if (this.wasteDisplay) this.wasteDisplay.value = '0.000';
+        if (this.netWeightDisplay) this.netWeightDisplay.value = '0.000';
+        if (this.quantityDisplay) this.quantityDisplay.value = '0.000';
+      }
+    }
+
+    /**
+     * Shipping Time Calculation:
+     * Shipping Time = External Loaded Weighing Date/Time − Internal Loaded Weighing Date/Time
+     * Format: HH:MM
+     */
+    recalculateShippingTime() {
+      const startTimeVal = this.wbIntLoadedTime?.value;
+      const endTimeVal = this.wbExtLoadedTime?.value;
+
+      if (!startTimeVal || !endTimeVal) {
+        if (this.shippingTimeDisplay) this.shippingTimeDisplay.textContent = '—';
+        if (this.bolShippingTimeDisplay) this.bolShippingTimeDisplay.value = '—';
+        if (this.shippingTimeError) this.shippingTimeError.style.display = 'none';
+        return;
+      }
+
+      const start = new Date(startTimeVal).getTime();
+      const end = new Date(endTimeVal).getTime();
+
+      if (end < start) {
+        if (this.shippingTimeDisplay) this.shippingTimeDisplay.textContent = 'خطأ في التوقيت';
+        if (this.bolShippingTimeDisplay) this.bolShippingTimeDisplay.value = 'خطأ في التوقيت';
+        if (this.shippingTimeError) {
+          this.shippingTimeError.textContent = 'وقت الوزن الخارجي القائم لا يمكن أن يكون قبل وقت الوزن الداخلي القائم.';
+          this.shippingTimeError.style.display = 'block';
+        }
+      } else {
+        if (this.shippingTimeError) this.shippingTimeError.style.display = 'none';
+        const diffMs = end - start;
+        const totalMinutes = Math.floor(diffMs / (1000 * 60));
+        const hours = Math.floor(totalMinutes / 60);
+        const mins = totalMinutes % 60;
+
+        const pad = (n) => String(n).padStart(2, '0');
+        const formattedTime = `${pad(hours)}:${pad(mins)}`;
+
+        if (this.shippingTimeDisplay) this.shippingTimeDisplay.textContent = formattedTime;
+        if (this.bolShippingTimeDisplay) this.bolShippingTimeDisplay.value = formattedTime;
+      }
+    }
+
     validateForm() {
-      this.clearAllFieldErrors();
       let isValid = true;
-      let firstInvalidEl = null;
+      this.clearAllFieldErrors();
 
-      const markInvalid = (el, msg) => {
-        this.setFieldError(el, msg);
+      // SECTION 1 VALIDATIONS:
+      // Manual Reference Codes (Requirements 1, 1A, 1B, 15)
+      if (!this.wbInternalCodeInput?.value?.trim()) {
+        this.setFieldError(this.wbInternalCodeInput, 'رقم مرجع الميزان الداخلي مطلوب ويجب إدخاله يدوياً.');
         isValid = false;
-        if (!firstInvalidEl) firstInvalidEl = el;
-      };
+      }
+      if (!this.wbExternalCodeInput?.value?.trim()) {
+        this.setFieldError(this.wbExternalCodeInput, 'رقم مرجع الميزان الخارجي مطلوب ويجب إدخاله يدوياً.');
+        isValid = false;
+      }
 
-      // 1. Transaction Number (رقم الحركة)
-      const txNumStr = this.txNumberInput?.value?.trim() || '';
-      if (!txNumStr) {
-        markInvalid(this.txNumberInput, 'رقم الحركة مطلوب.');
-      } else {
-        const txNum = parseInt(txNumStr, 10);
-        if (isNaN(txNum) || txNum <= 0 || !/^\d+$/.test(txNumStr)) {
-          markInvalid(this.txNumberInput, 'يرجى إدخال رقم صحيح موجب.');
+      // Internal Weights
+      const intLoaded = parseFloat(this.wbIntLoaded?.value);
+      const intEmpty = parseFloat(this.wbIntEmpty?.value);
+      if (isNaN(intLoaded) || intLoaded <= 0) {
+        this.setFieldError(this.wbIntLoaded, 'الوزن الداخلي قائم مطلوب ويجب أن يكون أكبر من الصفر.');
+        isValid = false;
+      }
+      if (isNaN(intEmpty) || intEmpty <= 0) {
+        this.setFieldError(this.wbIntEmpty, 'الوزن الداخلي فارغ مطلوب ويجب أن يكون أكبر من الصفر.');
+        isValid = false;
+      }
+      if (!isNaN(intLoaded) && !isNaN(intEmpty) && intLoaded <= intEmpty) {
+        this.setFieldError(this.wbIntLoaded, 'الوزن الداخلي قائم يجب أن يكون أكبر من الوزن الداخلي فارغ.');
+        isValid = false;
+      }
+
+      // External Weights
+      const extLoaded = parseFloat(this.wbExtLoaded?.value);
+      const extEmpty = parseFloat(this.wbExtEmpty?.value);
+      if (isNaN(extLoaded) || extLoaded <= 0) {
+        this.setFieldError(this.wbExtLoaded, 'الوزن الخارجي قائم مطلوب ويجب أن يكون أكبر من الصفر.');
+        isValid = false;
+      }
+      if (isNaN(extEmpty) || extEmpty <= 0) {
+        this.setFieldError(this.wbExtEmpty, 'الوزن الخارجي فارغ مطلوب ويجب أن يكون أكبر من الصفر.');
+        isValid = false;
+      }
+      if (!isNaN(extLoaded) && !isNaN(extEmpty) && extLoaded <= extEmpty) {
+        this.setFieldError(this.wbExtLoaded, 'الوزن الخارجي قائم يجب أن يكون أكبر من الوزن الخارجي فارغ.');
+        isValid = false;
+      }
+
+      // Shipment Date
+      if (!this.txDateInput?.value) {
+        this.setFieldError(this.txDateInput, 'تاريخ الشحنة مطلوب.');
+        isValid = false;
+      }
+
+      // Loaded Timestamps (Single Source of Truth for Departure & Arrival)
+      if (!this.wbIntLoadedTime?.value) {
+        this.setFieldError(this.wbIntLoadedTime, 'تاريخ ووقت الوزن القائم الداخلي مطلوب لتحديد تاريخ المغادرة.');
+        isValid = false;
+      }
+      if (!this.wbExtLoadedTime?.value) {
+        this.setFieldError(this.wbExtLoadedTime, 'تاريخ ووقت الوزن القائم الخارجي مطلوب لتحديد تاريخ الوصول.');
+        isValid = false;
+      }
+
+      // Shipping Time check: External Loaded must be >= Internal Loaded
+      const startTimeVal = this.wbIntLoadedTime?.value;
+      const endTimeVal = this.wbExtLoadedTime?.value;
+      if (startTimeVal && endTimeVal) {
+        const start = new Date(startTimeVal).getTime();
+        const end = new Date(endTimeVal).getTime();
+        if (end < start) {
+          if (this.shippingTimeError) {
+            this.shippingTimeError.textContent = 'وقت الوزن الخارجي القائم لا يمكن أن يكون قبل وقت الوزن الداخلي القائم.';
+            this.shippingTimeError.style.display = 'block';
+          }
+          isValid = false;
         }
       }
 
-      // 2. Transaction Date (التاريخ)
-      const dateStr = this.txDateInput?.value?.trim() || '';
-      if (!dateStr) {
-        markInvalid(this.txDateInput, 'التاريخ مطلوب.');
-      } else {
-        const d = new Date(dateStr);
-        if (isNaN(d.getTime())) {
-          markInvalid(this.txDateInput, 'يرجى اختيار تاريخ ووقت صحيح.');
+      // Section 1 Mandatory Attachment Check
+      if (!this.wbAttachmentFile) {
+        this.setAttachmentError(this.wbAttachmentError, 'Attachment is required for this section. (مرفق قسم الميزان مطلوب)');
+        isValid = false;
+      }
+
+      // SECTION 2 VALIDATIONS:
+      // Section 2 Mandatory Attachment Check
+      if (!this.dsAttachmentFile) {
+        this.setAttachmentError(this.dsAttachmentError, 'Attachment is required for this section. (مرفق قسم يومية التوريد مطلوب)');
+        isValid = false;
+      }
+
+      // SECTION 3 VALIDATIONS:
+      // Material Type
+      const mat = this.materialSelect?.value;
+      if (!mat || (mat !== 'powder' && mat !== 'slurry')) {
+        this.setFieldError(this.materialSelect, 'يرجى اختيار نوع الخامة (powder أو slurry فقط).');
+        isValid = false;
+      }
+
+      // Car Number
+      if (!this.carInput?.value?.trim()) {
+        this.setFieldError(this.carInput, 'رقم السيارة مطلوب.');
+        isValid = false;
+      }
+
+      // Driver
+      if (!this.driverSelect?.value?.trim()) {
+        this.setFieldError(this.driverSelect, 'يرجى اختيار السائق من القائمة المعتمدة.');
+        isValid = false;
+      }
+
+      // Delivery Status Checklist (Requirement 37)
+      const isSafe = this.statusSafeCheckbox?.checked;
+      const isIntact = this.statusIntactCheckbox?.checked;
+      if (!isSafe && !isIntact) {
+        if (this.recStatusError) {
+          this.recStatusError.textContent = 'حالة الاستلام مطلوبة. يجب تحديد (safe أو intact أو كلاهما).';
+          this.recStatusError.style.display = 'block';
         }
+        isValid = false;
       }
 
-      // 3. PO Number (رقم أمر الشراء)
-      const poStr = this.poInput?.value?.trim() || '';
-      if (!poStr) {
-        markInvalid(this.poInput, 'رقم أمر الشراء (PO) مطلوب.');
+      // Section 3 Mandatory Attachment Check
+      if (!this.bolAttachmentFile) {
+        this.setAttachmentError(this.bolAttachmentError, 'Attachment is required for this section. (مرفق قسم بوليصة الشحن مطلوب)');
+        isValid = false;
       }
 
-      // 4. Transaction Status (حالة النقلة)
-      const statusStr = this.statusSelect?.value || '';
-      if (!statusStr) {
-        markInvalid(this.statusSelect, 'يرجى اختيار حالة النقلة.');
+      // SECTION 4 VALIDATIONS:
+      // Custody (العهدة - Required decimal >= 0, Requirements 6, 7, 15)
+      const custodyVal = parseFloat(this.custodyInput?.value);
+      if (isNaN(custodyVal) || custodyVal < 0) {
+        this.setFieldError(this.custodyInput, 'العهدة مطلوبة ويجب إدخال قيمة رقمية صحيحة (صفر أو أكثر).');
+        isValid = false;
       }
 
-      // 5. Car Number (رقم السيارة)
-      const carStr = this.carInput?.value?.trim() || '';
-      if (!carStr) {
-        markInvalid(this.carInput, 'رقم السيارة مطلوب.');
-      }
-
-      // 6. Driver's Name (اسم السائق)
-      const driverStr = this.driverInput?.value?.trim() || '';
-      if (!driverStr) {
-        markInvalid(this.driverInput, 'اسم السائق مطلوب.');
-      }
-
-      // 7. Source (المورد / المصدر)
-      const sourceStr = this.sourceInput?.value?.trim() || '';
-      if (!sourceStr) {
-        markInvalid(this.sourceInput, 'المورد / المصدر مطلوب.');
-      }
-
-      // 8. Destination (الوجهة)
-      const destStr = this.destinationSelect?.value || '';
-      if (!destStr) {
-        markInvalid(this.destinationSelect, 'يرجى اختيار الوجهة.');
-      }
-
-      // 9. Material Type (نوع الخامة)
-      const matStr = this.materialSelect?.value || '';
-      if (!matStr) {
-        markInvalid(this.materialSelect, 'يرجى اختيار نوع الخامة.');
-      }
-
-      // 10. Weight Before Loading (الوزن قبل التحميل)
-      const beforeStr = this.weightBeforeInput?.value?.trim() || '';
-      const beforeVal = parseFloat(beforeStr);
-      if (!beforeStr) {
-        markInvalid(this.weightBeforeInput, 'الوزن قبل التحميل مطلوب.');
-      } else if (isNaN(beforeVal) || beforeVal <= 0) {
-        markInvalid(this.weightBeforeInput, 'يجب أن يكون الوزن قيمة رقمية موجبة.');
-      }
-
-      // 11. Weight When Entering Factory (وزن دخول المصنع)
-      const enterStr = this.weightEnterInput?.value?.trim() || '';
-      const enterVal = parseFloat(enterStr);
-      if (!enterStr) {
-        markInvalid(this.weightEnterInput, 'وزن دخول المصنع مطلوب.');
-      } else if (isNaN(enterVal) || enterVal <= 0) {
-        markInvalid(this.weightEnterInput, 'يجب أن يكون الوزن قيمة رقمية موجبة.');
-      }
-
-      // 12. Weight When Exiting Factory (وزن خروج المصنع)
-      const exitStr = this.weightExitInput?.value?.trim() || '';
-      const exitVal = parseFloat(exitStr);
-      if (!exitStr) {
-        markInvalid(this.weightExitInput, 'وزن خروج المصنع مطلوب.');
-      } else if (isNaN(exitVal) || exitVal <= 0) {
-        markInvalid(this.weightExitInput, 'يجب أن يكون الوزن قيمة رقمية موجبة.');
-      }
-
-      // 13. Logical Weight Rules
-      if (!isNaN(enterVal) && !isNaN(exitVal) && enterVal > 0 && exitVal > 0) {
-        if (exitVal > enterVal) {
-          markInvalid(this.weightExitInput, 'وزن خروج المصنع لا يمكن أن يتجاوز وزن دخول المصنع.');
+      // PO Quantity Check: Net Weight <= PO Remaining Quantity (Requirement 9)
+      if (this.currentPo) {
+        const netWeight = parseFloat(this.netWeightDisplay?.value) || 0;
+        const remaining = parseFloat(this.currentPo.remainingQuantity) || 0;
+        if (netWeight > remaining) {
+          this.showAlert(`Net weight exceeds the remaining quantity of this PO. (الوزن الصافي ${netWeight} طن يتجاوز الكمية المتبقية ${remaining} طن).`, 'error');
+          isValid = false;
         }
-      }
-      if (!isNaN(beforeVal) && !isNaN(exitVal) && beforeVal > 0 && exitVal > 0) {
-        if (exitVal > beforeVal) {
-          markInvalid(this.weightExitInput, 'وزن خروج المصنع لا يمكن أن يتجاوز الوزن قبل التحميل.');
-        }
-      }
-
-      // 14. Receiving Status (حالة الاستلام / الاعتماد)
-      const recvStr = this.receivingStatusSelect?.value || '';
-      if (!recvStr) {
-        markInvalid(this.receivingStatusSelect, 'يرجى اختيار حالة الاستلام / الاعتماد.');
-      }
-
-      if (!isValid && firstInvalidEl) {
-        firstInvalidEl.focus();
-        firstInvalidEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
 
       return isValid;
     }
 
-    /**
-     * Submit Form to API
-     */
-    async handleSubmit() {
+    setAttachmentError(el, msg) {
+      if (el) {
+        el.textContent = msg;
+        el.style.display = 'block';
+      }
+    }
+
+    async handleFormSubmit() {
       if (this.isSubmitting) return;
 
       if (!this.validateForm()) {
-        this.showAlert('يرجى تصحيح الحقول المحددة باللون الأحمر قبل الحفظ.', 'error');
+        this.showAlert('يرجى تصحيح الأخطاء الموضحة وتوفير المرفقات الإلزامية لكل قسم قبل الحفظ.', 'error');
         return;
       }
 
-      this.isSubmitting = true;
       this.setSubmitLoading(true);
       this.hideAlert();
 
-      const txNumber = parseInt(this.txNumberInput.value.trim(), 10);
-      const txDateIso = new Date(this.txDateInput.value.trim()).toISOString();
-      const carNumber = this.carInput.value.trim();
-      const driverName = this.driverInput.value.trim();
-      const source = this.sourceInput.value.trim();
-      const poNumber = this.poInput.value.trim();
-      const materialType = this.materialSelect.value;
-      const weightBefore = parseFloat(this.weightBeforeInput.value.trim());
-      const weightEnter = parseFloat(this.weightEnterInput.value.trim());
-      const weightExit = parseFloat(this.weightExitInput.value.trim());
-      const destination = this.destinationSelect.value;
-      const transactionStatus = this.statusSelect.value;
-      const receivingStatus = this.receivingStatusSelect.value;
-      const notes = this.notesInput.value.trim() || null;
-
-      const payload = {
-        transactionNumber: txNumber,
-        transactionDate: txDateIso,
-        carNumber: carNumber,
-        driverName: driverName,
-        source: source,
-        poNumber: poNumber,
-        materialType: materialType,
-        weightBeforeLoading: weightBefore,
-        weightWhenEnteringFactory: weightEnter,
-        weightWhenExitingFactory: weightExit,
-        destination: destination,
-        transactionStatus: transactionStatus,
-        receivingStatus: receivingStatus,
-        notes: notes
-      };
-
       try {
-        const res = await ChatApi.submitTransportation(payload);
+        const formData = new FormData();
 
-        if (res.success && res.data) {
-          const created = res.data;
-          this.showAlert(
-            `تم حفظ الحركة بنجاح! رقم الحركة: #${created.transactionNumber} - الوزن الفعلي: ${created.netWeight.toFixed(3)} طن.`,
-            'success'
-          );
+        const txNum = parseInt(this.txNumberInput?.value, 10) || 0;
+        formData.append('transactionNumber', txNum);
+        formData.append('transactionDate', this.txDateInput.value);
+        formData.append('carNumber', this.carInput.value.trim());
+        formData.append('driverName', this.driverSelect.value.trim());
+        formData.append('source', 'Face stone (Full Concrete Solutions)');
+        formData.append('poNumber', this.currentPo?.poNumber || '');
+        formData.append('destination', this.destinationInput?.value || this.currentPo?.destination || 'Cairo Factory');
+        formData.append('materialType', this.materialSelect.value.trim());
 
-          // Reset form fields
-          this.form.reset();
-          this.clearAllFieldErrors();
-          this.hideWeightWarning();
-          if (this.expectedWeightDisplay) this.expectedWeightDisplay.value = '0.000';
-          if (this.netWeightDisplay) this.netWeightDisplay.value = '0.000';
-          this.setDefaultDateTime();
+        // Weights (Entered ONLY in Section 1)
+        formData.append('weightBeforeLoading', this.wbIntEmpty.value);
+        formData.append('weightWhenExitingFactory', this.wbIntLoaded.value);
+        formData.append('externalLoadedWeight', this.wbExtLoaded.value);
+        formData.append('externalEmptyWeight', this.wbExtEmpty.value);
 
-          // Refresh recent transactions
-          await this.loadRecentTransactions();
+        // Movement Dates
+        if (this.departureInput?.value) {
+          formData.append('departureTime', this.departureInput.value);
+        }
+        if (this.arrivalInput?.value) {
+          formData.append('arrivalTime', this.arrivalInput.value);
+        }
 
-          // Scroll to alert banner smoothly
-          this.alertBanner?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        // Driver Phone
+        if (this.driverPhoneInput?.value?.trim()) {
+          formData.append('driverPhone', this.driverPhoneInput.value.trim());
+        }
+
+        // Supervisors & Recipient
+        formData.append('shippingSupervisor', 'محمد ناجح');
+        formData.append('departmentSupervisor', 'ازهر محمد');
+
+        // Checklist Delivery Status (Requirement 37)
+        const checklist = [];
+        if (this.statusSafeCheckbox?.checked) checklist.push('safe');
+        if (this.statusIntactCheckbox?.checked) checklist.push('intact');
+        formData.append('receivingStatus', checklist.join(', '));
+
+        if (this.recNameInput?.value?.trim()) {
+          formData.append('recipientName', this.recNameInput.value.trim());
+        }
+        if (this.recTitleSelect?.value?.trim()) {
+          formData.append('recipientTitle', this.recTitleSelect.value.trim());
+        }
+        if (this.recDateInput?.value) {
+          formData.append('receivedDate', this.recDateInput.value);
+        }
+
+        // Weighbridge codes (Entered manually by employee - Requirements 1A, 1B)
+        formData.append('internalWeighbridgeCode', this.wbInternalCodeInput.value.trim());
+        formData.append('externalWeighbridgeCode', this.wbExternalCodeInput.value.trim());
+
+        if (this.wbIntEmptyTime?.value) formData.append('internalEmptyWeightTime', this.wbIntEmptyTime.value);
+        if (this.wbIntLoadedTime?.value) formData.append('internalLoadedWeightTime', this.wbIntLoadedTime.value);
+        if (this.wbExtEmptyTime?.value) formData.append('externalEmptyWeightTime', this.wbExtEmptyTime.value);
+        if (this.wbExtLoadedTime?.value) formData.append('externalLoadedWeightTime', this.wbExtLoadedTime.value);
+
+        // Section 4: Custody (العهدة), Ikramiya & Notes
+        const custodyAmount = parseFloat(this.custodyInput?.value) || 0;
+        formData.append('custodyAmount', custodyAmount);
+
+        if (this.ikramiyaInput?.value) {
+          formData.append('ikramiya', parseFloat(this.ikramiyaInput.value) || 0);
+        }
+        if (this.notesInput?.value?.trim()) {
+          formData.append('notes', this.notesInput.value.trim());
+        }
+
+        // 3 Separate Mandatory Section Attachments
+        if (this.wbAttachmentFile) {
+          formData.append('weighbridgeAttachment', this.wbAttachmentFile);
+        }
+        if (this.dsAttachmentFile) {
+          formData.append('dailySupplyAttachment', this.dsAttachmentFile);
+        }
+        if (this.bolAttachmentFile) {
+          formData.append('billOfLadingAttachment', this.bolAttachmentFile);
+          formData.append('invoiceFile', this.bolAttachmentFile); // Backwards compatibility
+        }
+
+        const res = await window.ChatApi?.submitTransportationTransaction(formData);
+        if (res && res.success && res.data) {
+          this.showSuccessStep(res.data);
+          this.loadRecentTransactions();
+          this.loadConfig();
         } else {
-          // Check for duplicate transaction number error
-          const msg = res.message || 'فشل في حفظ الحركة.';
-          if (msg.toLowerCase().includes('already exists') || (res.status === 400 && msg.includes('Transaction Number'))) {
-            this.setFieldError(this.txNumberInput, 'رقم الحركة مسجل بالفعل.');
-            this.txNumberInput.focus();
-            this.showAlert('رقم الحركة مسجل بالفعل. يرجى إدخال رقم حركة فريد.', 'error');
-          } else {
-            this.showAlert(msg, 'error');
-          }
+          const msg = res?.message || 'حدث خطأ أثناء حفظ حركة النقل.';
+          this.showAlert(msg, 'error');
         }
       } catch (err) {
         console.error('Error submitting transportation transaction:', err);
-        this.showAlert('حدث خطأ في الاتصال بالخادم. يرجى المحاولة مرة أخرى.', 'error');
+        this.showAlert('حدث خطأ في الاتصال بالخادم أثناء حفظ الحركة.', 'error');
       } finally {
-        this.isSubmitting = false;
         this.setSubmitLoading(false);
       }
     }
 
-    setSubmitLoading(isLoading) {
-      if (!this.submitBtn) return;
-      this.submitBtn.disabled = isLoading;
-      if (this.submitSpinner) this.submitSpinner.style.display = isLoading ? 'inline-block' : 'none';
-      if (this.submitIcon) this.submitIcon.style.display = isLoading ? 'none' : 'inline-block';
-      if (this.submitBtnText) this.submitBtnText.textContent = isLoading ? 'جاري الحفظ...' : 'حفظ';
+    showSuccessStep(txData) {
+      if (this.stepPoEntry) this.stepPoEntry.style.display = 'none';
+      if (this.stepForm) this.stepForm.style.display = 'none';
+      if (this.stepSuccess) this.stepSuccess.style.display = 'block';
+
+      if (this.successTxNumber) this.successTxNumber.textContent = `#${txData.transactionNumber}`;
+      if (this.successPoNumber) this.successPoNumber.textContent = txData.poNumber;
+      if (this.successCompany) this.successCompany.textContent = txData.companyName || this.currentPo?.supplier || 'FaceStone Partner';
+      if (this.successDestination) this.successDestination.textContent = txData.destination;
+      if (this.successMaterial) this.successMaterial.textContent = txData.materialType;
+      if (this.successIntWeight) this.successIntWeight.textContent = `${Number(txData.internalWeight || 0).toFixed(3)} طن`;
+      if (this.successExtWeight) this.successExtWeight.textContent = `${Number(txData.externalNetWeight || 0).toFixed(3)} طن`;
+      if (this.successNetWeight) this.successNetWeight.textContent = `${Number(txData.netWeight || txData.quantity || 0).toFixed(3)} طن`;
+      if (this.successWaste) this.successWaste.textContent = `${Number(txData.wasteQuantity || 0).toFixed(3)} طن`;
+
+      if (this.successShippingTime) {
+        const mins = txData.shippingDurationMinutes;
+        if (mins !== null && mins !== undefined) {
+          const h = Math.floor(mins / 60);
+          const m = mins % 60;
+          this.successShippingTime.textContent = h > 0 ? `${h} ساعة و ${m} دقيقة` : `${m} دقيقة`;
+        } else {
+          this.successShippingTime.textContent = '—';
+        }
+      }
+
+      this.stepSuccess.scrollIntoView({ behavior: 'smooth' });
     }
 
-    showAlert(message, type = 'success') {
-      if (!this.alertBanner) return;
-      this.alertBanner.className = `trans-alert-banner ${type}`;
-      if (this.alertTitle) {
-        this.alertTitle.textContent = type === 'success' ? 'نجاح' : 'خطأ';
-      }
-      if (this.alertDesc) {
-        this.alertDesc.textContent = message;
-      }
-      if (this.alertIcon) {
-        this.alertIcon.textContent = type === 'success' ? '✓' : '!';
-      }
-      this.alertBanner.style.display = 'flex';
-    }
-
-    hideAlert() {
-      if (this.alertBanner) {
-        this.alertBanner.style.display = 'none';
-      }
-    }
-
-    /**
-     * Load recent transactions from database
-     */
     async loadRecentTransactions() {
       if (!this.recentTableBody) return;
+      this.recentTableBody.innerHTML = '<tr><td colspan="16" class="trans-empty-row">جاري تحميل سجل الحركات...</td></tr>';
+
       try {
-        const res = await ChatApi.getRecentTransportationTransactions(10);
-        if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+        const res = await window.ChatApi?.getRecentTransportationTransactions(20);
+        if (res && res.success && res.data) {
           this.renderRecentTable(res.data);
         } else {
-          this.recentTableBody.innerHTML = `
-            <tr>
-              <td colspan="11" class="trans-empty-row">لا توجد حركات مسجلة حتى الآن. قم بتسجيل حركة جديدة أعلاه لإضافتها للسجل.</td>
-            </tr>
-          `;
+          this.recentTableBody.innerHTML = '<tr><td colspan="16" class="trans-empty-row">لا توجد حركات مسجلة حالياً.</td></tr>';
         }
       } catch (err) {
-        console.warn('Failed to fetch recent transportation transactions:', err);
+        console.error('Failed to load recent transportation records:', err);
+        this.recentTableBody.innerHTML = '<tr><td colspan="16" class="trans-empty-row error">تعذر تحميل السجل. يرجى إعادة المحاولة.</td></tr>';
       }
     }
 
-    renderRecentTable(items) {
+    renderRecentTable(records) {
       if (!this.recentTableBody) return;
-      this.recentTableBody.innerHTML = items.map(tx => {
-        const dateFormatted = new Date(tx.transactionDate).toLocaleDateString('ar-EG', {
-          month: 'short', day: 'numeric', year: 'numeric'
-        });
-        const submitFormatted = new Date(tx.dateOfSubmit).toLocaleTimeString('ar-EG', {
-          hour: '2-digit', minute: '2-digit', hour12: true
-        });
+      if (!records || records.length === 0) {
+        this.recentTableBody.innerHTML = '<tr><td colspan="16" class="trans-empty-row">لا توجد حركات مسجلة حالياً.</td></tr>';
+        return;
+      }
 
-        const statusClass = (tx.transactionStatus || '').toLowerCase().replace(/\s+/g, '-');
-        const recvClass = (tx.receivingStatus || '').toLowerCase().replace(/[^a-z0-9]/g, '-');
+      const rowsHtml = records.map(tx => {
+        const intWeight = Number(tx.internalWeight || 0).toFixed(3);
+        const extWeight = Number(tx.externalNetWeight || 0).toFixed(3);
+        const netWeight = Number(tx.netWeight || tx.quantity || 0).toFixed(3);
+        const waste = Number(tx.wasteQuantity || 0).toFixed(3);
 
-        const displayMaterial = getArabicText(tx.materialType);
-        const displayDestination = getArabicText(tx.destination);
-        const displayStatus = getArabicText(tx.transactionStatus);
-        const displayReceiving = getArabicText(tx.receivingStatus);
+        let shipTimeStr = '—';
+        if (tx.shippingDurationMinutes !== null && tx.shippingDurationMinutes !== undefined) {
+          const h = Math.floor(tx.shippingDurationMinutes / 60);
+          const m = tx.shippingDurationMinutes % 60;
+          shipTimeStr = h > 0 ? `${h}س ${m}د` : `${m}د`;
+        }
+
+        const dateStr = this.formatDateTimeDisplay(tx.transactionDate);
+        const submitDateStr = this.formatDateTimeDisplay(tx.dateOfSubmit);
 
         return `
           <tr>
-            <td><strong class="trans-tx-cell">#${tx.transactionNumber}</strong></td>
-            <td>${dateFormatted}</td>
-            <td><span class="trans-code-badge">${this.escapeHtml(tx.carNumber)}</span></td>
+            <td class="font-numeric" style="font-weight: 800; color: #2563EB;">#${tx.transactionNumber}</td>
+            <td class="font-numeric">${dateStr}</td>
+            <td class="font-numeric" dir="ltr" style="font-weight: 700;">${this.escapeHtml(tx.poNumber)}</td>
+            <td>${this.escapeHtml(tx.companyName || '—')}</td>
+            <td>${this.escapeHtml(tx.destination)}</td>
+            <td class="font-numeric">${this.escapeHtml(tx.carNumber)}</td>
             <td>${this.escapeHtml(tx.driverName)}</td>
-            <td><span class="trans-material-cell">${this.escapeHtml(displayMaterial)}</span></td>
-            <td><strong class="trans-net-weight-cell">${tx.netWeight.toFixed(3)} طن</strong></td>
-            <td>${tx.expectedWeight.toFixed(3)} طن</td>
-            <td class="trans-dest-cell">${this.escapeHtml(displayDestination)}</td>
-            <td><span class="trans-status-pill status-${statusClass}">${this.escapeHtml(displayStatus)}</span></td>
-            <td><span class="trans-status-pill recv-${recvClass}">${this.escapeHtml(displayReceiving)}</span></td>
-            <td class="trans-time-cell">${submitFormatted}</td>
+            <td><span class="trans-tag-badge">${this.escapeHtml(tx.materialType)}</span></td>
+            <td class="font-numeric">${intWeight}</td>
+            <td class="font-numeric">${extWeight}</td>
+            <td class="font-numeric" style="font-weight: 800; color: #16A34A;">${netWeight}</td>
+            <td class="font-numeric" style="color: ${Number(waste) > 0 ? '#DC2626' : '#6B7280'};">${waste}</td>
+            <td class="font-numeric">${shipTimeStr}</td>
+            <td>${this.escapeHtml(tx.shippingSupervisor || 'محمد ناجح')}</td>
+            <td><span class="trans-status-badge safe">${this.escapeHtml(tx.receivingStatus || 'safe')}</span></td>
+            <td class="font-numeric" style="color: #6B7280; font-size: 0.8rem;">${submitDateStr}</td>
           </tr>
         `;
       }).join('');
+
+      this.recentTableBody.innerHTML = rowsHtml;
+    }
+
+    resetFormKeepPo() {
+      // Clear file attachments
+      this.wbAttachmentFile = null;
+      this.dsAttachmentFile = null;
+      this.bolAttachmentFile = null;
+
+      [
+        { input: this.wbAttachmentInput, placeholder: this.wbPlaceholder, preview: this.wbFilePreview, err: this.wbAttachmentError },
+        { input: this.dsAttachmentInput, placeholder: this.dsPlaceholder, preview: this.dsFilePreview, err: this.dsAttachmentError },
+        { input: this.bolAttachmentInput, placeholder: this.bolPlaceholder, preview: this.bolFilePreview, err: this.bolAttachmentError }
+      ].forEach(item => {
+        if (item.input) item.input.value = '';
+        if (item.placeholder) item.placeholder.style.display = 'flex';
+        if (item.preview) item.preview.style.display = 'none';
+        if (item.err) {
+          item.err.textContent = '';
+          item.err.style.display = 'none';
+        }
+      });
+
+      // Clear weights
+      if (this.wbIntLoaded) this.wbIntLoaded.value = '';
+      if (this.wbIntEmpty) this.wbIntEmpty.value = '';
+      if (this.wbExtLoaded) this.wbExtLoaded.value = '';
+      if (this.wbExtEmpty) this.wbExtEmpty.value = '';
+
+      // Clear operational inputs
+      if (this.wbInternalCodeInput) this.wbInternalCodeInput.value = '';
+      if (this.wbExternalCodeInput) this.wbExternalCodeInput.value = '';
+      if (this.driverPhoneInput) this.driverPhoneInput.value = '';
+      if (this.carInput) this.carInput.value = '';
+      if (this.driverSelect) this.driverSelect.selectedIndex = 0;
+      if (this.materialSelect) this.materialSelect.selectedIndex = 0;
+      if (this.recNameInput) this.recNameInput.value = '';
+      if (this.recTitleSelect) this.recTitleSelect.selectedIndex = 0;
+      if (this.recDateInput) this.recDateInput.value = '';
+      if (this.custodyInput) this.custodyInput.value = '';
+      if (this.ikramiyaInput) this.ikramiyaInput.value = '0.00';
+      if (this.notesInput) this.notesInput.value = '';
+
+      if (this.statusSafeCheckbox) this.statusSafeCheckbox.checked = true;
+      if (this.statusIntactCheckbox) this.statusIntactCheckbox.checked = true;
+
+      this.recalculateAllWeights();
+      this.recalculateShippingTime();
+      this.clearAllFieldErrors();
+      this.hideAlert();
+    }
+
+    setFieldError(inputEl, msg) {
+      if (!inputEl) return;
+      inputEl.classList.add('error');
+      const group = inputEl.closest('.trans-form-group');
+      if (group) {
+        let errEl = group.querySelector('.trans-field-error');
+        if (errEl) {
+          errEl.textContent = msg;
+          errEl.style.display = 'block';
+        }
+      }
+    }
+
+    clearAllFieldErrors() {
+      document.querySelectorAll('.trans-input.error').forEach(el => el.classList.remove('error'));
+      document.querySelectorAll('.trans-field-error').forEach(el => {
+        el.textContent = '';
+        el.style.display = 'none';
+      });
+      if (this.shippingTimeError) {
+        this.shippingTimeError.style.display = 'none';
+      }
+      if (this.recStatusError) {
+        this.recStatusError.style.display = 'none';
+      }
+      if (this.wbAttachmentError) this.wbAttachmentError.style.display = 'none';
+      if (this.dsAttachmentError) this.dsAttachmentError.style.display = 'none';
+      if (this.bolAttachmentError) this.bolAttachmentError.style.display = 'none';
+    }
+
+    showAlert(msg, type = 'success') {
+      if (!this.alertBanner) return;
+      this.alertBanner.className = `trans-alert-banner ${type}`;
+      if (this.alertIcon) this.alertIcon.textContent = type === 'error' ? '⚠️' : '✓';
+      if (this.alertTitle) this.alertTitle.textContent = type === 'error' ? 'تنبيه' : 'نجاح';
+      if (this.alertDesc) this.alertDesc.textContent = msg;
+      this.alertBanner.style.display = 'flex';
+      this.alertBanner.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    hideAlert() {
+      if (this.alertBanner) this.alertBanner.style.display = 'none';
+    }
+
+    setSubmitLoading(isLoading) {
+      this.isSubmitting = isLoading;
+      if (this.submitBtn) this.submitBtn.disabled = isLoading;
+      if (this.submitSpinner) this.submitSpinner.style.display = isLoading ? 'inline-block' : 'none';
+      if (this.submitIcon) this.submitIcon.style.display = isLoading ? 'none' : 'inline-block';
+      if (this.submitBtnText) this.submitBtnText.textContent = isLoading ? 'جاري الحفظ...' : 'حفظ';
     }
 
     escapeHtml(str) {
@@ -782,9 +1210,6 @@
         .replace(/'/g, '&#039;');
     }
 
-    /**
-     * Updates user information badge when viewing Transportation department
-     */
     updateUserBadge(user) {
       if (!user) return;
       if (this.userNameEl) {
@@ -794,7 +1219,7 @@
         let roleArabic = user.role || 'إدارة النقل';
         if (user.role === 'CEO') roleArabic = 'الرئيس التنفيذي';
         else if (user.role === 'IT') roleArabic = 'الدعم الفني / IT';
-        else if (user.role === 'Transportation Manager') roleArabic = 'مدير إدارة النقل';
+        else if (user.role === 'Transportation Manager' || user.role === 'TRANSPORTATION_MANAGER') roleArabic = 'مدير إدارة النقل';
         this.userRoleEl.textContent = roleArabic;
       }
       if (this.userAvatarEl) {
@@ -813,11 +1238,12 @@
   // Create global instance
   window.TransportationApp = new TransportationManager();
 
-  // Hook into ChatApp view transitions if available
+  // Hook into ChatApp view transitions
   document.addEventListener('chat:view:changed', (e) => {
     if (e.detail && e.detail.view === 'transportation') {
       const user = window.ChatApi?.getCurrentUser();
       window.TransportationApp.updateUserBadge(user);
+      window.TransportationApp.showPoEntryStep();
       window.TransportationApp.loadRecentTransactions();
     }
   });

@@ -1,0 +1,835 @@
+/* ==========================================================================
+   FACESTONE MOBILE APPLICATION STYLESHEET (PWA / MOBILE EXPERIENCES)
+   Brand Identity: Sleek Dark (#0B111E), Golden Yellow (#F59E0B), Clean White
+   Specifically tailored for mobile screens, touch targets, and installable PWA
+   ========================================================================== */
+
+:root {
+  --fs-gold: #F59E0B;
+  --fs-gold-hover: #D97706;
+  --fs-gold-glow: rgba(245, 158, 11, 0.25);
+  --fs-dark-bg: #0B111E;
+  --fs-card-bg: #131D31;
+  --fs-card-border: rgba(255, 255, 255, 0.08);
+  --fs-bottom-nav-h: 68px;
+  --fs-top-appbar-h: 58px;
+  --fs-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --fs-safe-top: env(safe-area-inset-top, 0px);
+}
+
+/* ==========================================================================
+   1. Offline Notification Banner
+   ========================================================================== */
+.fs-offline-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100000;
+  background: linear-gradient(135deg, #DC2626, #991B1B);
+  color: #FFFFFF;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  transform: translateY(-100%);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.fs-offline-banner.visible {
+  transform: translateY(0);
+}
+
+/* ==========================================================================
+   2. Mobile PWA Install Floating Banner
+   ========================================================================== */
+.fs-pwa-install-banner {
+  position: fixed;
+  bottom: calc(var(--fs-bottom-nav-h) + var(--fs-safe-bottom) + 12px);
+  left: 14px;
+  right: 14px;
+  z-index: 99990;
+  background: #111C30;
+  border: 1px solid var(--fs-gold);
+  border-radius: 16px;
+  padding: 12px 14px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 15px var(--fs-gold-glow);
+  display: none;
+  align-items: center;
+  gap: 12px;
+  animation: fsBannerSlideUp 0.35s ease-out;
+  direction: rtl;
+}
+
+@keyframes fsBannerSlideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fs-pwa-install-banner.visible {
+  display: flex;
+}
+
+@media (min-width: 769px) {
+  .fs-pwa-install-banner {
+    bottom: 24px;
+    left: 24px;
+    right: auto;
+    width: 380px;
+    max-width: calc(100vw - 48px);
+  }
+}
+
+.fs-pwa-app-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: #0B111E;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.fs-pwa-app-icon img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+
+.fs-pwa-text-wrap {
+  flex: 1;
+  min-width: 0;
+}
+
+.fs-pwa-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #FFFFFF;
+  line-height: 1.3;
+  margin-bottom: 2px;
+}
+
+.fs-pwa-desc {
+  font-size: 11.5px;
+  color: #94A3B8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fs-pwa-install-btn {
+  background: linear-gradient(135deg, #F59E0B, #D97706);
+  color: #0B111E;
+  font-size: 12.5px;
+  font-weight: 800;
+  border: none;
+  border-radius: 10px;
+  padding: 8px 14px;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 4px 10px rgba(245, 158, 11, 0.35);
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.fs-pwa-install-btn:active {
+  transform: scale(0.96);
+  filter: brightness(0.9);
+}
+
+.fs-pwa-dismiss-btn {
+  background: transparent;
+  border: none;
+  color: #64748B;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fs-pwa-dismiss-btn:active {
+  color: #FFFFFF;
+}
+
+/* ==========================================================================
+   3. Mobile Top App Bar
+   ========================================================================== */
+.fs-mobile-appbar {
+  display: none; /* Shown only on mobile screens */
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: calc(var(--fs-top-appbar-h) + var(--fs-safe-top));
+  padding-top: var(--fs-safe-top);
+  background: rgba(11, 17, 30, 0.94);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  z-index: 99980;
+  padding-left: 14px;
+  padding-right: 14px;
+  align-items: center;
+  justify-content: space-between;
+  direction: rtl;
+  user-select: none;
+}
+
+.fs-mobile-appbar-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.fs-appbar-brand-mark {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #F59E0B, #B45309);
+  color: #0B111E;
+  font-weight: 900;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: -0.5px;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+  flex-shrink: 0;
+}
+
+.fs-appbar-logo-img {
+  height: 28px;
+  max-width: 120px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+  flex-shrink: 0;
+}
+
+.fs-appbar-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.fs-appbar-title {
+  font-size: 14.5px;
+  font-weight: 800;
+  color: #FFFFFF;
+  line-height: 1.2;
+}
+
+.fs-appbar-subtitle {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--fs-gold);
+  line-height: 1.2;
+}
+
+.fs-mobile-appbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.fs-appbar-conn-pill {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 20px;
+  padding: 4px 9px;
+  font-size: 11px;
+  color: #10B981;
+  font-weight: 700;
+}
+
+.fs-appbar-conn-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #10B981;
+  box-shadow: 0 0 6px #10B981;
+  animation: fsPulse 2s infinite;
+}
+
+@keyframes fsPulse {
+  0% { opacity: 0.6; transform: scale(0.9); }
+  50% { opacity: 1; transform: scale(1.2); }
+  100% { opacity: 0.6; transform: scale(0.9); }
+}
+
+.fs-appbar-avatar-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #1E293B;
+  border: 1.5px solid var(--fs-gold);
+  color: #F59E0B;
+  font-size: 13px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+}
+
+/* ==========================================================================
+   4. Mobile Bottom Navigation Bar (شريط التنقل السفلي)
+   ========================================================================== */
+.fs-mobile-bottom-nav {
+  display: none; /* Shown only on mobile screens */
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: calc(var(--fs-bottom-nav-h) + var(--fs-safe-bottom));
+  padding-bottom: var(--fs-safe-bottom);
+  background: rgba(14, 22, 38, 0.96);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-top: 1px solid rgba(245, 158, 11, 0.22);
+  z-index: 99970;
+  direction: rtl;
+  user-select: none;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.45);
+}
+
+.fs-bottom-nav-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  height: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 0 6px;
+}
+
+.fs-nav-tab {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  background: transparent;
+  border: none;
+  color: #94A3B8;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  padding: 6px 2px;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.fs-nav-tab:active {
+  transform: scale(0.92);
+}
+
+.fs-nav-icon-wrap {
+  position: relative;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+}
+
+.fs-nav-icon-wrap svg {
+  width: 22px;
+  height: 22px;
+  stroke: currentColor;
+  stroke-width: 2;
+  transition: stroke 0.2s ease;
+}
+
+.fs-nav-label {
+  font-size: 10.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  letter-spacing: -0.2px;
+  transition: color 0.2s ease;
+}
+
+/* Active Nav Tab */
+.fs-nav-tab.active {
+  color: var(--fs-gold);
+}
+
+.fs-nav-tab.active .fs-nav-icon-wrap {
+  transform: translateY(-2px);
+}
+
+.fs-nav-tab.active .fs-nav-icon-wrap svg {
+  stroke: var(--fs-gold);
+  filter: drop-shadow(0 2px 6px rgba(245, 158, 11, 0.45));
+}
+
+.fs-nav-tab.active .fs-nav-label {
+  color: #FFFFFF;
+  font-weight: 800;
+}
+
+.fs-nav-tab.active::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 20%;
+  right: 20%;
+  height: 3px;
+  background: linear-gradient(90deg, #F59E0B, #FCD34D);
+  border-radius: 0 0 3px 3px;
+  box-shadow: 0 2px 8px var(--fs-gold);
+}
+
+.fs-nav-badge {
+  position: absolute;
+  top: -2px;
+  left: -4px;
+  background: #EF4444;
+  color: #FFFFFF;
+  font-size: 10px;
+  font-weight: 800;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  border: 1.5px solid #0E1626;
+}
+
+.fs-nav-badge.visible {
+  display: flex;
+}
+
+/* ==========================================================================
+   5. Mobile Profile & Quick Action Sheet
+   ========================================================================== */
+.fs-profile-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+  direction: rtl;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.fs-profile-sheet-backdrop.open {
+  display: flex;
+  opacity: 1;
+}
+
+.fs-profile-sheet {
+  background: #111C30;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px 24px 0 0;
+  width: 100%;
+  max-width: 520px;
+  padding: 20px 20px calc(24px + var(--fs-safe-bottom));
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.7);
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.fs-profile-sheet-backdrop.open .fs-profile-sheet {
+  transform: translateY(0);
+}
+
+.fs-sheet-drag-handle {
+  width: 40px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+  margin: 0 auto 16px;
+}
+
+.fs-sheet-user-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  padding: 14px;
+  margin-bottom: 18px;
+}
+
+.fs-sheet-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #F59E0B, #B45309);
+  color: #0B111E;
+  font-size: 18px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+  flex-shrink: 0;
+}
+
+.fs-sheet-user-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.fs-sheet-user-name {
+  font-size: 16px;
+  font-weight: 800;
+  color: #FFFFFF;
+  margin-bottom: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fs-sheet-user-role {
+  display: inline-block;
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--fs-gold);
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.fs-sheet-menu-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.fs-sheet-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 13px 16px;
+  background: #18253E;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  color: #E2E8F0;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: right;
+}
+
+.fs-sheet-btn:active {
+  background: #223456;
+  transform: scale(0.98);
+}
+
+.fs-sheet-btn.danger {
+  color: #F87171;
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.25);
+}
+
+.fs-sheet-btn.danger:active {
+  background: rgba(239, 68, 68, 0.18);
+}
+
+.fs-sheet-btn-icon {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ==========================================================================
+   6. Mobile Chat & Media Enhancements
+   ========================================================================== */
+.fs-mobile-camera-btn {
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--fs-gold);
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease;
+  flex-shrink: 0;
+}
+
+.fs-mobile-camera-btn:active {
+  transform: scale(0.92);
+  background: rgba(245, 158, 11, 0.25);
+}
+
+/* ==========================================================================
+   7. Mobile Touch & Card Responsiveness (< 768px)
+   ========================================================================== */
+@media (max-width: 768px) {
+  /* Show Mobile Bottom Nav */
+  .fs-mobile-bottom-nav {
+    display: block;
+  }
+
+  /* Show Mobile App Bar ONLY when in chat view, hide on department pages so the compact department navbar is used */
+  .fs-mobile-appbar {
+    display: none;
+  }
+
+  body.chat-view-active .fs-mobile-appbar {
+    display: flex;
+  }
+
+  /* Padding for Bottom Nav */
+  body {
+    padding-top: 0;
+    padding-bottom: calc(var(--fs-bottom-nav-h) + var(--fs-safe-bottom));
+  }
+
+  body.chat-view-active {
+    padding-top: calc(var(--fs-top-appbar-h) + var(--fs-safe-top));
+  }
+
+  /* Keep Department Headers visible, compact, and responsive on mobile */
+  .dept-selection-header,
+  .trans-page-header,
+  .storage-page-header,
+  .mgmt-page-header,
+  .management-page-header,
+  .finance-hub-header,
+  .finance-mgmt-header {
+    display: flex !important;
+    height: 60px !important;
+    min-height: 60px !important;
+    max-height: 64px !important;
+    padding: 0 10px !important;
+    gap: 6px !important;
+    flex-wrap: nowrap !important;
+    overflow: hidden !important;
+  }
+
+  .dept-brand-logo-img {
+    height: 34px !important;
+    max-height: 34px !important;
+    max-width: 140px !important;
+  }
+
+  .dept-brand-title,
+  .trans-title,
+  .storage-title,
+  .mgmt-title,
+  .finance-hub-title {
+    display: none !important;
+  }
+
+  .dept-brand-subtitle,
+  .trans-tag,
+  .storage-tag,
+  .mgmt-tag,
+  .finance-hub-subtitle {
+    display: none !important;
+  }
+
+  .trans-user-meta,
+  .storage-user-meta,
+  .mgmt-user-meta,
+  .finance-hub-user-meta,
+  .dept-user-info {
+    display: none !important;
+  }
+
+  .trans-user-pill,
+  .storage-user-pill,
+  .mgmt-user-pill,
+  .finance-hub-user-pill {
+    padding: 0 !important;
+    background: transparent !important;
+    border: none !important;
+  }
+
+  .btn-back-departments,
+  .btn-hub-back,
+  .finance-btn-nav,
+  .dept-signout-btn {
+    height: 34px !important;
+    padding: 0 8px !important;
+    font-size: 0.75rem !important;
+    gap: 4px !important;
+  }
+
+  /* Adjust root containers to take full viewport with safe bottom padding */
+  .dept-selection-root,
+  .transportation-page-root,
+  .storage-page-root,
+  .management-page-root,
+  .finance-hub-root,
+  .finance-mgmt-root,
+  .chat-app-root {
+    padding-bottom: calc(var(--fs-bottom-nav-h) + var(--fs-safe-bottom) + 16px) !important;
+    min-height: calc(100vh - var(--fs-bottom-nav-h)) !important;
+  }
+
+  /* Department Selection Cards on Mobile */
+  .dept-selection-container {
+    padding: 12px 14px 30px !important;
+    max-width: 100% !important;
+  }
+
+  .dept-cards-grid {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+  }
+
+  .dept-card {
+    border-radius: 18px !important;
+    padding: 18px !important;
+  }
+
+  .btn-enter-dept {
+    height: 48px !important;
+    font-size: 15px !important;
+    border-radius: 12px !important;
+  }
+
+  /* Form touch targets on Mobile */
+  input, select, textarea, button {
+    touch-action: manipulation;
+  }
+
+  .trans-input, .storage-input, .mgmt-input, .finance-input,
+  .auth-text-input {
+    height: 48px !important;
+    font-size: 16px !important; /* Prevents auto-zoom on iOS */
+    border-radius: 12px !important;
+  }
+
+  textarea.trans-input, textarea.storage-input, textarea.finance-input {
+    height: auto !important;
+  }
+
+  .trans-grid-2, .storage-grid-2, .mgmt-grid-2, .finance-grid-2 {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+  }
+
+  .trans-form-card, .storage-form-card, .mgmt-form-card, .finance-card {
+    padding: 16px !important;
+    border-radius: 18px !important;
+  }
+
+  /* Mobile Tables with smooth horizontal touch scrolling */
+  .trans-table-wrap, .storage-table-wrap, .finance-table-wrap, .mgmt-table-wrap {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    border-radius: 14px !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: inset -6px 0 8px -4px rgba(0,0,0,0.5);
+  }
+
+  .trans-table, .storage-table, .finance-table, .mgmt-table {
+    min-width: 650px !important;
+  }
+
+  .trans-table th, .trans-table td,
+  .storage-table th, .storage-table td,
+  .finance-table th, .finance-table td {
+    padding: 12px 10px !important;
+    font-size: 13px !important;
+  }
+
+  /* Chat Pane on Mobile */
+  .chat-app-root {
+    position: fixed !important;
+    top: calc(var(--fs-top-appbar-h) + var(--fs-safe-top)) !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: calc(var(--fs-bottom-nav-h) + var(--fs-safe-bottom)) !important;
+    height: auto !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+  }
+
+  .chat-pane {
+    border-radius: 0 !important;
+  }
+
+  .chat-send-bar {
+    padding: 10px 12px !important;
+  }
+
+  .chat-msg-textarea {
+    font-size: 15px !important;
+    border-radius: 12px !important;
+    max-height: 90px !important;
+  }
+
+  .send-msg-btn, .chat-attach-btn, .chat-location-btn {
+    width: 44px !important;
+    height: 44px !important;
+    border-radius: 12px !important;
+  }
+
+  /* Mobile Auth Modal Fullscreen Feel */
+  .auth-overlay-backdrop {
+    padding: 0 !important;
+    align-items: flex-end !important;
+  }
+
+  .auth-modal-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 24px 24px 0 0 !important;
+    max-height: 94vh !important;
+    overflow-y: auto !important;
+    padding: 24px 20px calc(30px + var(--fs-safe-bottom)) !important;
+  }
+
+  /* When Auth modal is open, hide bottom nav and top appbar */
+  body.auth-open .fs-mobile-bottom-nav,
+  body.auth-open .fs-mobile-appbar {
+    display: none !important;
+  }
+}
+
+/* ==========================================================================
+   8. PWA Standalone Display Mode Fixes
+   ========================================================================== */
+@media all and (display-mode: standalone) {
+  /* Installed App Feel */
+  html, body {
+    overscroll-behavior-y: none;
+    -webkit-user-select: none;
+  }
+
+  input, textarea {
+    -webkit-user-select: auto;
+  }
+
+  /* Hide the install banner inside standalone mode since already installed */
+  .fs-pwa-install-banner {
+    display: none !important;
+  }
+}

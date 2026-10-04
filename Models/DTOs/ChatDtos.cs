@@ -14,7 +14,10 @@ public class SendMessageDto
 {
     public string? MessageType { get; set; } = "TEXT";
     public string? Message { get; set; }
+    public string? MessageText { get; set; }
+    public string? GetEffectiveMessage() => !string.IsNullOrWhiteSpace(Message) ? Message : MessageText;
     public Guid? TargetEmployeeId { get; set; }
+    public Guid? RecipientId { get; set; }
     public Guid? ConversationId { get; set; }
     public string? Status { get; set; } = "ACTIVE";
     public double? Latitude { get; set; }
@@ -40,6 +43,8 @@ public class SendMessageDto
 
     public Guid? GetEffectiveTargetEmployeeId()
     {
+        if (RecipientId.HasValue && RecipientId.Value != Guid.Empty)
+            return RecipientId.Value;
         if (TargetEmployeeId.HasValue && TargetEmployeeId.Value != Guid.Empty)
             return TargetEmployeeId.Value;
         if (ConversationId.HasValue && ConversationId.Value != Guid.Empty)
@@ -109,7 +114,10 @@ public class SendLocationDto
     public double Latitude { get; set; }
     public double Longitude { get; set; }
     public Guid? TargetEmployeeId { get; set; }
+    public Guid? RecipientId { get; set; }
     public string? ClientMessageId { get; set; }
+
+    public Guid? GetEffectiveTargetId() => (RecipientId.HasValue && RecipientId.Value != Guid.Empty) ? RecipientId.Value : TargetEmployeeId;
 }
 
 public class StartLiveLocationDto
@@ -118,7 +126,10 @@ public class StartLiveLocationDto
     public double Longitude { get; set; }
     public int DurationMinutes { get; set; } = 15;
     public Guid? TargetEmployeeId { get; set; }
+    public Guid? RecipientId { get; set; }
     public string? ClientMessageId { get; set; }
+
+    public Guid? GetEffectiveTargetId() => (RecipientId.HasValue && RecipientId.Value != Guid.Empty) ? RecipientId.Value : TargetEmployeeId;
 }
 
 public class UpdateLiveLocationDto

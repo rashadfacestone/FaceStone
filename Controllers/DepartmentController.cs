@@ -38,19 +38,21 @@ public class DepartmentController : ControllerBase
         var hasStorage = AppRoles.HasStorageAccess(role);
         var hasManagement = AppRoles.HasManagementAccess(role);
 
-        var departments = new List<DepartmentSummaryDto>
+        var departments = new List<DepartmentSummaryDto>();
+
+        if (hasFinance)
         {
-            new DepartmentSummaryDto
+            departments.Add(new DepartmentSummaryDto
             {
                 Id = "finance",
                 Name = "FINANCE",
                 DisplayName = "Finance Department",
-                Description = "Operations Desk, Billing & Team Messaging. Active live communication hub for engineering and accounting staff.",
+                Description = "Financial statistics, PO tracking, invoices, and accounting management.",
                 Icon = "finance",
-                IsAvailable = hasFinance,
+                IsAvailable = true,
                 Route = "/finance"
-            }
-        };
+            });
+        }
 
         if (hasTransportation)
         {

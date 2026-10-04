@@ -43,7 +43,7 @@ try {
     
     # 1.1 Accountant
     Write-Host "[TEST 1.1] Testing Accountant (sarah@facestone.com)..."
-    $accToken = Get-Token "sarah@facestone.com" "SecretPass123!"
+    $accToken = Get-Token "sarah@facestone.com" "Password123!"
     $accHeaders = @{ Authorization = "Bearer $accToken" }
     
     $accVerify = Invoke-RestMethod -Uri "$baseUrl/api/department/finance" -Method Get -Headers $accHeaders

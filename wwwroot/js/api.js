@@ -14,20 +14,22 @@ class ChatApi {
    * to ensure simultaneous multi-account browsing across separate browser tabs.
    */
   static getToken() {
-    return sessionStorage.getItem(JWT_STORAGE_KEY);
+    return sessionStorage.getItem(JWT_STORAGE_KEY) || localStorage.getItem(JWT_STORAGE_KEY);
   }
 
   static setToken(token) {
     if (token) {
       sessionStorage.setItem(JWT_STORAGE_KEY, token);
+      localStorage.setItem(JWT_STORAGE_KEY, token);
     } else {
       sessionStorage.removeItem(JWT_STORAGE_KEY);
+      localStorage.removeItem(JWT_STORAGE_KEY);
     }
   }
 
   static getCurrentUser() {
     try {
-      const raw = sessionStorage.getItem(USER_STORAGE_KEY);
+      const raw = sessionStorage.getItem(USER_STORAGE_KEY) || localStorage.getItem(USER_STORAGE_KEY);
       return raw ? JSON.parse(raw) : null;
     } catch {
       return null;
@@ -37,8 +39,10 @@ class ChatApi {
   static setCurrentUser(user) {
     if (user) {
       sessionStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
+      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
     } else {
       sessionStorage.removeItem(USER_STORAGE_KEY);
+      localStorage.removeItem(USER_STORAGE_KEY);
     }
   }
 
@@ -54,9 +58,11 @@ class ChatApi {
     }
     this.isHandlingSessionExpiry = true;
 
-    // Clear tab-isolated authentication tokens
+    // Clear persistent and tab authentication tokens
     sessionStorage.removeItem(JWT_STORAGE_KEY);
     sessionStorage.removeItem(USER_STORAGE_KEY);
+    localStorage.removeItem(JWT_STORAGE_KEY);
+    localStorage.removeItem(USER_STORAGE_KEY);
 
     // Stop real-time WebSocket connection and background polling immediately
     if (window.realTimeChat) {
@@ -207,6 +213,7 @@ class ChatApi {
     if (attachmentFile) formData.append('Attachment', attachmentFile);
     if (targetEmployeeId && targetEmployeeId !== 'desk') {
       formData.append('TargetEmployeeId', targetEmployeeId);
+      formData.append('RecipientId', targetEmployeeId);
     }
     if (clientMessageId) {
       formData.append('ClientMessageId', clientMessageId);
@@ -215,6 +222,13 @@ class ChatApi {
     return await this.request('/api/chat/send', {
       method: 'POST',
       body: formData
+    });
+  }
+
+  static async searchUsers(searchTerm = '') {
+    const qs = searchTerm ? `?search=${encodeURIComponent(searchTerm)}` : '';
+    return await this.request(`/api/chat/users${qs}`, {
+      method: 'GET'
     });
   }
 
@@ -437,6 +451,65 @@ class ChatApi {
   /* ------------------------------------------------------------------------
      Transportation Department Endpoints (/api/transportation)
      ------------------------------------------------------------------------ */
+  static async getTransportationPurchaseOrder(poNumber) {
+    if (!poNumber) return { success: false, message: 'رقم أمر الشراء مطلوب' };
+    return await this.request(`/api/transportation/po/${encodeURIComponent(poNumber.trim())}`, {
+      method: 'GET'
+    });
+  }
+
+  static async submitTransportationTransaction(formData) {
+    const token = this.getToken();
+    const headers = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/transportation`, {
+        method: 'POST',
+        headers: headers,
+        body: formData
+      });
+
+      let json = {};
+      try {
+        json = await response.json();
+      } catch {
+        json = { success: response.ok, message: response.statusText };
+      }
+
+      return {
+        success: response.ok,
+        status: response.status,
+        ...json
+      };
+    } catch (err) {
+      return {
+        success: false,
+        message: err.message || 'حدث خطأ في الاتصال بالخادم.'
+      };
+    }
+  }
+
+  static getTransportationInvoiceUrl(fileName) {
+    if (!fileName) return '#';
+    return `${API_BASE_URL}/api/transportation/invoices/${encodeURIComponent(fileName)}`;
+  }
+
+  static async getTransportationPurchaseOrder(poNumber) {
+    return await this.request(`/api/transportation/po/${encodeURIComponent(poNumber)}`, {
+      method: 'GET'
+    });
+  }
+
+  static async submitTransportationTransaction(formData) {
+    return await this.request('/api/transportation', {
+      method: 'POST',
+      body: formData
+    });
+  }
+
   static async submitTransportation(data) {
     return await this.request('/api/transportation', {
       method: 'POST',

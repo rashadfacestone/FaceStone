@@ -178,7 +178,7 @@ public class FaceStoneDbContext : DbContext
             entity.Property(e => e.TransactionNumber)
                   .IsRequired();
 
-            entity.HasIndex(e => e.TransactionNumber)
+            entity.HasIndex(e => new { e.PONumber, e.TransactionNumber })
                   .IsUnique();
 
             entity.Property(e => e.TransactionDate)
@@ -224,6 +224,90 @@ public class FaceStoneDbContext : DbContext
                   .HasPrecision(18, 3)
                   .IsRequired();
 
+            entity.Property(e => e.CompanyName)
+                  .HasMaxLength(200)
+                  .HasDefaultValue(string.Empty)
+                  .IsRequired();
+
+            entity.Property(e => e.InternalWeight)
+                  .HasPrecision(18, 3)
+                  .HasDefaultValue(0m)
+                  .IsRequired();
+
+            entity.Property(e => e.ExternalLoadedWeight)
+                  .HasPrecision(18, 3)
+                  .HasDefaultValue(0m)
+                  .IsRequired();
+
+            entity.Property(e => e.ExternalEmptyWeight)
+                  .HasPrecision(18, 3)
+                  .HasDefaultValue(0m)
+                  .IsRequired();
+
+            entity.Property(e => e.ExternalNetWeight)
+                  .HasPrecision(18, 3)
+                  .HasDefaultValue(0m)
+                  .IsRequired();
+
+            entity.Property(e => e.WasteQuantity)
+                  .HasPrecision(18, 3)
+                  .HasDefaultValue(0m)
+                  .IsRequired();
+
+            entity.Property(e => e.DriverPhone)
+                  .HasMaxLength(30)
+                  .IsRequired(false);
+
+            entity.Property(e => e.DepartureTime)
+                  .IsRequired(false);
+
+            entity.Property(e => e.ArrivalTime)
+                  .IsRequired(false);
+
+            entity.Property(e => e.ShippingSupervisor)
+                  .HasMaxLength(100)
+                  .HasDefaultValue("محمد ناجح")
+                  .IsRequired();
+
+            entity.Property(e => e.DepartmentSupervisor)
+                  .HasMaxLength(100)
+                  .HasDefaultValue("ازهر محمد")
+                  .IsRequired();
+
+            entity.Property(e => e.RecipientName)
+                  .HasMaxLength(150)
+                  .IsRequired(false);
+
+            entity.Property(e => e.RecipientTitle)
+                  .HasMaxLength(100)
+                  .IsRequired(false);
+
+            entity.Property(e => e.ReceivedDate)
+                  .IsRequired(false);
+
+            entity.Property(e => e.InternalWeighbridgeCode)
+                  .HasMaxLength(100)
+                  .IsRequired(false);
+
+            entity.Property(e => e.InternalEmptyWeightTime)
+                  .IsRequired(false);
+
+            entity.Property(e => e.InternalLoadedWeightTime)
+                  .IsRequired(false);
+
+            entity.Property(e => e.ExternalWeighbridgeCode)
+                  .HasMaxLength(100)
+                  .IsRequired(false);
+
+            entity.Property(e => e.ExternalEmptyWeightTime)
+                  .IsRequired(false);
+
+            entity.Property(e => e.ExternalLoadedWeightTime)
+                  .IsRequired(false);
+
+            entity.Property(e => e.ShippingDurationMinutes)
+                  .IsRequired(false);
+
             entity.Property(e => e.Destination)
                   .HasMaxLength(200)
                   .IsRequired();
@@ -239,6 +323,92 @@ public class FaceStoneDbContext : DbContext
             entity.Property(e => e.Notes)
                   .HasMaxLength(1000)
                   .IsRequired(false);
+
+            entity.Property(e => e.Ikramiya)
+                  .HasPrecision(18, 3)
+                  .HasDefaultValue(0m)
+                  .IsRequired();
+
+            entity.Property(e => e.CustodyAmount)
+                  .HasPrecision(18, 3)
+                  .HasDefaultValue(0m)
+                  .IsRequired();
+
+            entity.Property(e => e.InvoiceAttachmentPath)
+                  .HasMaxLength(500)
+                  .IsRequired(false);
+
+            entity.Property(e => e.InvoiceFileName)
+                  .HasMaxLength(260)
+                  .IsRequired(false);
+
+            entity.Property(e => e.InvoiceFileType)
+                  .HasMaxLength(50)
+                  .IsRequired(false);
+
+            entity.Property(e => e.InvoiceFileSize)
+                  .HasDefaultValue(0L)
+                  .IsRequired();
+
+            // Section 1: Weighbridge Attachment
+            entity.Property(e => e.WeighbridgeAttachmentPath)
+                  .HasMaxLength(500)
+                  .IsRequired(false);
+
+            entity.Property(e => e.WeighbridgeFileName)
+                  .HasMaxLength(260)
+                  .IsRequired(false);
+
+            entity.Property(e => e.WeighbridgeFileType)
+                  .HasMaxLength(50)
+                  .IsRequired(false);
+
+            entity.Property(e => e.WeighbridgeFileSize)
+                  .HasDefaultValue(0L)
+                  .IsRequired();
+
+            // Section 2: Daily Supply Attachment
+            entity.Property(e => e.DailySupplyAttachmentPath)
+                  .HasMaxLength(500)
+                  .IsRequired(false);
+
+            entity.Property(e => e.DailySupplyFileName)
+                  .HasMaxLength(260)
+                  .IsRequired(false);
+
+            entity.Property(e => e.DailySupplyFileType)
+                  .HasMaxLength(50)
+                  .IsRequired(false);
+
+            entity.Property(e => e.DailySupplyFileSize)
+                  .HasDefaultValue(0L)
+                  .IsRequired();
+
+            // Section 3: Bill of Lading Attachment
+            entity.Property(e => e.BillOfLadingAttachmentPath)
+                  .HasMaxLength(500)
+                  .IsRequired(false);
+
+            entity.Property(e => e.BillOfLadingFileName)
+                  .HasMaxLength(260)
+                  .IsRequired(false);
+
+            entity.Property(e => e.BillOfLadingFileType)
+                  .HasMaxLength(50)
+                  .IsRequired(false);
+
+            entity.Property(e => e.BillOfLadingFileSize)
+                  .HasDefaultValue(0L)
+                  .IsRequired();
+
+            entity.Property(e => e.SubmittedBy)
+                  .HasMaxLength(150)
+                  .IsRequired(false);
+
+            entity.HasOne(e => e.PurchaseOrder)
+                  .WithMany(p => p.TransportationTransactions)
+                  .HasForeignKey(e => e.PurchaseOrderId)
+                  .OnDelete(DeleteBehavior.SetNull);
 
             entity.Property(e => e.DateOfSubmit)
                   .IsRequired();
@@ -421,6 +591,15 @@ public class FaceStoneDbContext : DbContext
                   .HasMaxLength(1000)
                   .IsRequired(false);
 
+            entity.Property(e => e.Destination)
+                  .HasMaxLength(200)
+                  .HasDefaultValue("Cairo Factory")
+                  .IsRequired();
+
+            entity.Property(e => e.RemainingQuantity)
+                  .HasPrecision(18, 3)
+                  .IsRequired();
+
             entity.Property(e => e.CreatedAt)
                   .HasDefaultValueSql("GETUTCDATE()");
 
@@ -474,4 +653,5 @@ public class FaceStoneDbContext : DbContext
         });
     }
 }
+
 

@@ -101,6 +101,17 @@ class ChatApp {
     this.currentUserAvatarEl = document.getElementById('current-user-avatar');
     this.logoutBtn = document.getElementById('user-logout-btn');
 
+    // Floating Chat Elements
+    this.floatingChatBtn = document.getElementById('fs-floating-chat-btn');
+    this.floatingChatBadge = document.getElementById('fs-floating-chat-badge');
+    this.chatListView = document.getElementById('fs-chat-list-view');
+    this.btnNewChatToggle = document.getElementById('btn-new-chat-toggle');
+    this.btnCloseFloatingChat = document.getElementById('btn-close-floating-chat');
+    this.btnCloseFloatingChatConv = document.getElementById('btn-close-floating-chat-conv');
+    this.usersDirectorySection = document.getElementById('fs-users-directory-section');
+    this.usersResultsList = document.getElementById('fs-users-results-list');
+    this.btnCancelUserSearch = document.getElementById('btn-cancel-user-search');
+
     // Chat Pane
     this.chatAppRoot = document.getElementById('chat-app-root');
     this.chatEmptyView = document.getElementById('chat-empty-view');
@@ -154,34 +165,35 @@ class ChatApp {
     this.tabLoginBtn?.addEventListener('click', () => this.switchAuthTab('login'));
     this.tabRegisterBtn?.addEventListener('click', () => this.switchAuthTab('register'));
 
+    // Floating Chat Button & Window Actions
+    this.floatingChatBtn?.addEventListener('click', () => {
+      this.toggleFloatingChat();
+    });
+
+    this.btnCloseFloatingChat?.addEventListener('click', () => {
+      this.closeFloatingChat();
+    });
+
+    this.btnCloseFloatingChatConv?.addEventListener('click', () => {
+      this.closeFloatingChat();
+    });
+
+    this.btnNewChatToggle?.addEventListener('click', () => {
+      this.toggleUserDirectory();
+    });
+
+    this.btnCancelUserSearch?.addEventListener('click', () => {
+      this.hideUserDirectory();
+    });
+
     // Department Action Buttons
     this.btnEnterFinance?.addEventListener('click', () => {
       this.enterDepartment('finance');
     });
 
-    // Finance Hub Actions
-    this.btnFinanceHubChat?.addEventListener('click', () => {
-      this.enterFinanceChat();
-    });
-
-    this.btnFinanceHubMgmt?.addEventListener('click', () => {
-      this.enterFinanceManagement();
-    });
-
-    this.financeHubBackBtn?.addEventListener('click', () => {
-      this.backToDepartments();
-    });
-
-    this.financeMgmtBackToHubBtn?.addEventListener('click', () => {
-      this.enterDepartment('finance');
-    });
-
+    // Finance Actions
     this.financeMgmtBackToDeptsBtn?.addEventListener('click', () => {
       this.backToDepartments();
-    });
-
-    this.btnChatToFinanceHub?.addEventListener('click', () => {
-      this.enterDepartment('finance');
     });
 
     this.btnEnterTransportation?.addEventListener('click', () => {
@@ -311,12 +323,16 @@ class ChatApp {
 
     // Search Box
     this.searchInput?.addEventListener('input', () => {
-      const val = this.searchInput.value;
+      const val = this.searchInput.value.trim();
       chatState.searchQuery = val;
       if (this.searchClearBtn) {
         this.searchClearBtn.classList.toggle('active', !!val);
       }
       this.renderConversationsList();
+
+      if (val.length >= 1 || (this.usersDirectorySection && this.usersDirectorySection.style.display !== 'none')) {
+        this.searchAndRenderUsers(val);
+      }
     });
 
     this.searchClearBtn?.addEventListener('click', () => {
@@ -324,17 +340,18 @@ class ChatApp {
       chatState.searchQuery = '';
       this.searchClearBtn.classList.remove('active');
       this.renderConversationsList();
+      if (this.usersDirectorySection && this.usersDirectorySection.style.display !== 'none') {
+        this.searchAndRenderUsers('');
+      }
     });
 
-    // Mobile Back Button
+    // Back to Conversations List
     this.mobileBackBtn?.addEventListener('click', () => {
-      this.chatAppRoot.classList.remove('mobile-chat-open');
-      this.chatAppRoot.classList.remove('mobile-empty-open');
+      this.showConversationsListView();
     });
 
-    // Empty View Mobile Back Button
     this.emptyMobileBackBtn?.addEventListener('click', () => {
-      this.chatAppRoot.classList.remove('mobile-empty-open');
+      this.showConversationsListView();
     });
 
     // Location Button & Popover Actions
@@ -448,6 +465,7 @@ class ChatApp {
   static bindStateEvents() {
     window.addEventListener('chat:state:conversations:updated', () => {
       this.renderConversationsList();
+      this.updateFloatingBadge();
     });
 
     window.addEventListener('chat:state:activeConversation:changed', (e) => {
@@ -500,40 +518,47 @@ class ChatApp {
 
     window.addEventListener('realtime:message:received', (e) => {
       const msg = e.detail;
-      const activeConv = chatState.activeConversation;
-      const isAccountant = chatState.isAccountantUser();
+      const currentUser = chatState.currentUser;
+      if (!msg || !currentUser) return;
 
-      // Check if this message belongs to the current thread
-      let belongsToCurrent = false;
-      if (activeConv) {
-        if (isAccountant) {
-          const activeEmpId = activeConv.employeeId || activeConv.id;
-          belongsToCurrent = (msg.senderId === activeEmpId || msg.recipientId === activeEmpId);
-        } else {
-          belongsToCurrent = true; // Employee thread is with Desk
-        }
-      }
+      const myId = currentUser.id;
+      const isSentByMe = msg.senderId === myId;
+      const partnerId = isSentByMe ? msg.recipientId : msg.senderId;
+
+      const activeConv = chatState.activeConversation;
+      const activePartnerId = activeConv ? (activeConv.employeeId || activeConv.id) : null;
+      const belongsToCurrent = activePartnerId && (activePartnerId === partnerId);
 
       if (belongsToCurrent) {
         chatState.addMessage(msg);
+        this.scrollToBottom();
+        // If window is open and conversation is active, mark read
+        if (!isSentByMe && this.chatAppRoot && this.chatAppRoot.style.display !== 'none') {
+          ChatApi.getConversationMessages(partnerId);
+        }
       }
 
       // Update snippet in conversation list
-      const partnerId = isAccountant ? (msg.senderRole === 'Accountant' ? msg.recipientId : msg.senderId) : 'desk';
-      if (partnerId && partnerId !== 'desk') {
-        const activeEmpId = activeConv ? (activeConv.employeeId || activeConv.id) : null;
-        const isCurrentlyViewing = activeEmpId === partnerId;
-        const rawType = (msg.messageType || '').toUpperCase();
-        let snippetText = msg.messageText;
-        if (rawType === 'LIVE_LOCATION' || rawType === 'LIVELOCATION' || Boolean(msg.liveSessionId)) {
-          snippetText = '📍 موقع مباشر';
-        } else if (rawType === 'LOCATION') {
-          snippetText = '📍 موقع جغرافي';
-        } else if (msg.attachment) {
-          snippetText = '[مرفق]';
-        }
-        chatState.updateConversationSnippet(partnerId, snippetText || '', msg.sentAt, !isCurrentlyViewing);
+      const isCurrentlyViewing = belongsToCurrent && (this.chatAppRoot && this.chatAppRoot.style.display !== 'none');
+      const rawType = (msg.messageType || '').toUpperCase();
+      let snippetText = msg.messageText;
+      if (rawType === 'LIVE_LOCATION' || rawType === 'LIVELOCATION' || Boolean(msg.liveSessionId)) {
+        snippetText = '📍 موقع مباشر';
+      } else if (rawType === 'LOCATION') {
+        snippetText = '📍 موقع جغرافي';
+      } else if (msg.attachment || msg.hasAttachment) {
+        snippetText = '📎 [مرفق]';
       }
+
+      const partnerInfo = isSentByMe ? null : {
+        fullName: msg.senderName,
+        role: msg.senderRole,
+        username: msg.senderUsername || ''
+      };
+
+      const incrementUnread = !isSentByMe && !isCurrentlyViewing;
+      chatState.updateConversationSnippet(partnerId, snippetText || '', msg.sentAt, incrementUnread, partnerInfo);
+      this.updateFloatingBadge();
     });
   }
 
@@ -547,6 +572,8 @@ class ChatApp {
   }
 
   static showView(viewName) {
+    document.body.classList.toggle('auth-open', viewName === 'auth');
+
     if (this.authModal) {
       if (viewName === 'auth') {
         this.authModal.classList.add('active');
@@ -564,22 +591,14 @@ class ChatApp {
         if (u) {
           this.updateDepartmentCardsVisibility(u);
         }
-      }
-    }
-
-    if (this.financeHubRoot) {
-      this.financeHubRoot.style.display = (viewName === 'finance-hub') ? 'flex' : 'none';
-      if (viewName === 'finance-hub') {
-        const u = chatState.currentUser || ChatApi.getCurrentUser();
-        if (window.FinanceManagementApp) {
-          window.FinanceManagementApp.updateUserBadge(u);
-        }
+        document.dispatchEvent(new CustomEvent('chat:view:changed', { detail: { view: 'departments', user: u } }));
       }
     }
 
     if (this.financeManagementRoot) {
-      this.financeManagementRoot.style.display = (viewName === 'finance-management') ? 'flex' : 'none';
-      if (viewName === 'finance-management') {
+      const isMgmt = (viewName === 'finance' || viewName === 'finance-management' || viewName === 'finance-hub');
+      this.financeManagementRoot.style.display = isMgmt ? 'flex' : 'none';
+      if (isMgmt) {
         const u = chatState.currentUser || ChatApi.getCurrentUser();
         if (window.FinanceManagementApp) {
           window.FinanceManagementApp.init();
@@ -590,8 +609,17 @@ class ChatApp {
       }
     }
 
-    if (this.chatAppRoot) {
-      this.chatAppRoot.style.display = (viewName === 'finance' || viewName === 'finance-chat') ? 'flex' : 'none';
+    // Floating Chat Button visibility control
+    if (this.floatingChatBtn) {
+      const isAuth = ChatApi.isAuthenticated();
+      this.floatingChatBtn.style.display = (viewName === 'auth' || !isAuth) ? 'none' : 'flex';
+      if (viewName === 'auth') {
+        this.closeFloatingChat();
+      }
+    }
+
+    if (viewName === 'finance-chat') {
+      this.openFloatingChat();
     }
 
     if (this.transportationPageRoot) {
@@ -654,14 +682,8 @@ class ChatApp {
   static ensureFinanceElementsInDom() {
     this.cardDeptFinance = document.getElementById('card-dept-finance');
     this.btnEnterFinance = document.getElementById('btn-enter-finance');
-    this.financeHubRoot = document.getElementById('finance-hub-root');
     this.financeManagementRoot = document.getElementById('finance-management-page-root');
-    this.btnFinanceHubChat = document.getElementById('btn-finance-hub-chat');
-    this.btnFinanceHubMgmt = document.getElementById('btn-finance-hub-mgmt');
-    this.financeHubBackBtn = document.getElementById('finance-hub-back-to-departments-btn');
-    this.financeMgmtBackToHubBtn = document.getElementById('finance-mgmt-back-to-hub-btn');
     this.financeMgmtBackToDeptsBtn = document.getElementById('finance-mgmt-back-to-departments-btn');
-    this.btnChatToFinanceHub = document.getElementById('btn-chat-to-finance-hub');
   }
 
   static updateDepartmentCardsVisibility(user, deptRes = null) {
@@ -699,11 +721,11 @@ class ChatApp {
         hasManagement = deptRes.data.hasManagementAccess;
       }
       if (Array.isArray(deptRes.data.departments)) {
-        const deptIds = deptRes.data.departments.map(d => (d.id || '').toLowerCase());
-        if (deptIds.includes('finance')) hasFinance = true;
-        if (deptIds.includes('transportation')) hasTrans = true;
-        if (deptIds.includes('storage')) hasStorage = true;
-        if (deptIds.includes('management')) hasManagement = true;
+        const availableDepts = deptRes.data.departments.filter(d => d.isAvailable !== false).map(d => (d.id || '').toLowerCase());
+        hasFinance = availableDepts.includes('finance');
+        hasTrans = availableDepts.includes('transportation');
+        hasStorage = availableDepts.includes('storage');
+        hasManagement = availableDepts.includes('management');
       }
     }
 
@@ -782,6 +804,19 @@ class ChatApp {
   static async onAuthenticated(user) {
     chatState.init(user);
 
+    // Show floating chat button for all authenticated users
+    if (this.floatingChatBtn) {
+      this.floatingChatBtn.style.display = 'flex';
+    }
+
+    // Start real-time messaging for all users
+    if (window.realTimeChat) {
+      window.realTimeChat.start(user);
+    }
+
+    // Load initial conversations & update unread badge
+    await this.loadConversations();
+
     // Update Header in Finance Chat
     if (this.currentUserNameEl) this.currentUserNameEl.textContent = user.fullName;
     if (this.currentUserRoleEl) this.currentUserRoleEl.textContent = this.formatRoleArabic(user.role);
@@ -835,16 +870,18 @@ class ChatApp {
 
   static async enterDepartment(dept) {
     if (dept === 'finance') {
-      // Backend authorization check for Finance Department (Hub)
+      // Backend authorization check for Finance Department
       const res = await ChatApi.verifyFinanceAccess();
       if (res.success && res.status !== 403) {
-        this.showView('finance-hub');
+        this.showView('finance-management');
         const user = chatState.currentUser || ChatApi.getCurrentUser();
         if (window.FinanceManagementApp) {
+          window.FinanceManagementApp.init();
           window.FinanceManagementApp.updateUserBadge(user);
+          window.FinanceManagementApp.loadData();
         }
         if (window.location.pathname !== '/finance') {
-          history.pushState({ view: 'finance-hub' }, '', '/finance');
+          history.pushState({ view: 'finance-management' }, '', '/finance');
         }
       } else {
         // 403 Forbidden: Render Access Denied screen
@@ -906,47 +943,11 @@ class ChatApp {
   }
 
   static async enterFinanceChat() {
-    this.showView('finance-chat');
-    if (window.location.pathname !== '/finance/chat') {
-      history.pushState({ view: 'finance-chat' }, '', '/finance/chat');
-    }
-
-    // Initialize Finance real-time SignalR connection and load conversations once
-    if (!this.financeInitialized) {
-      this.financeInitialized = true;
-      const user = chatState.currentUser;
-      if (user) {
-        realTimeChat.start(user);
-        if (chatState.isAccountantUser()) {
-          await this.loadAccountantConversations();
-        } else {
-          await this.loadEmployeeDeskConversation(user);
-        }
-      }
-    }
+    this.openFloatingChat();
   }
 
   static async enterFinanceManagement() {
-    // Backend authorization check
-    const res = await ChatApi.verifyFinanceAccess();
-    if (res.success && res.status !== 403) {
-      this.showView('finance-management');
-      const user = chatState.currentUser || ChatApi.getCurrentUser();
-      if (window.FinanceManagementApp) {
-        window.FinanceManagementApp.init();
-        window.FinanceManagementApp.updateUserBadge(user);
-        window.FinanceManagementApp.loadData();
-      }
-      if (window.location.pathname !== '/finance/management') {
-        history.pushState({ view: 'finance-management' }, '', '/finance/management');
-      }
-    } else {
-      this.setAccessDeniedDept('Finance Management', 'Accountants, IT, and CEO');
-      this.showView('access-denied');
-      if (window.location.pathname !== '/finance/management') {
-        history.pushState({ view: 'access-denied' }, '', '/finance/management');
-      }
-    }
+    await this.enterDepartment('finance');
   }
 
   static setAccessDeniedDept(deptName, allowedRoles) {
@@ -981,8 +982,145 @@ class ChatApp {
     }
   }
 
+  static toggleFloatingChat(forceOpen = null) {
+    if (!this.chatAppRoot) return;
+    const isHidden = this.chatAppRoot.style.display === 'none';
+    const shouldOpen = forceOpen !== null ? forceOpen : isHidden;
+    if (shouldOpen) {
+      this.openFloatingChat();
+    } else {
+      this.closeFloatingChat();
+    }
+  }
+
+  static openFloatingChat() {
+    if (!this.chatAppRoot) return;
+    this.chatAppRoot.style.display = 'flex';
+    this.chatAppRoot.classList.add('active');
+    if (!chatState.activeConversation) {
+      this.showConversationsListView();
+    } else {
+      this.showActiveConversationView();
+    }
+  }
+
+  static closeFloatingChat() {
+    if (!this.chatAppRoot) return;
+    this.chatAppRoot.style.display = 'none';
+    this.chatAppRoot.classList.remove('active');
+  }
+
+  static updateFloatingBadge() {
+    const badge = document.getElementById('fs-floating-chat-badge');
+    if (!badge) return;
+    const totalUnread = chatState.getTotalUnreadCount();
+    if (totalUnread > 0) {
+      badge.textContent = totalUnread > 99 ? '99+' : totalUnread;
+      badge.style.display = 'flex';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+
+  static showConversationsListView() {
+    if (this.chatListView) this.chatListView.style.display = 'flex';
+    if (this.chatActiveView) this.chatActiveView.style.display = 'none';
+    chatState.activeConversation = null;
+    window.ChatAppActiveEmployeeId = null;
+    this.renderConversationsList();
+  }
+
+  static showActiveConversationView() {
+    if (this.chatListView) this.chatListView.style.display = 'none';
+    if (this.chatActiveView) this.chatActiveView.style.display = 'flex';
+  }
+
+  static async searchAndRenderUsers(searchTerm = '') {
+    if (!this.usersResultsList) return;
+    this.usersResultsList.innerHTML = '<div style="padding: 1rem; text-align: center; color: var(--text-muted); font-size: 0.8125rem;">جاري البحث عن الزملاء...</div>';
+    
+    try {
+      const res = await ChatApi.searchUsers(searchTerm);
+      if (res.success && Array.isArray(res.data)) {
+        if (res.data.length === 0) {
+          this.usersResultsList.innerHTML = '<div style="padding: 1rem; text-align: center; color: var(--text-muted); font-size: 0.8125rem;">لا يوجد مستخدمين مطابقين.</div>';
+          return;
+        }
+
+        this.usersResultsList.innerHTML = res.data.map(u => {
+          const initials = (u.fullName || u.username || 'FS').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+          const roleArabic = this.formatRoleArabic(u.role);
+          return `
+            <div class="fs-user-item" onclick="ChatApp.startConversationWithUser('${u.id}', '${this.escape(u.fullName || u.username)}', '${this.escape(u.role || '')}', '${this.escape(u.username || '')}')">
+              <div class="fs-user-item-avatar">${initials}</div>
+              <div class="fs-user-item-info">
+                <span class="fs-user-item-name">${this.escape(u.fullName || u.username)}</span>
+                <div class="fs-user-item-meta">
+                  <span class="fs-user-item-role">${roleArabic}</span>
+                  <span>@${this.escape(u.username)}</span>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } else {
+        this.usersResultsList.innerHTML = '<div style="padding: 1rem; text-align: center; color: var(--text-muted); font-size: 0.8125rem;">تعذر جلب قائمة المستخدمين.</div>';
+      }
+    } catch (e) {
+      console.error('searchAndRenderUsers error:', e);
+      this.usersResultsList.innerHTML = '<div style="padding: 1rem; text-align: center; color: var(--text-muted); font-size: 0.8125rem;">خطأ أثناء البحث.</div>';
+    }
+  }
+
+  static toggleUserDirectory() {
+    if (!this.usersDirectorySection) return;
+    const isHidden = this.usersDirectorySection.style.display === 'none';
+    if (isHidden) {
+      this.usersDirectorySection.style.display = 'flex';
+      this.searchAndRenderUsers(this.searchInput?.value?.trim() || '');
+      this.searchInput?.focus();
+    } else {
+      this.usersDirectorySection.style.display = 'none';
+    }
+  }
+
+  static hideUserDirectory() {
+    if (this.usersDirectorySection) {
+      this.usersDirectorySection.style.display = 'none';
+    }
+  }
+
+  static async startConversationWithUser(userId, fullName, role, username) {
+    this.hideUserDirectory();
+    if (this.searchInput) {
+      this.searchInput.value = '';
+      chatState.searchQuery = '';
+      this.searchClearBtn?.classList.remove('active');
+    }
+
+    let conv = chatState.conversations.find(c => (c.employeeId === userId || c.id === userId));
+    if (!conv) {
+      conv = {
+        id: userId,
+        employeeId: userId,
+        fullName: fullName || username,
+        username: username,
+        role: role,
+        lastMessageText: '',
+        lastMessageTime: new Date().toISOString(),
+        unreadCount: 0
+      };
+      chatState.conversations.unshift(conv);
+      chatState.emitChange('conversations:updated');
+    }
+
+    await this.selectConversation(conv);
+  }
+
   static logout() {
     this.stopTrackingOnSessionExpired();
+    if (this.floatingChatBtn) this.floatingChatBtn.style.display = 'none';
+    this.closeFloatingChat();
     if (window.realTimeChat) {
       window.realTimeChat.stop();
     }
@@ -998,37 +1136,31 @@ class ChatApp {
   /* ------------------------------------------------------------------------
      Sidebar Conversation Loading
      ------------------------------------------------------------------------ */
-  static async loadAccountantConversations() {
-    this.conversationsListEl.innerHTML = '<div style="padding: 1.5rem; text-align: center; color: var(--text-muted); font-size: 0.8125rem;">جاري تحميل محادثات الموظفين...</div>';
-    const res = await ChatApi.getConversations();
-
-    if (res.success && res.data?.conversations) {
-      chatState.setConversations(res.data.conversations);
-
-      // Auto-open first conversation on desktop
-      if (window.innerWidth >= 768 && res.data.conversations.length > 0 && !chatState.activeConversation) {
-        this.selectConversation(res.data.conversations[0]);
+  static async loadConversations() {
+    if (!this.conversationsListEl) return;
+    this.conversationsListEl.innerHTML = '<div style="padding: 1.5rem; text-align: center; color: var(--text-muted); font-size: 0.8125rem;">جاري تحميل المحادثات...</div>';
+    
+    try {
+      const res = await ChatApi.getConversations();
+      if (res.success && res.data?.conversations) {
+        chatState.setConversations(res.data.conversations);
+        this.updateFloatingBadge();
+      } else {
+        chatState.setConversations([]);
+        this.renderConversationsList();
       }
-    } else {
-      this.conversationsListEl.innerHTML = '<div style="padding: 1.5rem; text-align: center; color: var(--text-muted); font-size: 0.8125rem;">لا توجد محادثات نشطة حالياً.</div>';
+    } catch (e) {
+      console.error('loadConversations error:', e);
+      chatState.setConversations([]);
     }
   }
 
-  static async loadEmployeeDeskConversation(currentUser) {
-    const deskConv = {
-      id: 'desk',
-      employeeId: 'desk',
-      fullName: 'مكتب العمليات والمحاسبة FaceStone',
-      username: 'accounting_team',
-      role: 'مكتب العمليات',
-      lastMessageText: 'القناة الرسمية المباشرة لأوامر العمل، الاستفسارات والفواتير.',
-      lastMessageTime: new Date().toISOString(),
-      unreadCount: 0,
-      isDesk: true
-    };
+  static async loadAccountantConversations() {
+    return await this.loadConversations();
+  }
 
-    chatState.setConversations([deskConv]);
-    this.selectConversation(deskConv);
+  static async loadEmployeeDeskConversation(currentUser) {
+    return await this.loadConversations();
   }
 
   static renderConversationsList() {
@@ -1038,7 +1170,8 @@ class ChatApp {
     if (list.length === 0) {
       this.conversationsListEl.innerHTML = `
         <div style="padding: 2rem 1rem; text-align: center; color: var(--text-muted); font-size: 0.875rem;">
-          لا توجد محادثات مطابقة
+          لا توجد محادثات سابقة.<br>
+          <button type="button" class="fs-chat-btn-action" style="margin-top: 0.75rem;" onclick="ChatApp.toggleUserDirectory()">بدء محادثة جديدة</button>
         </div>
       `;
       return;
@@ -1046,7 +1179,7 @@ class ChatApp {
 
     this.conversationsListEl.innerHTML = list.map(c => {
       const isActive = chatState.activeConversation && (chatState.activeConversation.id === c.employeeId || chatState.activeConversation.id === c.id);
-      const initials = c.fullName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+      const initials = (c.fullName || c.username || 'FS').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
       const timeStr = c.lastMessageTime ? this.formatTimeSnippet(c.lastMessageTime) : '';
       const isDesk = c.isDesk || c.role === 'Operations Desk';
 
@@ -1097,15 +1230,11 @@ class ChatApp {
 
     try {
       chatState.setActiveConversation(conv);
-      window.ChatAppActiveEmployeeId = conv.isDesk ? null : (conv.employeeId || conv.id);
+      window.ChatAppActiveEmployeeId = targetId;
 
-      // On mobile, trigger slide
-      this.chatAppRoot.classList.add('mobile-chat-open');
-      this.chatAppRoot.classList.remove('mobile-empty-open');
-
-      // Switch views
-      if (this.chatEmptyView) this.chatEmptyView.style.display = 'none';
-      if (this.chatActiveView) this.chatActiveView.style.display = 'flex';
+      // Switch views in floating window
+      this.showActiveConversationView();
+      this.renderActiveConversationHeader(conv);
 
       // Highlight in list
       this.renderConversationsList();
@@ -1113,19 +1242,14 @@ class ChatApp {
       // Fetch conversation messages
       this.messagesStreamBox.innerHTML = '<div style="padding: 2rem; text-align: center; color: var(--text-muted); font-size: 0.8125rem;">جاري تحميل الرسائل...</div>';
 
-      if (conv.isDesk) {
-        const res = await ChatApi.getChatHistory();
-        if (res.success && res.data) {
-          chatState.setMessages(res.data);
-        }
+      const res = await ChatApi.getConversationMessages(targetId);
+      if (res.success && res.data?.messages) {
+        conv.unreadCount = 0;
+        this.renderConversationsList();
+        this.updateFloatingBadge();
+        chatState.setMessages(res.data.messages);
       } else {
-        const empId = conv.employeeId || conv.id;
-        const res = await ChatApi.getConversationMessages(empId);
-        if (res.success && res.data?.messages) {
-          conv.unreadCount = 0;
-          this.renderConversationsList();
-          chatState.setMessages(res.data.messages);
-        }
+        chatState.setMessages([]);
       }
 
       this.focusInput();
@@ -1186,16 +1310,7 @@ class ChatApp {
     this.showToast('جاري تحديد موقعك الجغرافي...', 'info');
 
     const currentUser = chatState.currentUser;
-    const isAccountant = chatState.isAccountantUser();
-    let targetEmpId = null;
-    if (isAccountant) {
-      const rawId = activeConv.employeeId || activeConv.id;
-      if (!rawId || rawId === 'desk') {
-        this.showToast('يرجى اختيار محادثة الموظف أولاً.', 'error');
-        return;
-      }
-      targetEmpId = rawId;
-    }
+    const targetEmpId = activeConv.employeeId || activeConv.id;
 
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
@@ -1274,16 +1389,7 @@ class ChatApp {
     this.showToast('جاري تحديد موقعك الجغرافي...', 'info');
 
     const currentUser = chatState.currentUser;
-    const isAccountant = chatState.isAccountantUser();
-    let targetEmpId = null;
-    if (isAccountant) {
-      const rawId = activeConv.employeeId || activeConv.id;
-      if (!rawId || rawId === 'desk') {
-        this.showToast('يرجى اختيار محادثة الموظف أولاً.', 'error');
-        return;
-      }
-      targetEmpId = rawId;
-    }
+    const targetEmpId = activeConv.employeeId || activeConv.id;
 
     console.log('[LiveLocation] START', {
       durationMinutes,
@@ -1950,17 +2056,7 @@ class ChatApp {
     }
 
     const currentUser = chatState.currentUser;
-    const isAccountant = chatState.isAccountantUser();
-    let targetEmpId = null;
-
-    if (isAccountant) {
-      const rawId = activeConv.employeeId || activeConv.id;
-      if (!rawId || rawId === 'desk') {
-        this.showToast('يرجى اختيار محادثة الموظف أولاً.', 'error');
-        return;
-      }
-      targetEmpId = rawId;
-    }
+    const targetEmpId = activeConv.employeeId || activeConv.id;
 
     // 1. Generate unique Client Correlation ID for idempotency
     const clientMessageId = 'cmsg_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
@@ -2026,18 +2122,8 @@ class ChatApp {
       if (meta) meta.innerHTML = '<span>جاري الإرسال...</span> <span class="checkmark-icon pending">🕒</span>';
     }
 
-    const isAccountant = chatState.isAccountantUser();
     const activeConv = chatState.activeConversation;
-    let targetEmpId = null;
-
-    if (isAccountant) {
-      const rawId = activeConv?.employeeId || activeConv?.id;
-      if (!rawId || rawId === 'desk') {
-        this.showToast('يرجى اختيار محادثة الموظف أولاً.', 'error');
-        return;
-      }
-      targetEmpId = rawId;
-    }
+    const targetEmpId = activeConv?.employeeId || activeConv?.id;
 
     // Reuse the exact same Client Correlation ID to ensure server-side idempotency
     const correlationId = msg.clientMessageId || tempId;

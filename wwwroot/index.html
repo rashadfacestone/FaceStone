@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>فيس ستون — المنظومة المتكاملة لإدارة العمليات والمالية</title>
-  <meta name="description" content="منظومة فيس ستون المتكاملة لإدارة العمليات الميدانية، المحاجر، النقل، المستودعات، والمالية.">
+  <title>FaceStone</title>
+  <meta name="description" content="منظومة FaceStone لإدارة العمليات الميدانية، المحاجر، النقل، المستودعات، والمالية.">
   
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
@@ -13,45 +13,123 @@
   <!-- Base URL for SPA Routing -->
   <base href="/">
 
-  <!-- Favicon -->
-  <link rel="icon" type="image/png" href="/assets/logo.png">
+  <!-- Favicon & PWA Icons -->
+  <link rel="icon" type="image/png" href="/images/facestone-logo-transparent.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="/assets/icon-192.png">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="apple-touch-icon" sizes="192x192" href="/assets/icon-192.png">
+
+  <!-- Progressive Web App (PWA) Manifest & Mobile Settings -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#F59E0B">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="FaceStone">
 
   <!-- Core Messaging Stylesheet -->
   <link rel="stylesheet" href="/css/chat-app.css?v=20260929_pro">
   <!-- Finance Department Stylesheet -->
-  <link rel="stylesheet" href="/css/finance.css?v=20260929_pro">
+  <link rel="stylesheet" href="/css/finance.css?v=20261001_workflow">
+  <!-- Mobile Application Stylesheet -->
+  <link rel="stylesheet" href="/css/mobile-app.css?v=20260930_pro">
 </head>
 <body>
+
+  <!-- ========================================================================
+       Mobile Application Shell (Top App Bar, Banners, and Profile Sheet)
+       ======================================================================== -->
+  <!-- Offline Alert Banner -->
+  <div class="fs-offline-banner" id="fs-offline-banner" role="status" aria-live="assertive">
+    <span>⚠️</span>
+    <span>أنت غير متصل بالإنترنت حالياً. تعمل المنظومة في وضع المعاينة دون اتصال.</span>
+  </div>
+
+  <!-- Mobile Top App Bar -->
+  <header class="fs-mobile-appbar" id="fs-mobile-appbar" dir="rtl">
+    <div class="fs-mobile-appbar-left">
+      <img src="/images/facestone-logo-transparent.png" alt="FaceStone Logo" class="fs-appbar-logo-img">
+      <div class="fs-appbar-info">
+        <span class="fs-appbar-title">FaceStone</span>
+        <span class="fs-appbar-subtitle" id="fs-appbar-subtitle">لوحة التحكم والأقسام</span>
+      </div>
+    </div>
+    <div class="fs-mobile-appbar-right">
+      <div class="fs-appbar-conn-pill" id="fs-appbar-conn-pill" title="حالة الاتصال بالخادم">
+        <span class="fs-appbar-conn-dot"></span>
+        <span id="fs-appbar-conn-text">متصل</span>
+      </div>
+      <button type="button" class="fs-appbar-avatar-btn" id="fs-appbar-avatar-btn" title="الملف الشخصي والخيارات" aria-label="الملف الشخصي">
+        FS
+      </button>
+    </div>
+  </header>
+
+  <!-- Mobile PWA Install Floating Banner -->
+  <div class="fs-pwa-install-banner" id="fs-pwa-install-banner" dir="rtl">
+    <div class="fs-pwa-app-icon">
+      <img src="/assets/icon-192.png" alt="FaceStone Logo">
+    </div>
+    <div class="fs-pwa-text-wrap">
+      <div class="fs-pwa-title">تطبيق فيس ستون للعمليات</div>
+      <div class="fs-pwa-desc">ثبّت التطبيق على هاتفك لوصول مباشر وسريع</div>
+    </div>
+    <button type="button" class="fs-pwa-install-btn" id="fs-banner-install-btn">تثبيت</button>
+    <button type="button" class="fs-pwa-dismiss-btn" id="fs-banner-dismiss-btn" aria-label="إغلاق">✕</button>
+  </div>
+
+  <!-- Mobile Profile & Options Sheet -->
+  <div class="fs-profile-sheet-backdrop" id="fs-profile-sheet-backdrop" role="dialog" aria-modal="true" dir="rtl">
+    <div class="fs-profile-sheet">
+      <div class="fs-sheet-drag-handle"></div>
+      <div class="fs-sheet-user-card">
+        <div class="fs-sheet-avatar" id="fs-sheet-avatar">FS</div>
+        <div class="fs-sheet-user-meta">
+          <div class="fs-sheet-user-name" id="fs-sheet-user-name">جاري التحميل...</div>
+          <span class="fs-sheet-user-role" id="fs-sheet-user-role">الصلاحية</span>
+        </div>
+      </div>
+      <div class="fs-sheet-menu-list">
+        <button type="button" class="fs-sheet-btn" id="fs-sheet-install-btn">
+          <span class="fs-sheet-btn-icon">📲</span>
+          <span>تثبيت تطبيق فيس ستون على الهاتف (PWA)</span>
+        </button>
+        <button type="button" class="fs-sheet-btn danger" id="fs-sheet-logout-btn">
+          <span class="fs-sheet-btn-icon">🚪</span>
+          <span>تسجيل الخروج من الحساب</span>
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- ========================================================================
        Department Selection Screen (لوحة التحكم الرئيسية)
        ======================================================================== -->
   <div class="dept-selection-root" id="dept-selection-root" dir="rtl" style="display: none;">
+    <!-- Top Full-Width Brand Header -->
+    <header class="dept-selection-header">
+      <div class="dept-brand">
+        <img src="/images/facestone-logo-transparent.png" alt="FaceStone Logo" class="dept-brand-logo-img">
+        <div>
+          <h1 class="dept-brand-title">FaceStone</h1>
+          <p class="dept-brand-subtitle">بوابة فيس ستون الموحدة — إدارة العمليات واللوجستيات والمالية</p>
+        </div>
+      </div>
+
+      <div class="dept-user-badge">
+        <div class="dept-user-avatar" id="dept-user-avatar">FS</div>
+        <div class="dept-user-info">
+          <span class="dept-user-name" id="dept-user-name">جاري التحميل...</span>
+          <span class="dept-user-role" id="dept-user-role">الصلاحية</span>
+        </div>
+        <button type="button" class="dept-signout-btn" id="dept-logout-btn" title="تسجيل الخروج">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          <span>تسجيل الخروج</span>
+        </button>
+      </div>
+    </header>
+
     <div class="dept-selection-container">
-      
-      <!-- Top Brand Header -->
-      <header class="dept-selection-header">
-        <div class="dept-brand">
-          <div class="dept-brand-logo">FS</div>
-          <div>
-            <h1 class="dept-brand-title">بوابة فيس ستون الموحدة</h1>
-            <p class="dept-brand-subtitle">فيس ستون — إدارة العمليات الصناعية والمحاجر واللوجستيات والمالية</p>
-          </div>
-        </div>
-
-        <div class="dept-user-badge">
-          <div class="dept-user-avatar" id="dept-user-avatar">FS</div>
-          <div class="dept-user-info">
-            <span class="dept-user-name" id="dept-user-name">جاري التحميل...</span>
-            <span class="dept-user-role" id="dept-user-role">الصلاحية</span>
-          </div>
-          <button type="button" class="dept-signout-btn" id="dept-logout-btn" title="تسجيل الخروج">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-            <span>تسجيل الخروج</span>
-          </button>
-        </div>
-      </header>
-
       <!-- Main Department Choice Section -->
       <div class="dept-selection-content">
         <div class="dept-selection-intro">
@@ -169,10 +247,10 @@
     <!-- Top Header -->
     <header class="trans-page-header">
       <div class="trans-brand">
-        <div class="dept-brand-logo trans-brand-logo">FS</div>
+        <img src="/images/facestone-logo-transparent.png" alt="FaceStone Logo" class="dept-brand-logo-img">
         <div>
-          <span class="trans-title">فيس ستون للنقل واللوجستيات</span>
-          <span class="trans-tag">إدارة أسطول النقل وحركات المصنع</span>
+          <span class="trans-title">FaceStone</span>
+          <span class="trans-tag">النقل واللوجستيات — إدارة أسطول النقل وحركات المصنع</span>
         </div>
       </div>
 
@@ -192,372 +270,993 @@
     </header>
 
     <!-- Main Content Area -->
+    <!-- Main Content Area -->
     <main class="trans-main-container">
-      <div class="trans-dashboard-wrapper">
-        
-        <!-- Header Banner Card -->
-        <div class="trans-header-card">
-          <div class="trans-header-icon-box">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
-          </div>
-          <div class="trans-header-text">
-            <div class="trans-badge-row">
-              <span class="trans-role-badge">صلاحية: المدير التنفيذي / الدعم الفني / مدير النقل</span>
-              <span class="trans-live-badge"><span class="live-dot-pulse"></span> متصل بقاعدة البيانات SQL Server</span>
-            </div>
-            <h1 class="trans-heading">تسجيل حركة نقل جديدة</h1>
-            <p class="trans-subheading">تسجيل حركات سيارات المصنع، أذونات الشحن، موازين البسكول، وبيانات استلام الشحنات.</p>
-          </div>
-        </div>
 
-        <!-- Global Alert Box -->
-        <div class="trans-alert-banner" id="trans-form-alert" style="display: none;">
-          <div class="trans-alert-icon" id="trans-alert-icon">✓</div>
-          <div class="trans-alert-content">
-            <div class="trans-alert-title" id="trans-alert-title">نجاح</div>
-            <div class="trans-alert-desc" id="trans-alert-desc">تم حفظ الحركة بنجاح.</div>
-          </div>
-          <button type="button" class="trans-alert-close" id="trans-alert-close" aria-label="إغلاق التنبيه">✕</button>
-        </div>
-
-        <!-- Main Form Container -->
-        <form class="trans-form-card" id="trans-entry-form" novalidate>
-
-          <!-- 1. Transaction Information Section -->
-          <div class="trans-form-section">
-            <div class="trans-section-header">
-              <div class="trans-section-num">1</div>
-              <div>
-                <h2 class="trans-section-title">بيانات الحركة</h2>
-                <p class="trans-section-desc">البيانات الأساسية وتاريخ تسجيل حركة النقل.</p>
-              </div>
-            </div>
-
-            <div class="trans-grid-2">
-              <!-- Field A: Transaction Number -->
-              <div class="trans-form-group" id="group-trans-number">
-                <label class="trans-label" for="trans-number-input">
-                  رقم الحركة <span class="trans-req">*</span>
-                </label>
-                <div class="trans-input-wrap">
-                  <span class="trans-input-prefix">#</span>
-                  <input type="number" id="trans-number-input" class="trans-input" placeholder="مثال: 1001" step="1" min="1" required autocomplete="off" />
-                </div>
-                <span class="trans-field-hint">رقم صحيح فريد لتعريف حركة النقل.</span>
-                <span class="trans-field-error" id="trans-number-error"></span>
-              </div>
-
-              <!-- Field B: Transaction Date -->
-              <div class="trans-form-group" id="group-trans-date">
-                <label class="trans-label" for="trans-date-input">
-                  التاريخ <span class="trans-req">*</span>
-                </label>
-                <div class="trans-input-wrap">
-                  <input type="datetime-local" id="trans-date-input" class="trans-input" required />
-                </div>
-                <span class="trans-field-hint">تاريخ وتوقيت تسجيل الحركة.</span>
-                <span class="trans-field-error" id="trans-date-error"></span>
-              </div>
-
-              <!-- Field F: PO Number -->
-              <div class="trans-form-group" id="group-trans-po">
-                <label class="trans-label" for="trans-po-input">
-                  رقم أمر الشراء (PO) <span class="trans-req">*</span>
-                </label>
-                <div class="trans-input-wrap">
-                  <input type="text" id="trans-po-input" class="trans-input" placeholder="مثال: PO-2026-9402" required autocomplete="off" />
-                </div>
-                <span class="trans-field-hint">رقم أمر التوريد أو عقد الشراء.</span>
-                <span class="trans-field-error" id="trans-po-error"></span>
-              </div>
-
-              <!-- Field 6: Transaction Status -->
-              <div class="trans-form-group" id="group-trans-status">
-                <label class="trans-label" for="trans-status-select">
-                  حالة النقلة <span class="trans-req">*</span>
-                </label>
-                <div class="trans-input-wrap">
-                  <select id="trans-status-select" class="trans-input trans-select" required>
-                    <option value="" disabled selected>-- اختر حالة النقلة --</option>
-                  </select>
-                </div>
-                <span class="trans-field-hint">المرحلة التشغيلية الحالية للنقلة.</span>
-                <span class="trans-field-error" id="trans-status-error"></span>
-              </div>
-            </div>
+      <!-- ==================================================================
+           STEP 1: Dedicated Transportation PO Entry Page
+           ================================================================== -->
+      <section class="trans-step-container" id="trans-step-po-entry">
+        <div class="trans-po-entry-card">
+          <div class="trans-po-card-icon">
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <rect x="1" y="3" width="15" height="13"></rect>
+              <polygon points="16 8 20 8 23 11 23 16 16 16 8"></polygon>
+              <circle cx="5.5" cy="18.5" r="2.5"></circle>
+              <circle cx="18.5" cy="18.5" r="2.5"></circle>
+            </svg>
           </div>
 
-          <!-- 2. Vehicle & Driver Section -->
-          <div class="trans-form-section">
-            <div class="trans-section-header">
-              <div class="trans-section-num">2</div>
-              <div>
-                <h2 class="trans-section-title">بيانات السيارة والسائق</h2>
-                <p class="trans-section-desc">بيانات وسيلة النقل، السائق، وخط السير اللوجستي.</p>
-              </div>
+          <h1 class="trans-po-entry-title">Enter Purchase Order</h1>
+          <p class="trans-po-entry-subtitle">أدخل رقم أمر الشراء (PO) للتحقق واسترجاع الوجهة والكمية المتبقية تلقائياً ومتابعة تسجيل حركة النقل</p>
+
+          <!-- PO Error Alert Banner -->
+          <div class="trans-alert-banner error" id="trans-po-error-alert" style="display: none; margin-bottom: 1.25rem;">
+            <div class="trans-alert-icon">⚠️</div>
+            <div class="trans-alert-content">
+              <div class="trans-alert-title" id="trans-po-error-title">Purchase Order not found.</div>
+              <div class="trans-alert-desc" id="trans-po-error-desc">تأكد من كتابة رقم أمر الشراء بشكل صحيح ومطابق للسجلات المعتمدة.</div>
             </div>
-
-            <div class="trans-grid-2">
-              <!-- Field C: Car Number -->
-              <div class="trans-form-group" id="group-trans-car">
-                <label class="trans-label" for="trans-car-input">
-                  رقم السيارة <span class="trans-req">*</span>
-                </label>
-                <div class="trans-input-wrap">
-                  <input type="text" id="trans-car-input" class="trans-input" placeholder="مثال: ن ق د 5821" required autocomplete="off" />
-                </div>
-                <span class="trans-field-hint">رقم لوحة الشاحنة أو السيارة.</span>
-                <span class="trans-field-error" id="trans-car-error"></span>
-              </div>
-
-              <!-- Field D: Driver's Name -->
-              <div class="trans-form-group" id="group-trans-driver">
-                <label class="trans-label" for="trans-driver-input">
-                  اسم السائق <span class="trans-req">*</span>
-                </label>
-                <div class="trans-input-wrap">
-                  <input type="text" id="trans-driver-input" class="trans-input" placeholder="مثال: مصطفى حسن محمود" required autocomplete="off" />
-                </div>
-                <span class="trans-field-hint">الاسم الكامل لسائق الشاحنة.</span>
-                <span class="trans-field-error" id="trans-driver-error"></span>
-              </div>
-
-              <!-- Field E: Source -->
-              <div class="trans-form-group" id="group-trans-source">
-                <label class="trans-label" for="trans-source-input">
-                  المورد / المصدر <span class="trans-req">*</span>
-                </label>
-                <div class="trans-input-wrap">
-                  <input type="text" id="trans-source-input" class="trans-input" placeholder="مثال: محجر السويس / القطاع 3" required autocomplete="off" />
-                </div>
-                <span class="trans-field-hint">مكان التحميل أو جهة التوريد الأصلية.</span>
-                <span class="trans-field-error" id="trans-source-error"></span>
-              </div>
-
-              <!-- Field 5: Destination -->
-              <div class="trans-form-group" id="group-trans-destination">
-                <label class="trans-label" for="trans-destination-select">
-                  الوجهة <span class="trans-req">*</span>
-                </label>
-                <div class="trans-input-wrap">
-                  <select id="trans-destination-select" class="trans-input trans-select" required>
-                    <option value="" disabled selected>-- اختر الوجهة --</option>
-                  </select>
-                </div>
-                <span class="trans-field-hint">الموقع أو قطاع المصنع المستهدف للتسليم.</span>
-                <span class="trans-field-error" id="trans-destination-error"></span>
-              </div>
-            </div>
+            <button type="button" class="trans-alert-close" id="trans-po-error-close">✕</button>
           </div>
 
-          <!-- 3. Material & Weight Information Section -->
-          <div class="trans-form-section">
-            <div class="trans-section-header">
-              <div class="trans-section-num">3</div>
-              <div>
-                <h2 class="trans-section-title">بيانات الخامة وأوزان البسكول</h2>
-                <p class="trans-section-desc">مواصفات الشحنة وحسابات الوزن الصافي والمتوقع آلياً.</p>
-              </div>
-            </div>
-
-            <!-- Material Type Select -->
-            <div class="trans-form-group" id="group-trans-material" style="margin-bottom: 1.25rem;">
-              <label class="trans-label" for="trans-material-select">
-                نوع الخامة <span class="trans-req">*</span>
+          <!-- PO Form -->
+          <form class="trans-po-form" id="trans-po-lookup-form" novalidate>
+            <div class="trans-form-group" style="text-align: right; margin-bottom: 1.25rem;">
+              <label class="trans-label" for="trans-po-entry-input">
+                Purchase Order Number <span class="trans-req">*</span>
               </label>
               <div class="trans-input-wrap">
-                <select id="trans-material-select" class="trans-input trans-select" required>
-                  <option value="" disabled selected>-- اختر نوع الخامة --</option>
-                </select>
+                <input 
+                  type="text" 
+                  id="trans-po-entry-input" 
+                  class="trans-input" 
+                  placeholder="مثال: PO-2026-9810 أو PO-2026-9811" 
+                  autocomplete="off" 
+                  required 
+                  dir="ltr"
+                />
               </div>
-              <span class="trans-field-hint">رتبة الخرسانة أو مادة البناء الموردة.</span>
-              <span class="trans-field-error" id="trans-material-error"></span>
+              <span class="trans-field-hint">رقم أمر الشراء المسجل والمعتمد في قاعدة بيانات المصنع.</span>
             </div>
 
-            <!-- 3 Numeric Weight Inputs -->
-            <div class="trans-grid-3">
-              <!-- Field H: Weight Before Loading -->
-              <div class="trans-form-group" id="group-trans-weight-before">
-                <label class="trans-label" for="trans-weight-before-input">
-                  الوزن قبل التحميل <span class="trans-req">*</span>
-                </label>
-                <div class="trans-input-wrap">
-                  <input type="number" id="trans-weight-before-input" class="trans-input trans-num-input" placeholder="0.000" step="0.001" min="0.001" required />
-                  <span class="trans-unit-suffix">طن</span>
-                </div>
-                <span class="trans-field-hint">وزن الشاحنة الفارغة قبل التحميل (فارغ).</span>
-                <span class="trans-field-error" id="trans-weight-before-error"></span>
-              </div>
-
-              <!-- Field I: Weight When Entering Factory -->
-              <div class="trans-form-group" id="group-trans-weight-enter">
-                <label class="trans-label" for="trans-weight-enter-input">
-                  وزن دخول المصنع <span class="trans-req">*</span>
-                </label>
-                <div class="trans-input-wrap">
-                  <input type="number" id="trans-weight-enter-input" class="trans-input trans-num-input" placeholder="0.000" step="0.001" min="0.001" required />
-                  <span class="trans-unit-suffix">طن</span>
-                </div>
-                <span class="trans-field-hint">الوزن الإجمالي للشاحنة محملة عند ميزان الدخول.</span>
-                <span class="trans-field-error" id="trans-weight-enter-error"></span>
-              </div>
-
-              <!-- Field J: Weight When Exiting Factory -->
-              <div class="trans-form-group" id="group-trans-weight-exit">
-                <label class="trans-label" for="trans-weight-exit-input">
-                  وزن خروج المصنع <span class="trans-req">*</span>
-                </label>
-                <div class="trans-input-wrap">
-                  <input type="number" id="trans-weight-exit-input" class="trans-input trans-num-input" placeholder="0.000" step="0.001" min="0.001" required />
-                  <span class="trans-unit-suffix">طن</span>
-                </div>
-                <span class="trans-field-hint">وزن الشاحنة فارغة بعد التفريغ عند ميزان الخروج.</span>
-                <span class="trans-field-error" id="trans-weight-exit-error"></span>
+            <!-- Quick PO Chips for testing & convenience -->
+            <div class="trans-po-chips-wrap">
+              <span class="trans-chips-label">أوامر شراء نشطة للتجربة السريعة:</span>
+              <div class="trans-chips-list">
+                <button type="button" class="trans-po-chip" data-po="PO-100">PO-100 (20,000 kg)</button>
+                <button type="button" class="trans-po-chip" data-po="PO-200">PO-200 (20,000 kg)</button>
+                <button type="button" class="trans-po-chip" data-po="PO-2026-FS-101">PO-2026-FS-101</button>
+                <button type="button" class="trans-po-chip" data-po="PO-2026-ST-001">PO-2026-ST-001</button>
               </div>
             </div>
 
-            <!-- Dynamic Weight Warning Banner -->
-            <div class="trans-calc-warning" id="trans-weight-warning" style="display: none;">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-              <span id="trans-weight-warning-text">خطأ منطقي في الأوزان</span>
-            </div>
-
-            <!-- Automatic Calculated Weights Cards (Read-only) -->
-            <div class="trans-calc-grid">
-              <!-- Expected Weight Card -->
-              <div class="trans-calc-card expected-card">
-                <div class="trans-calc-header">
-                  <span class="trans-calc-badge">حساب تلقائي</span>
-                  <span class="trans-calc-formula">المعادلة: الوزن قبل التحميل − وزن خروج المصنع</span>
-                </div>
-                <label class="trans-calc-label" for="trans-expected-weight-display">الوزن المتوقع</label>
-                <div class="trans-calc-value-wrap">
-                  <input type="text" id="trans-expected-weight-display" class="trans-calc-input" readonly value="0.000" />
-                  <span class="trans-calc-unit">طن</span>
-                </div>
-                <p class="trans-calc-subtext">يتم التحديث فوراً عند تغيير الوزن قبل التحميل أو وزن خروج المصنع.</p>
-              </div>
-
-              <!-- Net Weight Card -->
-              <div class="trans-calc-card net-card">
-                <div class="trans-calc-header">
-                  <span class="trans-calc-badge primary">حساب تلقائي</span>
-                  <span class="trans-calc-formula">المعادلة: وزن دخول المصنع − وزن خروج المصنع</span>
-                </div>
-                <label class="trans-calc-label" for="trans-net-weight-display">الوزن الفعلي</label>
-                <div class="trans-calc-value-wrap">
-                  <input type="text" id="trans-net-weight-display" class="trans-calc-input" readonly value="0.000" />
-                  <span class="trans-calc-unit">طن</span>
-                </div>
-                <p class="trans-calc-subtext">صافي حمولة الخرسانة المستلمة. يتم التحديث فوراً عند تغيير وزن الدخول أو الخروج.</p>
-              </div>
-            </div>
-          </div>
-
-          <!-- 4. Receiving Information & Notes Section -->
-          <div class="trans-form-section">
-            <div class="trans-section-header">
-              <div class="trans-section-num">4</div>
-              <div>
-                <h2 class="trans-section-title">بيانات الاستلام والاعتماد</h2>
-                <p class="trans-section-desc">موقف قبول الشحنة بالمصنع وملاحظات الجودة والمطابقة.</p>
-              </div>
-            </div>
-
-            <div class="trans-grid-2">
-              <!-- Field 7: Receiving Status -->
-              <div class="trans-form-group" id="group-trans-receiving-status">
-                <label class="trans-label" for="trans-receiving-status-select">
-                  حالة الاستلام / الاعتماد <span class="trans-req">*</span>
-                </label>
-                <div class="trans-input-wrap">
-                  <select id="trans-receiving-status-select" class="trans-input trans-select" required>
-                    <option value="" disabled selected>-- اختر حالة الاستلام / الاعتماد --</option>
-                  </select>
-                </div>
-                <span class="trans-field-hint">موقف قبول الخامة ومطابقتها للمواصفات.</span>
-                <span class="trans-field-error" id="trans-receiving-status-error"></span>
-              </div>
-
-              <!-- Field 9: Submission Date -->
-              <div class="trans-form-group">
-                <label class="trans-label" for="trans-submission-date-display">
-                  تاريخ وتوقيت الحفظ
-                </label>
-                <div class="trans-input-wrap trans-readonly-wrap">
-                  <input type="text" id="trans-submission-date-display" class="trans-input" readonly value="يتم التوليد تلقائياً من الخادم عند الحفظ" />
-                  <span class="trans-server-badge">توقيت الخادم</span>
-                </div>
-                <span class="trans-field-hint">تسجيل زمني رسمي يصدره خادم النظام عند الحفظ في قاعدة البيانات.</span>
-              </div>
-            </div>
-
-            <!-- Field 8: Notes (Optional) -->
-            <div class="trans-form-group" id="group-trans-notes" style="margin-top: 1rem;">
-              <label class="trans-label" for="trans-notes-input">
-                ملاحظات <span class="trans-opt">(اختياري)</span>
-              </label>
-              <textarea id="trans-notes-input" class="trans-input trans-textarea" rows="3" placeholder="أدخل أي ملاحظات خاصة بالجودة، رقم الخلطة، أو تعليمات الشحن والتعتيق..."></textarea>
-              <span class="trans-field-hint">ملاحظات إضافية (بحد أقصى 1000 حرف).</span>
-              <span class="trans-field-error" id="trans-notes-error"></span>
-            </div>
-          </div>
-
-          <!-- Form Buttons Bar (Submit & Clear) -->
-          <div class="trans-form-actions">
-            <button type="button" class="trans-btn trans-btn-clear" id="trans-clear-btn" title="مسح كافة البيانات المدخلة">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-              <span>مسح</span>
+            <button type="submit" class="trans-btn-continue" id="trans-po-continue-btn">
+              <span class="trans-btn-spinner" id="trans-po-spinner" style="display: none;"></span>
+              <span id="trans-po-continue-text">Continue</span>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
             </button>
+          </form>
+        </div>
+      </section>
 
-            <button type="submit" class="trans-btn trans-btn-submit" id="trans-submit-btn">
-              <span class="trans-btn-spinner" id="trans-submit-spinner" style="display: none;"></span>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" id="trans-submit-icon"><polyline points="20 6 9 17 4 12"/></svg>
-              <span id="trans-submit-btn-text">حفظ</span>
-            </button>
-          </div>
-
-        </form>
-
-        <!-- Recent Transactions Log Section -->
-        <div class="trans-recent-section" id="trans-recent-section">
-          <div class="trans-recent-header">
-            <div>
-              <h2 class="trans-recent-title">سجل الحركات الأخيرة</h2>
-              <p class="trans-recent-subtitle">حركات النقل المحفوظة في قاعدة بيانات المصنع SQL Server خلال هذه الجلسة.</p>
+      <!-- ==================================================================
+           STEP 2: Transportation Form (Three Distinct Structured Sections)
+           ================================================================== -->
+      <section class="trans-step-container" id="trans-step-form" style="display: none;">
+        <div class="trans-dashboard-wrapper">
+          
+          <!-- Purchase Order Information Box (Requirements 8, 9, 10 - Compact, Professional, Yellow/Black/White) -->
+          <div class="trans-po-info-box" id="trans-po-info-box">
+            <div class="trans-po-info-header">
+              <div class="trans-po-info-title-group">
+                <span class="trans-po-info-icon">📋</span>
+                <span class="trans-po-info-title">Purchase Order Information (بيانات أمر الشراء)</span>
+                <span class="trans-po-readonly-tag">🔒 للقراءة فقط - معتمد آلياً</span>
+              </div>
+              <button type="button" class="trans-btn-change-po" id="trans-btn-change-po" title="العودة وتغيير أمر الشراء">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 17l-5-5 5-5M18 17l-5-5 5-5"/></svg>
+                <span>تغيير أمر الشراء</span>
+              </button>
             </div>
-            <button type="button" class="trans-btn-refresh" id="trans-refresh-btn" title="تحديث السجل من قاعدة البيانات">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-              <span>تحديث السجل</span>
-            </button>
+            <div class="trans-po-info-grid">
+              <div class="trans-po-info-cell">
+                <span class="info-cell-label">PO Number (رقم أمر الشراء)</span>
+                <span class="info-cell-val font-numeric highlight-po" id="trans-summary-po" dir="ltr">—</span>
+              </div>
+              <div class="trans-po-info-cell">
+                <span class="info-cell-label">Company (اسم الشركة)</span>
+                <span class="info-cell-val" id="trans-summary-supplier">—</span>
+              </div>
+              <div class="trans-po-info-cell">
+                <span class="info-cell-label">Destination (الوجهة)</span>
+                <span class="info-cell-val" id="trans-summary-destination">—</span>
+              </div>
+              <div class="trans-po-info-cell">
+                <span class="info-cell-label">Source (المصدر)</span>
+                <span class="info-cell-val font-accent" id="trans-summary-source">Face stone (Full Concrete Solutions)</span>
+              </div>
+            </div>
           </div>
 
-          <div class="trans-table-responsive">
-            <table class="trans-data-table" id="trans-data-table">
-              <thead>
-                <tr>
-                  <th>رقم الحركة</th>
-                  <th>التاريخ</th>
-                  <th>رقم السيارة</th>
-                  <th>اسم السائق</th>
-                  <th>نوع الخامة</th>
-                  <th>الوزن الفعلي</th>
-                  <th>الوزن المتوقع</th>
-                  <th>الوجهة</th>
-                  <th>حالة النقلة</th>
-                  <th>حالة الاستلام / الاعتماد</th>
-                  <th>وقت الحفظ</th>
-                </tr>
-              </thead>
-              <tbody id="trans-recent-tbody">
-                <tr>
-                  <td colspan="11" class="trans-empty-row">لا توجد حركات مسجلة حتى الآن. قم بتسجيل حركة جديدة أعلاه لإضافتها للسجل.</td>
-                </tr>
-              </tbody>
-            </table>
+          <!-- Header Banner Card -->
+          <div class="trans-header-card">
+            <div class="trans-header-icon-box">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+            </div>
+            <div class="trans-header-text">
+              <div class="trans-badge-row">
+                <span class="trans-role-badge">إدارة النقل واللوجستيات</span>
+                <span class="trans-live-badge"><span class="live-dot-pulse"></span> متصل بقاعدة البيانات SQL Server</span>
+              </div>
+              <h1 class="trans-heading">تسجيل حركة نقل جديدة</h1>
+              <p class="trans-subheading">تنظيم متكامل لحركة التوريد، بوليصة الشحن، وبيانات الميزان الداخلي والخارجي مع الحساب والتحقق التلقائي.</p>
+            </div>
+          </div>
+
+          <!-- Global Alert Box -->
+          <div class="trans-alert-banner" id="trans-form-alert" style="display: none;">
+            <div class="trans-alert-icon" id="trans-alert-icon">✓</div>
+            <div class="trans-alert-content">
+              <div class="trans-alert-title" id="trans-alert-title">نجاح</div>
+              <div class="trans-alert-desc" id="trans-alert-desc">تم حفظ الحركة بنجاح.</div>
+            </div>
+            <button type="button" class="trans-alert-close" id="trans-alert-close" aria-label="إغلاق التنبيه">✕</button>
+          </div>
+
+          <!-- Main Form Container -->
+          <form class="trans-form-card" id="trans-entry-form" novalidate>
+
+            <!-- ==============================================================
+                 1. SECTION 1 — الميزان
+                 ============================================================== -->
+            <div class="trans-form-section" id="section-trans-weighbridge">
+              <div class="trans-section-header">
+                <div class="trans-section-num">1</div>
+                <div>
+                  <h2 class="trans-section-title">الميزان</h2>
+                  <p class="trans-section-desc">المصدر الوحيد لإدخال قياسات الأوزان وتواريخ الحركة، مع حساب الوزن الصافي ووقت الشحن آلياً، ورفع مرفق الميزان الإلزامي.</p>
+                </div>
+              </div>
+
+              <!-- Weighbridge Cards Container -->
+              <div class="trans-weighbridge-container">
+                <!-- 1.1 الميزان الداخلي -->
+                <div class="trans-wb-card internal-wb-card">
+                  <div class="trans-wb-header">
+                    <div class="trans-wb-badge">⚖️ الميزان الداخلي (بالمصنع)</div>
+                  </div>
+
+                  <div class="trans-grid-2">
+                    <!-- رقم المرجع للميزان الداخلي (Manual Entry by Employee - Required) -->
+                    <div class="trans-form-group full-width" id="group-trans-wb-int-code">
+                      <label class="trans-label" for="trans-wb-internal-code">
+                        رقم المرجع (الميزان الداخلي بالمصنع) <span class="trans-req">*</span>
+                      </label>
+                      <div class="trans-input-wrap">
+                        <span class="trans-input-prefix">🔖</span>
+                        <input type="text" id="trans-wb-internal-code" class="trans-input" placeholder="أدخل رقم المرجع الصادر من ميزان المصنع (مثال: WB-001)" required autocomplete="off" />
+                      </div>
+                      <span class="trans-field-hint">يدخل يدوياً من قبل الموظف وفقاً لإشعار وزن المصنع.</span>
+                      <span class="trans-field-error" id="trans-wb-internal-code-error"></span>
+                    </div>
+                    <!-- الوزن القائم (Internal Loaded) -->
+                    <div class="trans-form-group" id="group-trans-internal-loaded">
+                      <label class="trans-label" for="trans-wb-int-loaded">
+                        الوزن القائم (داخلي) <span class="trans-req">*</span>
+                      </label>
+                      <div class="trans-input-wrap">
+                        <input type="number" id="trans-wb-int-loaded" class="trans-input trans-num-input" placeholder="0.000" step="0.001" min="0.001" required />
+                        <span class="trans-unit-suffix">طن</span>
+                      </div>
+                      <span class="trans-field-hint">وزن الشاحنة بعد تحميل الخامة بالمصنع.</span>
+                      <span class="trans-field-error" id="trans-internal-loaded-error"></span>
+                    </div>
+
+                    <!-- الوزن الفارغ (Internal Empty) -->
+                    <div class="trans-form-group" id="group-trans-internal-empty">
+                      <label class="trans-label" for="trans-wb-int-empty">
+                        الوزن الفارغ (داخلي) <span class="trans-req">*</span>
+                      </label>
+                      <div class="trans-input-wrap">
+                        <input type="number" id="trans-wb-int-empty" class="trans-input trans-num-input" placeholder="0.000" step="0.001" min="0.001" required />
+                        <span class="trans-unit-suffix">طن</span>
+                      </div>
+                      <span class="trans-field-hint">وزن الشاحنة قبل تحميل الخامة بالمصنع.</span>
+                      <span class="trans-field-error" id="trans-internal-empty-error"></span>
+                    </div>
+
+                    <!-- الوزن الصافي الداخلي (Auto-calculated, Read-only) -->
+                    <div class="trans-form-group full-width">
+                      <label class="trans-label" for="trans-wb-int-net">
+                        الوزن الداخلي الصافي <span class="trans-lock-badge">🔒 تلقائي</span>
+                      </label>
+                      <div class="trans-input-wrap">
+                        <input type="text" id="trans-wb-int-net" class="trans-input trans-readonly" readonly value="0.000" />
+                        <span class="trans-unit-suffix">طن</span>
+                      </div>
+                      <span class="trans-field-hint">الوزن الداخلي القائم − الوزن الداخلي الفارغ (حساب تلقائي مقفل).</span>
+                    </div>
+
+                    <!-- تاريخ ووقت الوزن الفارغ الداخلي -->
+                    <div class="trans-form-group">
+                      <label class="trans-label" for="trans-wb-int-empty-time">
+                        تاريخ ووقت الوزن الفارغ
+                      </label>
+                      <div class="trans-input-wrap">
+                        <input type="datetime-local" id="trans-wb-int-empty-time" class="trans-input" />
+                      </div>
+                      <span class="trans-field-hint">توقيت تسجيل وزن الشاحنة فارغة داخلياً.</span>
+                    </div>
+
+                    <!-- تاريخ ووقت الوزن القائم الداخلي (Start of Shipping Time) -->
+                    <div class="trans-form-group">
+                      <label class="trans-label" for="trans-wb-int-loaded-time">
+                        تاريخ ووقت الوزن القائم <span class="trans-info-badge">بداية وقت الشحن</span>
+                      </label>
+                      <div class="trans-input-wrap">
+                        <input type="datetime-local" id="trans-wb-int-loaded-time" class="trans-input" />
+                      </div>
+                      <span class="trans-field-hint">نقطة انطلاق حساب وقت الشحن (START).</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 1.2 الميزان الخارجي -->
+                <div class="trans-wb-card external-wb-card">
+                  <div class="trans-wb-header">
+                    <div class="trans-wb-badge external">🏢 الميزان الخارجي (ميزان الوجهة)</div>
+                  </div>
+
+                  <div class="trans-grid-2">
+                    <!-- رقم المرجع للميزان الخارجي (Manual Entry by Employee - Required) -->
+                    <div class="trans-form-group full-width" id="group-trans-wb-ext-code">
+                      <label class="trans-label" for="trans-wb-external-code">
+                        رقم المرجع (الميزان الخارجي بالوجهة) <span class="trans-req">*</span>
+                      </label>
+                      <div class="trans-input-wrap">
+                        <span class="trans-input-prefix">🔖</span>
+                        <input type="text" id="trans-wb-external-code" class="trans-input" placeholder="أدخل رقم المرجع الصادر من ميزان الوجهة (مثال: EXT-555)" required autocomplete="off" />
+                      </div>
+                      <span class="trans-field-hint">يدخل يدوياً من قبل الموظف وفقاً لبوليصة/إشعار ميزان الوجهة.</span>
+                      <span class="trans-field-error" id="trans-wb-external-code-error"></span>
+                    </div>
+                    <!-- الوزن القائم (External Loaded) -->
+                    <div class="trans-form-group" id="group-trans-external-loaded">
+                      <label class="trans-label" for="trans-wb-ext-loaded">
+                        الوزن الخارجي قائم <span class="trans-req">*</span>
+                      </label>
+                      <div class="trans-input-wrap">
+                        <input type="number" id="trans-wb-ext-loaded" class="trans-input trans-num-input" placeholder="0.000" step="0.001" min="0.001" required />
+                        <span class="trans-unit-suffix">طن</span>
+                      </div>
+                      <span class="trans-field-hint">وزن الشاحنة محملة عند الوصول إلى ميزان الوجهة.</span>
+                      <span class="trans-field-error" id="trans-external-loaded-error"></span>
+                    </div>
+
+                    <!-- الوزن الفارغ (External Empty) -->
+                    <div class="trans-form-group" id="group-trans-external-empty">
+                      <label class="trans-label" for="trans-wb-ext-empty">
+                        الوزن الخارجي فارغ <span class="trans-req">*</span>
+                      </label>
+                      <div class="trans-input-wrap">
+                        <input type="number" id="trans-wb-ext-empty" class="trans-input trans-num-input" placeholder="0.000" step="0.001" min="0.001" required />
+                        <span class="trans-unit-suffix">طن</span>
+                      </div>
+                      <span class="trans-field-hint">وزن الشاحنة بعد تفريغ الشحنة بالكامل في الوجهة.</span>
+                      <span class="trans-field-error" id="trans-external-empty-error"></span>
+                    </div>
+
+                    <!-- الوزن الصافي الخارجي (Auto-calculated, Read-only) -->
+                    <div class="trans-form-group full-width">
+                      <label class="trans-label" for="trans-wb-ext-net">
+                        الوزن الخارجي الصافي <span class="trans-lock-badge">🔒 تلقائي</span>
+                      </label>
+                      <div class="trans-input-wrap">
+                        <input type="text" id="trans-wb-ext-net" class="trans-input trans-readonly" readonly value="0.000" />
+                        <span class="trans-unit-suffix">طن</span>
+                      </div>
+                      <span class="trans-field-hint">الوزن الخارجي القائم − الوزن الخارجي الفارغ (حساب تلقائي مقفل).</span>
+                    </div>
+
+                    <!-- تاريخ ووقت الوزن الفارغ الخارجي -->
+                    <div class="trans-form-group">
+                      <label class="trans-label" for="trans-wb-ext-empty-time">
+                        تاريخ ووقت الوزن الفارغ
+                      </label>
+                      <div class="trans-input-wrap">
+                        <input type="datetime-local" id="trans-wb-ext-empty-time" class="trans-input" />
+                      </div>
+                      <span class="trans-field-hint">توقيت تسجيل وزن الشاحنة فارغة بعد التفريغ بميزان الوجهة.</span>
+                    </div>
+
+                    <!-- تاريخ ووقت الوزن القائم الخارجي (End of Shipping Time) -->
+                    <div class="trans-form-group">
+                      <label class="trans-label" for="trans-wb-ext-loaded-time">
+                        تاريخ ووقت الوزن القائم <span class="trans-info-badge">نهاية وقت الشحن</span>
+                      </label>
+                      <div class="trans-input-wrap">
+                        <input type="datetime-local" id="trans-wb-ext-loaded-time" class="trans-input" />
+                      </div>
+                      <span class="trans-field-hint">نقطة اكتمال حساب وقت الشحن (END) وتوقيت الوصول.</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Movement Dates (Derived automatically from Weighbridge Timestamps - Requirements 2, 3, 4, 12) -->
+              <div class="trans-grid-3" style="margin-top: 1rem;">
+                <!-- تاريخ الشحنة -->
+                <div class="trans-form-group" id="group-trans-date">
+                  <label class="trans-label" for="trans-date-input">
+                    تاريخ الشحنة <span class="trans-req">*</span>
+                  </label>
+                  <div class="trans-input-wrap">
+                    <input type="datetime-local" id="trans-date-input" class="trans-input" required />
+                  </div>
+                  <span class="trans-field-hint">تاريخ وتوقيت الشحنة (ينعكس تلقائياً في الأقسام الأخرى).</span>
+                  <span class="trans-field-error" id="trans-date-error"></span>
+                </div>
+
+                <!-- تاريخ المغادرة (Automatic from Internal Loaded Timestamp) -->
+                <div class="trans-form-group" id="group-trans-departure">
+                  <label class="trans-label" for="trans-departure-display">
+                    تاريخ المغادرة <span class="trans-lock-badge">🔒 تلقائي من الوزن القائم الداخلي</span>
+                  </label>
+                  <div class="trans-input-wrap">
+                    <input type="text" id="trans-departure-display" class="trans-input trans-readonly" readonly placeholder="ينعكس تلقائياً من الوزن القائم بالمصنع" />
+                  </div>
+                  <span class="trans-field-hint">تاريخ المغادرة = تاريخ ووقت الوزن القائم الداخلي (مشتق آلياً).</span>
+                </div>
+
+                <!-- تاريخ الوصول (Automatic from External Loaded Timestamp) -->
+                <div class="trans-form-group" id="group-trans-arrival">
+                  <label class="trans-label" for="trans-arrival-display">
+                    تاريخ الوصول <span class="trans-lock-badge">🔒 تلقائي من الوزن القائم الخارجي</span>
+                  </label>
+                  <div class="trans-input-wrap">
+                    <input type="text" id="trans-arrival-display" class="trans-input trans-readonly" readonly placeholder="ينعكس تلقائياً من الوزن القائم بالوجهة" />
+                  </div>
+                  <span class="trans-field-hint">تاريخ الوصول = تاريخ ووقت الوزن القائم الخارجي (مشتق آلياً).</span>
+                </div>
+              </div>
+
+              <!-- Dedicated Calculated Shipping Time Box (Requirement 24) -->
+              <div class="trans-shipping-time-box" id="trans-shipping-time-box">
+                <div class="shipping-time-icon">⏱️</div>
+                <div class="shipping-time-content">
+                  <div class="shipping-time-label">وقت الشحن (Shipping Time)</div>
+                  <div class="shipping-time-val font-numeric" id="trans-shipping-time-display">—</div>
+                  <div class="shipping-time-formula">المعادلة: تاريخ ووقت الوزن القائم الخارجي − تاريخ ووقت الوزن القائم الداخلي</div>
+                </div>
+                <span class="trans-field-error" id="trans-shipping-time-error" style="display: none;"></span>
+              </div>
+
+              <!-- Attachment at the END of Section 1: الميزان (Mandatory) -->
+              <div class="trans-attachment-section">
+                <div class="trans-attachment-header">
+                  <span class="attachment-title">📎 مرفق قسم الميزان <span class="trans-req">*</span></span>
+                  <span class="attachment-subtitle">مطلوب رفع مستند/صورة تأكيد الميزان (PDF, JPG, JPEG - حد أقصى 25 ميجابايت).</span>
+                </div>
+                <div class="trans-upload-zone" id="trans-wb-dropzone">
+                  <input type="file" id="trans-wb-attachment-input" class="trans-file-input" accept=".pdf,.jpg,.jpeg" style="display: none;" />
+                  <div class="trans-upload-placeholder" id="trans-wb-placeholder">
+                    <div class="upload-icon">⚖️</div>
+                    <div class="upload-text">
+                      <span class="upload-prompt">انقر لاختيار مرفق الميزان أو اسحب الملف هنا</span>
+                      <span class="upload-hint">الملفات المسموحة فقط: PDF, JPG, JPEG</span>
+                    </div>
+                    <button type="button" class="trans-btn-browse" onclick="document.getElementById('trans-wb-attachment-input').click()">اختيار ملف الميزان *</button>
+                  </div>
+                  <div class="trans-file-preview" id="trans-wb-file-preview" style="display: none;">
+                    <span class="file-icon" id="trans-wb-file-icon">📑</span>
+                    <div class="file-info">
+                      <span class="file-name" id="trans-wb-file-name">—</span>
+                      <span class="file-size" id="trans-wb-file-size">—</span>
+                    </div>
+                    <button type="button" class="trans-btn-remove-file" id="trans-wb-remove-btn" title="إزالة الملف">✕</button>
+                  </div>
+                </div>
+                <span class="trans-field-error" id="trans-wb-attachment-error"></span>
+              </div>
+
+            </div>
+
+            <!-- ==============================================================
+                 2. SECTION 2 — يومية التوريد
+                 ============================================================== -->
+            <div class="trans-form-section" id="section-trans-daily">
+              <div class="trans-section-header">
+                <div class="trans-section-num">2</div>
+                <div>
+                  <h2 class="trans-section-title">يومية التوريد</h2>
+                  <p class="trans-section-desc">بيانات التوريد المعتمدة والأوزان الصافية المنقولة تلقائياً من الميزان (للقراءة فقط) وبيانات السائق والمصدر المعتمد.</p>
+                </div>
+              </div>
+
+              <div class="trans-grid-2">
+                <!-- رقم الحركة (Sequential PER PO, Generated by Backend, Read-only) -->
+                <div class="trans-form-group" id="group-trans-number">
+                  <label class="trans-label" for="trans-number-input">
+                    رقم الحركة (تلقائي لكل أمر شراء) <span class="trans-lock-badge">🔒 تلقائي ومقفل</span>
+                  </label>
+                  <div class="trans-input-wrap">
+                    <span class="trans-input-prefix">#</span>
+                    <input type="text" id="trans-number-input" class="trans-input trans-readonly" readonly placeholder="يتم التوليد تلقائياً per PO" />
+                  </div>
+                  <span class="trans-field-hint">يبدأ من 1 لكل أمر شراء ويتسلسل تلقائياً تحت حماية قاعدة البيانات.</span>
+                </div>
+
+                <!-- تاريخ الشحنة (Read-only, Populated from Section 1) -->
+                <div class="trans-form-group" id="group-trans-daily-ship-date">
+                  <label class="trans-label" for="trans-daily-ship-date-display">
+                    تاريخ الشحنة <span class="trans-lock-badge">🔒 من قسم الميزان</span>
+                  </label>
+                  <div class="trans-input-wrap">
+                    <input type="text" id="trans-daily-ship-date-display" class="trans-input trans-readonly" readonly placeholder="تاريخ الشحنة" />
+                  </div>
+                  <span class="trans-field-hint">مأخوذ تلقائياً من تاريخ الشحنة المدخل في قسم الميزان.</span>
+                </div>
+              </div>
+
+              <!-- Read-only Net Weights & Waste Display (Strictly NO Editing Here - Driven ONLY from Section 1) -->
+              <div class="trans-calc-grid">
+                <!-- الوزن الداخلي الصافي -->
+                <div class="trans-calc-card expected-card">
+                  <div class="trans-calc-header">
+                    <span class="trans-calc-badge">من الميزان الداخلي</span>
+                    <span class="trans-calc-formula">القائم − الفارغ</span>
+                  </div>
+                  <label class="trans-calc-label" for="trans-internal-net-display">الوزن الداخلي الصافي</label>
+                  <div class="trans-calc-value-wrap">
+                    <input type="text" id="trans-internal-net-display" class="trans-calc-input" readonly value="0.000" />
+                    <span class="trans-calc-unit">طن</span>
+                  </div>
+                  <p class="trans-calc-subtext">محسوب تلقائياً من قياسات الميزان الداخلي.</p>
+                </div>
+
+                <!-- الوزن الخارجي الصافي -->
+                <div class="trans-calc-card expected-card">
+                  <div class="trans-calc-header">
+                    <span class="trans-calc-badge">من ميزان الوجهة</span>
+                    <span class="trans-calc-formula">القائم − الفارغ</span>
+                  </div>
+                  <label class="trans-calc-label" for="trans-external-net-display">الوزن الخارجي الصافي</label>
+                  <div class="trans-calc-value-wrap">
+                    <input type="text" id="trans-external-net-display" class="trans-calc-input" readonly value="0.000" />
+                    <span class="trans-calc-unit">طن</span>
+                  </div>
+                  <p class="trans-calc-subtext">محسوب تلقائياً من قياسات الميزان الخارجي.</p>
+                </div>
+
+                <!-- الوزن الصافي = MIN(الداخلي, الخارجي) -->
+                <div class="trans-calc-card net-card">
+                  <div class="trans-calc-header">
+                    <span class="trans-calc-badge primary">الوزن الصافي المعتمد</span>
+                    <span class="trans-calc-formula">MIN(الداخلي, الخارجي)</span>
+                  </div>
+                  <label class="trans-calc-label" for="trans-net-weight-display">الوزن الصافي (الكمية)</label>
+                  <div class="trans-calc-value-wrap">
+                    <input type="text" id="trans-net-weight-display" class="trans-calc-input" readonly value="0.000" />
+                    <span class="trans-calc-unit">طن</span>
+                  </div>
+                  <p class="trans-calc-subtext">القيمة الأقل وتخصم تلقائياً من كمية أمر الشراء (PO).</p>
+                </div>
+
+                <!-- كمية هالك = ABS(الداخلي - الخارجي) -->
+                <div class="trans-calc-card waste-card">
+                  <div class="trans-calc-header">
+                    <span class="trans-calc-badge" id="trans-waste-badge">فرق الوزن / الهالك</span>
+                    <span class="trans-calc-formula">|الداخلي − الخارجي|</span>
+                  </div>
+                  <label class="trans-calc-label" for="trans-waste-display">كمية هالك</label>
+                  <div class="trans-calc-value-wrap">
+                    <input type="text" id="trans-waste-display" class="trans-calc-input" readonly value="0.000" />
+                    <span class="trans-calc-unit">طن</span>
+                  </div>
+                  <p class="trans-calc-subtext">تساوي صفراً إذا تساوى الوزنان، أو الفرق المطلق بينهما.</p>
+                </div>
+              </div>
+
+              <!-- Driver Phone & Read-only Movement Dates -->
+              <div class="trans-grid-3" style="margin-top: 1.25rem;">
+                <!-- رقم هاتف السائق -->
+                <div class="trans-form-group" id="group-trans-driver-phone">
+                  <label class="trans-label" for="trans-driver-phone-input">
+                    رقم هاتف السائق <span class="trans-opt">(اختياري)</span>
+                  </label>
+                  <div class="trans-input-wrap">
+                    <input type="tel" id="trans-driver-phone-input" class="trans-input" placeholder="مثال: 01012345678" dir="ltr" />
+                  </div>
+                  <span class="trans-field-hint">رقم هاتف السائق للتواصل والمتابعة.</span>
+                </div>
+
+                <!-- تاريخ المغادرة (Read-only, from Section 1) -->
+                <div class="trans-form-group" id="group-trans-daily-departure">
+                  <label class="trans-label" for="trans-daily-departure-display">
+                    تاريخ المغادرة <span class="trans-lock-badge">🔒 من قسم الميزان</span>
+                  </label>
+                  <div class="trans-input-wrap">
+                    <input type="text" id="trans-daily-departure-display" class="trans-input trans-readonly" readonly placeholder="—" />
+                  </div>
+                  <span class="trans-field-hint">ينعكس آلياً من قسم الميزان.</span>
+                </div>
+
+                <!-- تاريخ الوصول (Read-only, from Section 1) -->
+                <div class="trans-form-group" id="group-trans-daily-arrival">
+                  <label class="trans-label" for="trans-daily-arrival-display">
+                    تاريخ الوصول <span class="trans-lock-badge">🔒 من قسم الميزان</span>
+                  </label>
+                  <div class="trans-input-wrap">
+                    <input type="text" id="trans-daily-arrival-display" class="trans-input trans-readonly" readonly placeholder="—" />
+                  </div>
+                  <span class="trans-field-hint">ينعكس آلياً من قسم الميزان.</span>
+                </div>
+              </div>
+
+              <!-- Source & PO Verification Info -->
+              <div class="trans-grid-2">
+                <!-- Source (Fixed and Read-only) -->
+                <div class="trans-form-group" id="group-trans-source">
+                  <label class="trans-label" for="trans-source-display">
+                    المصدر (Source) <span class="trans-lock-badge">🔒 ثابت ومحدد آلياً</span>
+                  </label>
+                  <div class="trans-input-wrap">
+                    <input type="text" id="trans-source-display" class="trans-input trans-readonly" readonly value="Face stone (Full Concrete Solutions)" />
+                  </div>
+                  <span class="trans-field-hint">قيمة ثابتة معتمدة تلقائياً من قبل النظام.</span>
+                </div>
+
+                <!-- PO -->
+                <div class="trans-form-group" id="group-trans-daily-po">
+                  <label class="trans-label" for="trans-daily-po-display">
+                    أمر الشراء (PO) <span class="trans-lock-badge">🔒 معتمد</span>
+                  </label>
+                  <div class="trans-input-wrap">
+                    <input type="text" id="trans-daily-po-display" class="trans-input trans-readonly" readonly dir="ltr" placeholder="PO Number" />
+                  </div>
+                  <span class="trans-field-hint">رقم أمر الشراء المرتبط بالحركة الحالية.</span>
+                </div>
+              </div>
+
+              <!-- Attachment at the END of Section 2: يومية التوريد (Mandatory) -->
+              <div class="trans-attachment-section">
+                <div class="trans-attachment-header">
+                  <span class="attachment-title">📎 مرفق قسم يومية التوريد <span class="trans-req">*</span></span>
+                  <span class="attachment-subtitle">مطلوب رفع مستند/صورة يومية التوريد (PDF, JPG, JPEG - حد أقصى 25 ميجابايت).</span>
+                </div>
+                <div class="trans-upload-zone" id="trans-ds-dropzone">
+                  <input type="file" id="trans-ds-attachment-input" class="trans-file-input" accept=".pdf,.jpg,.jpeg" style="display: none;" />
+                  <div class="trans-upload-placeholder" id="trans-ds-placeholder">
+                    <div class="upload-icon">📋</div>
+                    <div class="upload-text">
+                      <span class="upload-prompt">انقر لاختيار مرفق يومية التوريد أو اسحب الملف هنا</span>
+                      <span class="upload-hint">الملفات المسموحة فقط: PDF, JPG, JPEG</span>
+                    </div>
+                    <button type="button" class="trans-btn-browse" onclick="document.getElementById('trans-ds-attachment-input').click()">اختيار ملف يومية التوريد *</button>
+                  </div>
+                  <div class="trans-file-preview" id="trans-ds-file-preview" style="display: none;">
+                    <span class="file-icon" id="trans-ds-file-icon">📑</span>
+                    <div class="file-info">
+                      <span class="file-name" id="trans-ds-file-name">—</span>
+                      <span class="file-size" id="trans-ds-file-size">—</span>
+                    </div>
+                    <button type="button" class="trans-btn-remove-file" id="trans-ds-remove-btn" title="إزالة الملف">✕</button>
+                  </div>
+                </div>
+                <span class="trans-field-error" id="trans-ds-attachment-error"></span>
+              </div>
+
+            </div>
+
+            <!-- ==============================================================
+                 3. SECTION 3 — بوليصة الشحن
+                 ============================================================== -->
+            <div class="trans-form-section" id="section-trans-bill">
+              <div class="trans-section-header">
+                <div class="trans-section-num">3</div>
+                <div>
+                  <h2 class="trans-section-title">بوليصة الشحن</h2>
+                  <p class="trans-section-desc">البيانات الرسمية لبوليصة الشحن: أمر الشراء، الأطراف المسؤولة، وسيلة النقل، والكمية الصافية، وقائمة التحقق للاستلام.</p>
+                </div>
+              </div>
+
+              <div class="trans-grid-2">
+                <!-- اسم الشركة (Automatic from PO, Read-only) -->
+                <div class="trans-form-group" id="group-trans-company">
+                  <label class="trans-label" for="trans-company-input">
+                    اسم الشركة <span class="trans-lock-badge">🔒 من أمر الشراء</span>
+                  </label>
+                  <div class="trans-input-wrap">
+                    <input type="text" id="trans-company-input" class="trans-input trans-readonly" readonly placeholder="اسم الشركة / المورد" />
+                  </div>
+                  <span class="trans-field-hint">مسترجع تلقائياً من أمر الشراء ولا يمكن تعديله.</span>
+                </div>
+
+                <!-- الوجهة (Automatic from PO, Read-only) -->
+                <div class="trans-form-group" id="group-trans-destination">
+                  <label class="trans-label" for="trans-destination-input">
+                    الوجهة <span class="trans-lock-badge">🔒 من أمر الشراء</span>
+                  </label>
+                  <div class="trans-input-wrap">
+                    <input type="text" id="trans-destination-input" class="trans-input trans-readonly" readonly placeholder="الوجهة المحددة" />
+                  </div>
+                  <span class="trans-field-hint">محددة تلقائياً من أمر الشراء ولا يمكن تعديلها.</span>
+                </div>
+
+                <!-- تاريخ الشحن (Automatic from Section 1 تاريخ الشحنة, Read-only) -->
+                <div class="trans-form-group" id="group-trans-ship-date">
+                  <label class="trans-label" for="trans-ship-date-display">
+                    تاريخ الشحن <span class="trans-lock-badge">🔒 من قسم الميزان</span>
+                  </label>
+                  <div class="trans-input-wrap">
+                    <input type="text" id="trans-ship-date-display" class="trans-input trans-readonly" readonly placeholder="تاريخ الشحن" />
+                  </div>
+                  <span class="trans-field-hint">مأخوذ تلقائياً من تاريخ الشحنة في قسم الميزان.</span>
+                </div>
+
+                <!-- الكمية (Automatic from Net Weight, Read-only, ONLY الكمية is displayed here) -->
+                <div class="trans-form-group" id="group-trans-quantity">
+                  <label class="trans-label" for="trans-quantity-display">
+                    الكمية <span class="trans-lock-badge">🔒 مساوية للوزن الصافي</span>
+                  </label>
+                  <div class="trans-input-wrap">
+                    <input type="text" id="trans-quantity-display" class="trans-input trans-readonly" readonly value="0.000" />
+                    <span class="trans-unit-suffix">طن</span>
+                  </div>
+                  <span class="trans-field-hint">الكمية = الوزن الصافي المحسوب من الميزان تلقائياً.</span>
+                </div>
+
+                <!-- نوع الخامة (Enum: powder / slurry ONLY) -->
+                <div class="trans-form-group" id="group-trans-material">
+                  <label class="trans-label" for="trans-material-select">
+                    نوع الخامة <span class="trans-req">*</span>
+                  </label>
+                  <div class="trans-input-wrap">
+                    <select id="trans-material-select" class="trans-input trans-select" required>
+                      <option value="" disabled selected>-- اختر نوع الخامة --</option>
+                      <option value="powder">powder</option>
+                      <option value="slurry">slurry</option>
+                    </select>
+                  </div>
+                  <span class="trans-field-hint">خيارات محددة حصراً: powder أو slurry.</span>
+                  <span class="trans-field-error" id="trans-material-error"></span>
+                </div>
+
+                <!-- المسؤول عن الشحن (Enum: محمد ناجح ONLY) -->
+                <div class="trans-form-group" id="group-trans-ship-sup">
+                  <label class="trans-label" for="trans-ship-sup-select">
+                    المسؤول عن الشحن <span class="trans-req">*</span>
+                  </label>
+                  <div class="trans-input-wrap">
+                    <select id="trans-ship-sup-select" class="trans-input trans-select" required>
+                      <option value="محمد ناجح" selected>محمد ناجح</option>
+                    </select>
+                  </div>
+                  <span class="trans-field-hint">المسؤول المصرح له عن الشحن (خيار وحيد معتمد).</span>
+                </div>
+
+                <!-- مسؤول القسم (Enum: ازهر محمد ONLY) -->
+                <div class="trans-form-group" id="group-trans-dept-sup">
+                  <label class="trans-label" for="trans-dept-sup-select">
+                    مسؤول القسم <span class="trans-req">*</span>
+                  </label>
+                  <div class="trans-input-wrap">
+                    <select id="trans-dept-sup-select" class="trans-input trans-select" required>
+                      <option value="ازهر محمد" selected>ازهر محمد</option>
+                    </select>
+                  </div>
+                  <span class="trans-field-hint">مسؤول قسم النقل (خيار وحيد معتمد).</span>
+                </div>
+
+                <!-- رقم السيارة (Plate Number) -->
+                <div class="trans-form-group" id="group-trans-car">
+                  <label class="trans-label" for="trans-car-input">
+                    رقم السيارة <span class="trans-req">*</span>
+                  </label>
+                  <div class="trans-input-wrap">
+                    <input type="text" id="trans-car-input" class="trans-input" placeholder="مثال: م ص ر 777" required autocomplete="off" />
+                  </div>
+                  <span class="trans-field-hint">رقم اللوحة المعدنية للشاحنة أو السيارة الناقلة.</span>
+                  <span class="trans-field-error" id="trans-car-error"></span>
+                </div>
+
+                <!-- اسم السائق (Reused from existing DB drivers) -->
+                <div class="trans-form-group" id="group-trans-driver">
+                  <label class="trans-label" for="trans-driver-select">
+                    اسم السائق <span class="trans-req">*</span>
+                  </label>
+                  <div class="trans-input-wrap">
+                    <select id="trans-driver-select" class="trans-input trans-select" required>
+                      <option value="" disabled selected>-- اختر السائق من السجلات المعتمدة --</option>
+                    </select>
+                  </div>
+                  <span class="trans-field-hint">اختيار من قائمة السائقين المسجلين مسبقاً.</span>
+                  <span class="trans-field-error" id="trans-driver-error"></span>
+                </div>
+
+                <!-- اسم مستلم الشحنة (Free text) -->
+                <div class="trans-form-group" id="group-trans-rec-name">
+                  <label class="trans-label" for="trans-rec-name-input">
+                    اسم مستلم الشحنة <span class="trans-opt">(اختياري)</span>
+                  </label>
+                  <div class="trans-input-wrap">
+                    <input type="text" id="trans-rec-name-input" class="trans-input" placeholder="أدخل اسم الشخص المستلم في الموقع" autocomplete="off" />
+                  </div>
+                  <span class="trans-field-hint">حقل نصي حر لاسم مستلم الشحنة في الوجهة.</span>
+                </div>
+
+                <!-- مسمى مستلم الشحنة (Controlled list) -->
+                <div class="trans-form-group" id="group-trans-rec-title">
+                  <label class="trans-label" for="trans-rec-title-select">
+                    مسمى مستلم الشحنة <span class="trans-opt">(اختياري)</span>
+                  </label>
+                  <div class="trans-input-wrap">
+                    <select id="trans-rec-title-select" class="trans-input trans-select">
+                      <option value="" selected>-- اختر المسمى الوظيفي للمستلم --</option>
+                      <option value="مهندس الموقع">مهندس الموقع</option>
+                      <option value="مشرف استلام">مشرف استلام</option>
+                      <option value="فني مختبر">فني مختبر</option>
+                      <option value="مسؤول الجودة">مسؤول الجودة</option>
+                      <option value="مدير المشروع">مدير المشروع</option>
+                    </select>
+                  </div>
+                  <span class="trans-field-hint">اختيار من المسميات الوظيفية المعتمدة للمستلمين.</span>
+                </div>
+
+                <!-- حالة الاستلام (Checklist: safe, intact - NOT an enum! Requirement 37) -->
+                <div class="trans-form-group" id="group-trans-rec-status">
+                  <label class="trans-label">
+                    حالة الاستلام (قائمة التحقق - Checklist) <span class="trans-req">*</span>
+                  </label>
+                  <div class="trans-checklist-wrap">
+                    <label class="trans-checkbox-label">
+                      <input type="checkbox" id="trans-status-safe" value="safe" checked />
+                      <span>safe (آمنة وسليمة)</span>
+                    </label>
+                    <label class="trans-checkbox-label">
+                      <input type="checkbox" id="trans-status-intact" value="intact" checked />
+                      <span>intact (مكتملة ومطابقة)</span>
+                    </label>
+                  </div>
+                  <span class="trans-field-hint">قائمة اختيار (Checklist). حدد خياراً واحداً على الأقل.</span>
+                  <span class="trans-field-error" id="trans-rec-status-error"></span>
+                </div>
+
+                <!-- تاريخ الاستلام -->
+                <div class="trans-form-group" id="group-trans-rec-date">
+                  <label class="trans-label" for="trans-rec-date-input">
+                    تاريخ الاستلام <span class="trans-opt">(اختياري)</span>
+                  </label>
+                  <div class="trans-input-wrap">
+                    <input type="datetime-local" id="trans-rec-date-input" class="trans-input" />
+                  </div>
+                  <span class="trans-field-hint">تاريخ وتوقيت استلام الشحنة وتوقيع البوليصة.</span>
+                </div>
+
+                <!-- وقت الشحن في بوليصة الشحن (Read-only, from Section 1) -->
+                <div class="trans-form-group" id="group-trans-bol-shipping-time">
+                  <label class="trans-label" for="trans-bol-shipping-time-display">
+                    وقت الشحن <span class="trans-lock-badge">🔒 من قسم الميزان</span>
+                  </label>
+                  <div class="trans-input-wrap">
+                    <input type="text" id="trans-bol-shipping-time-display" class="trans-input trans-readonly" readonly placeholder="00:00" />
+                  </div>
+                  <span class="trans-field-hint">محسوب تلقائياً من توقيتات أوزان الميزان.</span>
+                </div>
+              </div>
+
+              <!-- Attachment at the END of Section 3: بوليصة الشحن (Mandatory) -->
+              <div class="trans-attachment-section">
+                <div class="trans-attachment-header">
+                  <span class="attachment-title">📎 مرفق قسم بوليصة الشحن <span class="trans-req">*</span></span>
+                  <span class="attachment-subtitle">مطلوب رفع مستند/صورة بوليصة الشحن الموقعة (PDF, JPG, JPEG - حد أقصى 25 ميجابايت).</span>
+                </div>
+                <div class="trans-upload-zone" id="trans-bol-dropzone">
+                  <input type="file" id="trans-bol-attachment-input" class="trans-file-input" accept=".pdf,.jpg,.jpeg" style="display: none;" />
+                  <div class="trans-upload-placeholder" id="trans-bol-placeholder">
+                    <div class="upload-icon">📑</div>
+                    <div class="upload-text">
+                      <span class="upload-prompt">انقر لاختيار مرفق بوليصة الشحن أو اسحب الملف هنا</span>
+                      <span class="upload-hint">الملفات المسموحة فقط: PDF, JPG, JPEG</span>
+                    </div>
+                    <button type="button" class="trans-btn-browse" onclick="document.getElementById('trans-bol-attachment-input').click()">اختيار ملف بوليصة الشحن *</button>
+                  </div>
+                  <div class="trans-file-preview" id="trans-bol-file-preview" style="display: none;">
+                    <span class="file-icon" id="trans-bol-file-icon">📑</span>
+                    <div class="file-info">
+                      <span class="file-name" id="trans-bol-file-name">—</span>
+                      <span class="file-size" id="trans-bol-file-size">—</span>
+                    </div>
+                    <button type="button" class="trans-btn-remove-file" id="trans-bol-remove-btn" title="إزالة الملف">✕</button>
+                  </div>
+                </div>
+                <span class="trans-field-error" id="trans-bol-attachment-error"></span>
+              </div>
+
+            </div>
+
+            <!-- ==============================================================
+                 4. SECTION 4 — اكرامية / ملاحظات
+                 ============================================================== -->
+            <div class="trans-form-section" id="section-trans-additional" style="background: rgba(255, 255, 255, 0.6);">
+              <div class="trans-section-header">
+                <div class="trans-section-num" style="background: #64748B;">4</div>
+                <div>
+                  <h2 class="trans-section-title">اكرامية / ملاحظات</h2>
+                  <p class="trans-section-desc">تسجيل الإكرامية والملاحظات التشغيلية قبل الاعتماد النهائي لحركة النقل.</p>
+                </div>
+              </div>
+
+              <div class="trans-grid-3">
+                <!-- العهدة (Decimal, Required, NOT NULL in DB - Requirements 6, 7) -->
+                <div class="trans-form-group" id="group-trans-custody">
+                  <label class="trans-label" for="trans-custody-input">
+                    العهدة <span class="trans-req">*</span>
+                  </label>
+                  <div class="trans-input-wrap">
+                    <input type="number" id="trans-custody-input" class="trans-input trans-num-input" placeholder="0.00" step="0.001" min="0" required />
+                    <span class="trans-unit-suffix">ج.م</span>
+                  </div>
+                  <span class="trans-field-hint">مبلغ العهدة المالية (إلزامي - يدعم الأرقام العشرية).</span>
+                  <span class="trans-field-error" id="trans-custody-error"></span>
+                </div>
+
+                <!-- اكرامية (Decimal, NOT used in weights or PO quantity deduction) -->
+                <div class="trans-form-group" id="group-trans-ikramiya">
+                  <label class="trans-label" for="trans-ikramiya-input">
+                    اكرامية <span class="trans-opt">(اختياري)</span>
+                  </label>
+                  <div class="trans-input-wrap">
+                    <input type="number" id="trans-ikramiya-input" class="trans-input trans-num-input" placeholder="0.00" step="0.01" min="0" value="0.00" />
+                    <span class="trans-unit-suffix">ج.م</span>
+                  </div>
+                  <span class="trans-field-hint">مخصصة لاستخدامات الإدارة المالية لاحقاً ولا تؤثر على حسابات الأوزان أو خصم كمية أمر الشراء.</span>
+                </div>
+
+                <!-- ملاحظات (Optional text) -->
+                <div class="trans-form-group" id="group-trans-notes">
+                  <label class="trans-label" for="trans-notes-input">
+                    ملاحظات <span class="trans-opt">(اختياري)</span>
+                  </label>
+                  <div class="trans-input-wrap">
+                    <textarea id="trans-notes-input" class="trans-input trans-textarea" rows="2" placeholder="أدخل أي ملاحظات تشغيلية إضافية..."></textarea>
+                  </div>
+                  <span class="trans-field-hint">ملاحظات توثيقية إضافية حول الشحنة.</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Form Buttons Bar (Submit & Clear) -->
+            <div class="trans-form-actions">
+              <button type="button" class="trans-btn trans-btn-clear" id="trans-clear-btn" title="مسح كافة البيانات المدخلة">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                <span>مسح</span>
+              </button>
+
+              <button type="submit" class="trans-btn trans-btn-submit" id="trans-submit-btn">
+                <span class="trans-btn-spinner" id="trans-submit-spinner" style="display: none;"></span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" id="trans-submit-icon"><polyline points="20 6 9 17 4 12"/></svg>
+                <span id="trans-submit-btn-text">حفظ</span>
+              </button>
+            </div>
+
+          </form>
+
+        </div>
+      </section>
+
+      <!-- ==================================================================
+           STEP 3: Submission Confirmation Success Screen
+           ================================================================== -->
+      <section class="trans-step-container" id="trans-step-success" style="display: none;">
+        <div class="trans-success-card">
+          <div class="trans-success-icon-wrap">✓</div>
+          <h2 class="trans-success-heading">Transportation transaction submitted successfully.</h2>
+          <p class="trans-success-sub">تم حفظ حركة النقل وبيانات الميزان وبوليصة الشحن بنجاح وفقاً للمعادلات والضوابط المعتمدة.</p>
+
+          <div class="trans-success-grid">
+            <div class="trans-success-item">
+              <span class="s-label">رقم الحركة:</span>
+              <span class="s-val font-numeric" id="trans-success-tx-number">—</span>
+            </div>
+            <div class="trans-success-item">
+              <span class="s-label">رقم أمر الشراء (PO):</span>
+              <span class="s-val font-numeric" id="trans-success-po-number" dir="ltr">—</span>
+            </div>
+            <div class="trans-success-item">
+              <span class="s-label">اسم الشركة:</span>
+              <span class="s-val" id="trans-success-company">—</span>
+            </div>
+            <div class="trans-success-item">
+              <span class="s-label">الوجهة:</span>
+              <span class="s-val" id="trans-success-destination">—</span>
+            </div>
+            <div class="trans-success-item">
+              <span class="s-label">نوع الخامة:</span>
+              <span class="s-val" id="trans-success-material">—</span>
+            </div>
+            <div class="trans-success-item">
+              <span class="s-label">الوزن الداخلي:</span>
+              <span class="s-val font-numeric" id="trans-success-int-weight">—</span>
+            </div>
+            <div class="trans-success-item">
+              <span class="s-label">الوزن الخارجي:</span>
+              <span class="s-val font-numeric" id="trans-success-ext-weight">—</span>
+            </div>
+            <div class="trans-success-item highlight">
+              <span class="s-label">الوزن الصافي (الكمية):</span>
+              <span class="s-val font-numeric" style="color: #2563EB;" id="trans-success-net-weight">—</span>
+            </div>
+            <div class="trans-success-item">
+              <span class="s-label">كمية هالك:</span>
+              <span class="s-val font-numeric" id="trans-success-waste">—</span>
+            </div>
+            <div class="trans-success-item">
+              <span class="s-label">وقت الشحن:</span>
+              <span class="s-val font-numeric" id="trans-success-shipping-time">—</span>
+            </div>
+            <div class="trans-success-item full-width">
+              <span class="s-label">المصدر المعتمد:</span>
+              <span class="s-val">Face stone (Full Concrete Solutions)</span>
+            </div>
+          </div>
+
+          <div class="trans-success-actions">
+            <button type="button" class="trans-btn trans-btn-submit" id="trans-btn-new-po">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              <span>تسجيل حركة جديدة (أمر شراء آخر)</span>
+            </button>
+            <button type="button" class="trans-btn trans-btn-clear" id="trans-btn-view-recent-from-success">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+              <span>عرض سجل الحركات</span>
+            </button>
           </div>
         </div>
+      </section>
 
+      <!-- Recent Transactions Log Section -->
+      <div class="trans-recent-section" id="trans-recent-section">
+        <div class="trans-recent-header">
+          <div>
+            <h2 class="trans-recent-title">سجل الحركات الأخيرة ومتابعة الشحنات</h2>
+            <p class="trans-recent-subtitle">حركات النقل المحفوظة في قاعدة بيانات المصنع SQL Server مع تفاصيل الأوزان والهالك وبوليصة الشحن.</p>
+          </div>
+          <button type="button" class="trans-btn-refresh" id="trans-refresh-btn" title="تحديث السجل من قاعدة البيانات">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+            <span>تحديث السجل</span>
+          </button>
+        </div>
+
+        <div class="trans-table-responsive">
+          <table class="trans-data-table" id="trans-data-table">
+            <thead>
+              <tr>
+                <th>رقم الحركة</th>
+                <th>تاريخ الشحنة</th>
+                <th>أمر الشراء (PO)</th>
+                <th>اسم الشركة</th>
+                <th>الوجهة</th>
+                <th>رقم السيارة</th>
+                <th>اسم السائق</th>
+                <th>نوع الخامة</th>
+                <th>الوزن الداخلي</th>
+                <th>الوزن الخارجي</th>
+                <th>الوزن الصافي (الكمية)</th>
+                <th>كمية هالك</th>
+                <th>وقت الشحن</th>
+                <th>المسؤول عن الشحن</th>
+                <th>حالة الاستلام</th>
+                <th>وقت الحفظ</th>
+              </tr>
+            </thead>
+            <tbody id="trans-recent-tbody">
+              <tr>
+                <td colspan="16" class="trans-empty-row">جاري تحميل سجل الحركات...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </main>
 
@@ -584,10 +1283,10 @@
     <!-- Top Sticky Header -->
     <header class="storage-page-header">
       <div class="storage-brand">
-        <div class="dept-brand-logo storage-brand-logo">FS</div>
+        <img src="/images/facestone-logo-transparent.png" alt="FaceStone Logo" class="dept-brand-logo-img">
         <div>
-          <span class="storage-title">فيس ستون لإدارة المخازن والمستودعات</span>
-          <span class="storage-tag">نظام تتبع وإدارة حركات المواد وأرصدة المخزون</span>
+          <span class="storage-title">FaceStone</span>
+          <span class="storage-tag">المستودعات والتخزين — نظام تتبع وإدارة حركات المواد وأرصدة المخزون</span>
         </div>
       </div>
 
@@ -995,10 +1694,10 @@
     <!-- Top Header -->
     <header class="mgmt-page-header">
       <div class="mgmt-brand">
-        <div class="dept-brand-logo mgmt-brand-logo">FS</div>
+        <img src="/images/facestone-logo-transparent.png" alt="FaceStone Logo" class="dept-brand-logo-img">
         <div>
-          <span class="mgmt-title">فيس ستون للإدارة والرقابة</span>
-          <span class="mgmt-tag">لوحة متابعة استلام الخامات وحركات النقل والموازين</span>
+          <span class="mgmt-title">FaceStone</span>
+          <span class="mgmt-tag">الإدارة والرقابة — لوحة متابعة استلام الخامات وحركات النقل والموازين</span>
         </div>
       </div>
 
@@ -1279,85 +1978,7 @@
     </div>
   </div>
 
-  <!-- ========================================================================
-       Finance Department Redirection Page (Gateway / Hub) - Arabic RTL
-       ======================================================================== -->
-  <div class="finance-hub-root" id="finance-hub-root" dir="rtl" style="display: none;">
-    <!-- Top Header -->
-    <header class="finance-hub-header">
-      <div class="finance-hub-brand">
-        <div class="finance-hub-logo">FS</div>
-        <div>
-          <span class="finance-hub-title">إدارة الشؤون المالية | فيس ستون</span>
-          <span class="finance-hub-subtitle">بوابة الخدمات والعمليات المالية</span>
-        </div>
-      </div>
 
-      <div class="finance-mgmt-actions">
-        <div class="finance-hub-user-pill">
-          <div class="finance-hub-user-avatar" id="finance-hub-user-avatar">FS</div>
-          <div class="finance-hub-user-meta">
-            <span class="finance-hub-user-name" id="finance-hub-user-name">المستخدم</span>
-            <span class="finance-hub-user-role" id="finance-hub-user-role">محاسب</span>
-          </div>
-        </div>
-        <button type="button" class="btn-hub-back" id="finance-hub-back-to-departments-btn" title="العودة إلى شاشة الأقسام الرئيسية">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-          <span>العودة إلى الأقسام</span>
-        </button>
-      </div>
-    </header>
-
-    <!-- Main Content Area -->
-    <main class="finance-hub-content">
-      <div class="finance-hub-hero">
-        <span class="finance-hub-hero-badge">بوابة الإدارة والتواصل المالي</span>
-        <h1 class="finance-hub-hero-heading">المالية</h1>
-        <p class="finance-hub-hero-sub">
-          اختر مساحة العمل المطلوبة: التواصل المباشر مع فريق المالية، أو الدخول إلى لوحة الإحصائيات والإدارة المالية ومتابعة أوامر الشراء والمدفوعات.
-        </p>
-      </div>
-
-      <!-- Two Large Action Cards -->
-      <div class="finance-hub-cards-grid">
-        
-        <!-- CARD 1: التواصل مع فريق المالية -->
-        <div class="finance-hub-card card-chat">
-          <div class="finance-hub-card-icon-wrap">
-            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-          </div>
-          <span class="finance-hub-card-tag">محادثات وتنسيق فوري</span>
-          <h2 class="finance-hub-card-title">التواصل مع فريق المالية</h2>
-          <h3 class="finance-hub-card-sub">التواصل مع فريق المالية والاستفسارات</h3>
-          <p class="finance-hub-card-desc">
-            غرفة المحادثات والاستفسارات المباشرة مع المحاسبين وفريق المالية، استفسارات الفواتير، التنسيق المالي الميداني، ومشاركة المستندات والمواقع الحية.
-          </p>
-          <button type="button" class="btn-enter-finance-action btn-enter-finance-chat" id="btn-finance-hub-chat">
-            <span>دخول المحادثة</span>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
-          </button>
-        </div>
-
-        <!-- CARD 2: الإحصائيات وإدارة المالية -->
-        <div class="finance-hub-card card-mgmt">
-          <div class="finance-hub-card-icon-wrap">
-            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/><path d="M7 10h2v3H7zM11 7h2v6h-2zM15 10h2v3h-2z"/></svg>
-          </div>
-          <span class="finance-hub-card-tag">بيانات وإحصائيات متقدمة</span>
-          <h2 class="finance-hub-card-title">الإحصائيات وإدارة المالية</h2>
-          <h3 class="finance-hub-card-sub">عرض البيانات المالية والإحصائيات وإدارة المدفوعات</h3>
-          <p class="finance-hub-card-desc">
-            متابعة أوامر الشراء (PO)، الموردين، الكميات الموردة والمتبقية، الكميات المعتمدة والهالك، أسعار الأطنان، المبالغ المستحقة والمدفوعة، وحالات السداد والفواتير.
-          </p>
-          <button type="button" class="btn-enter-finance-action btn-enter-finance-mgmt" id="btn-finance-hub-mgmt">
-            <span>دخول الإدارة المالية</span>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
-          </button>
-        </div>
-
-      </div>
-    </main>
-  </div>
 
   <!-- ========================================================================
        Finance Management & Statistics Page - Arabic RTL
@@ -1366,10 +1987,10 @@
     <!-- Top Header -->
     <header class="finance-mgmt-header">
       <div class="finance-mgmt-brand">
-        <div class="finance-hub-logo">FS</div>
+        <img src="/images/facestone-logo-transparent.png" alt="FaceStone Logo" class="dept-brand-logo-img">
         <div>
-          <span class="finance-hub-title">الإحصائيات وإدارة المالية</span>
-          <span class="finance-hub-subtitle">لوحة أوامر الشراء والبيانات المالية والمدفوعات</span>
+          <span class="finance-hub-title">FaceStone</span>
+          <span class="finance-hub-subtitle">الإحصائيات وإدارة المالية — لوحة أوامر الشراء والبيانات المالية والمدفوعات</span>
         </div>
       </div>
 
@@ -1382,14 +2003,9 @@
           </div>
         </div>
 
-        <button type="button" class="finance-btn-nav finance-btn-nav-primary" id="finance-mgmt-back-to-hub-btn" title="العودة لبوابة المالية الرئيسية">
+        <button type="button" class="finance-btn-nav finance-btn-nav-primary" id="finance-mgmt-back-to-departments-btn" title="العودة إلى شاشة اختيار الأقسام">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-          <span>بوابة المالية</span>
-        </button>
-
-        <button type="button" class="finance-btn-nav finance-btn-nav-secondary" id="finance-mgmt-back-to-departments-btn" title="العودة إلى شاشة اختيار الأقسام">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
-          <span>الأقسام</span>
+          <span>العودة إلى الأقسام</span>
         </button>
       </div>
     </header>
@@ -1664,172 +2280,161 @@
   </div>
 
   <!-- ========================================================================
-       Main Two-Panel Messaging Container (Finance Department)
+       Global Floating Messenger Widget (FaceStone Global 1-on-1 Chat)
        ======================================================================== -->
-  <div class="chat-app-root" id="chat-app-root" dir="rtl" style="display: none;">
+  <!-- Floating Chat Button (Bottom-Right) -->
+  <button type="button" class="fs-floating-chat-btn" id="fs-floating-chat-btn" aria-label="محادثات FaceStone" title="محادثات FaceStone" style="display: none;">
+    <span class="fs-floating-chat-icon">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+      </svg>
+    </span>
+    <span class="fs-floating-chat-badge" id="fs-floating-chat-badge" style="display: none;">0</span>
+  </button>
 
-    <!-- --------------------------------------------------------------------
-         1. Left Sidebar: Conversations & User Directory
-         -------------------------------------------------------------------- -->
-    <aside class="sidebar-panel" id="sidebar-panel" aria-label="شريط المحادثات الجانبي">
-      <!-- Sidebar Top Header -->
-      <header class="sidebar-header">
-        <div class="user-profile-summary" id="user-profile-summary" title="حسابك الشخصي">
-          <div class="user-avatar-wrap">
-            <div class="user-avatar-circle" id="current-user-avatar">FS</div>
-            <div class="online-status-badge"></div>
+  <!-- Floating Chat Window (Bottom-Right Above Button) -->
+  <div class="chat-app-root fs-floating-chat-window" id="chat-app-root" dir="rtl" style="display: none;">
+    
+    <!-- 1. Conversations & User Search View (View A) -->
+    <div class="fs-chat-list-view" id="fs-chat-list-view">
+      <!-- Header -->
+      <header class="fs-chat-header-main">
+        <div class="fs-chat-header-title-wrap">
+          <div class="fs-chat-logo-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
           </div>
-          <div class="user-details">
-            <span class="user-full-name" id="current-user-name">جاري التحميل...</span>
-            <span class="user-role-label" id="current-user-role">جاري الاتصال...</span>
+          <div>
+            <h3 class="fs-chat-panel-title">محادثات FaceStone</h3>
+            <span class="fs-chat-panel-subtitle" id="fs-chat-user-status-text">رسائل فورية داخلية</span>
           </div>
         </div>
-
-        <div class="sidebar-header-actions">
-          <button type="button" class="dept-nav-btn finance-hub-link-btn" id="btn-chat-to-finance-hub" title="العودة إلى بوابة المالية" aria-label="بوابة المالية">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
-            <span>بوابة المالية</span>
+        <div class="fs-chat-header-actions">
+          <button type="button" class="fs-chat-btn-action" id="btn-new-chat-toggle" title="بدء محادثة جديدة" aria-label="محادثة جديدة">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <span>جديدة</span>
           </button>
-          <button type="button" class="dept-nav-btn" id="btn-back-to-departments" title="العودة إلى لوحة الأقسام" aria-label="الأقسام">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"/><polyline points="12 5 19 12 12 19"/></svg>
-            <span>الأقسام</span>
-          </button>
-          <div class="connection-status-pill" id="connection-status-pill" title="حالة الاتصال المباشر">
-            <span class="connection-dot"></span>
-            <span>جاري الاتصال...</span>
-          </div>
-          <button type="button" class="icon-btn" id="user-logout-btn" title="تسجيل الخروج من المنظومة" aria-label="تسجيل الخروج">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          <button type="button" class="fs-chat-btn-icon" id="btn-close-floating-chat" title="إغلاق المحادثة" aria-label="إغلاق">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
         </div>
       </header>
 
       <!-- Search Input Box -->
-      <div class="sidebar-search-box">
+      <div class="sidebar-search-box fs-chat-search-wrap">
         <div class="search-input-wrap">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-          <input type="text" class="search-input-field" id="search-conversations-input" placeholder="بحث في المحادثات والزملاء..." autocomplete="off">
+          <input type="text" class="search-input-field" id="search-conversations-input" placeholder="بحث في المحادثات أو الزملاء..." autocomplete="off">
           <button type="button" class="search-clear-btn" id="search-clear-btn" aria-label="مسح نص البحث">✕</button>
         </div>
       </div>
 
+      <!-- New Chat / User Search Directory Section -->
+      <div class="fs-users-directory-section" id="fs-users-directory-section" style="display: none;">
+        <div class="fs-users-dir-header">
+          <span class="fs-users-dir-label">اختر زميلاً لبدء محادثة:</span>
+          <button type="button" class="fs-users-dir-cancel-btn" id="btn-cancel-user-search">إلغاء</button>
+        </div>
+        <div class="fs-users-results-list" id="fs-users-results-list" role="list">
+          <!-- Populated dynamically via ChatApi.searchUsers() -->
+        </div>
+      </div>
+
       <!-- Conversations Stream -->
-      <div class="conversations-list" id="conversations-list-container" role="list" aria-label="قائمة المحادثات">
+      <div class="conversations-list fs-floating-convs-list" id="conversations-list-container" role="list" aria-label="قائمة المحادثات">
         <!-- Rendered dynamically by chat-app.js -->
       </div>
-    </aside>
+    </div>
 
-    <!-- --------------------------------------------------------------------
-         2. Right Panel: Main Chat Conversation View
-         -------------------------------------------------------------------- -->
-    <main class="chat-pane" id="chat-pane" aria-label="نافذة المحادثة النشطة">
-      
-      <!-- Zero Selection Empty View -->
-      <div class="chat-empty-view" id="chat-empty-view">
-        <div class="empty-view-intro">
-          <button type="button" class="mobile-back-btn empty-view-mobile-back" id="empty-mobile-back-btn" aria-label="العودة إلى المحادثات">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-            <span style="font-size: 0.85rem; font-weight: 600; margin-right: 6px;">العودة للمحادثات</span>
+    <!-- 2. Active 1-to-1 Chat Conversation View (View B) -->
+    <div class="fs-chat-active-view" id="chat-active-view" style="display: none; flex-direction: column; width: 100%; height: 100%;">
+      <!-- Active Chat Header -->
+      <header class="chat-header fs-floating-active-header">
+        <div class="chat-header-left">
+          <button type="button" class="fs-chat-back-btn" id="mobile-back-btn" aria-label="العودة للمحادثات" title="العودة للمحادثات">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
           </button>
-          <div class="empty-view-icon-circle">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <div class="conv-avatar-wrap" style="width: 36px; height: 36px; min-width: 36px;">
+            <div class="conv-avatar-img" id="chat-recipient-avatar">FS</div>
           </div>
-          <h2 class="empty-view-title">مراسلات فريق العمل والمالية</h2>
-          <p class="empty-view-desc">
-            اختر محادثة من القائمة لبدء التواصل الفوري المباشر مع أعضاء الفريق والمحاسبين الماليين.
-          </p>
-        </div>
-      </div>
-
-      <!-- Active Chat View (Hidden when no chat selected) -->
-      <div id="chat-active-view" style="display: none; flex-direction: column; width: 100%; height: 100%;">
-        <!-- Active Chat Header -->
-        <header class="chat-header">
-          <div class="chat-header-left">
-            <button type="button" class="mobile-back-btn" id="mobile-back-btn" aria-label="العودة للمحادثات">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-            </button>
-            <div class="conv-avatar-wrap" style="width: 40px; height: 40px;">
-              <div class="conv-avatar-img" id="chat-recipient-avatar">FS</div>
-            </div>
-            <div class="chat-recipient-info">
-              <span class="chat-recipient-name" id="chat-recipient-name">اسم المحاسب / الموظف</span>
-              <span class="chat-recipient-status online" id="chat-recipient-status">
-                <span style="width: 7px; height: 7px; border-radius: 50%; background: var(--status-online); display: inline-block;"></span>
-                <span>متصل الآن</span>
-              </span>
-            </div>
-          </div>
-
-          <div class="chat-header-actions">
-            <button type="button" class="dept-nav-btn secondary" id="chat-header-back-dept-btn" title="العودة إلى الأقسام" aria-label="العودة للأقسام">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"/><polyline points="12 5 19 12 12 19"/></svg>
-              <span>الأقسام</span>
-            </button>
-          </div>
-        </header>
-
-        <!-- Messages Stream Box -->
-        <div class="messages-stream-box" id="messages-stream-box" role="log" aria-live="polite">
-          <!-- Rendered dynamically by chat-app.js -->
-        </div>
-
-        <!-- Jump to Bottom Floating Button -->
-        <button type="button" class="jump-bottom-btn" id="jump-bottom-btn" aria-label="الانتقال إلى أحدث الرسائل">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
-          <span>رسائل جديدة</span>
-        </button>
-
-        <!-- Location Picker Popover Menu -->
-        <div class="location-popover-menu" id="location-popover-menu" style="display: none;">
-          <div class="loc-popover-header">
-            <span class="loc-popover-title">مشاركة الموقع الجغرافي</span>
-            <button type="button" class="loc-popover-close" id="loc-popover-close" aria-label="إغلاق القائمة">✕</button>
-          </div>
-          <button type="button" class="loc-popover-option" id="btn-share-current-location">
-            <span class="loc-option-icon">📍</span>
-            <span class="loc-option-info">
-              <strong>موقعي الحالي</strong>
-              <small>إرسال إحداثيات GPS الحالية لمرة واحدة</small>
+          <div class="chat-recipient-info">
+            <span class="chat-recipient-name" id="chat-recipient-name">اسم المستخدم</span>
+            <span class="chat-recipient-status online" id="chat-recipient-status">
+              <span style="width: 7px; height: 7px; border-radius: 50%; background: var(--status-online); display: inline-block;"></span>
+              <span>متصل الآن</span>
             </span>
-          </button>
-          <div class="loc-popover-divider"></div>
-          <div class="loc-popover-section-title">
-            <span class="live-dot-pulse"></span>
-            <strong>الموقع المباشر (تتبع حي)</strong>
-          </div>
-          <div class="loc-live-durations">
-            <button type="button" class="btn-live-duration" data-minutes="15">15 دقيقة</button>
-            <button type="button" class="btn-live-duration" data-minutes="30">30 دقيقة</button>
-            <button type="button" class="btn-live-duration" data-minutes="60">60 دقيقة</button>
           </div>
         </div>
 
-        <!-- Bottom Input Bar -->
-        <footer class="chat-bottom-bar">
-          <button type="button" class="icon-btn" id="chat-attach-btn" title="إرفاق مستند أو صورة" aria-label="إرفاق ملف">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+        <div class="chat-header-actions">
+          <button type="button" class="fs-chat-btn-icon" id="btn-close-floating-chat-conv" title="إغلاق المحادثة" aria-label="إغلاق">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
-          <button type="button" class="icon-btn" id="chat-location-btn" title="مشاركة الموقع الجغرافي" aria-label="مشاركة الموقع">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg>
-          </button>
-          <input type="file" id="chat-file-input" style="display: none;">
+        </div>
+      </header>
 
-          <div class="chat-input-wrapper">
-            <div class="selected-file-preview-strip" id="file-preview-strip">
-              <span id="file-name-preview">document.pdf</span>
-              <button type="button" id="file-remove-btn" style="color: inherit; font-weight: bold; cursor: pointer;">✕</button>
-            </div>
-            <textarea class="msg-textarea" id="chat-msg-textarea" rows="1" placeholder="اكتب رسالتك هنا..." aria-label="نص الرسالة"></textarea>
-          </div>
-
-          <button type="button" class="send-msg-btn" id="send-msg-btn" title="إرسال الرسالة" aria-label="إرسال الرسالة">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-          </button>
-        </footer>
+      <!-- Messages Stream Box -->
+      <div class="messages-stream-box fs-floating-messages-stream" id="messages-stream-box" role="log" aria-live="polite">
+        <!-- Rendered dynamically by chat-app.js -->
       </div>
 
-    </main>
+      <!-- Jump to Bottom Floating Button -->
+      <button type="button" class="jump-bottom-btn" id="jump-bottom-btn" aria-label="الانتقال إلى أحدث الرسائل">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+        <span>رسائل جديدة</span>
+      </button>
+
+      <!-- Location Picker Popover Menu -->
+      <div class="location-popover-menu" id="location-popover-menu" style="display: none;">
+        <div class="loc-popover-header">
+          <span class="loc-popover-title">مشاركة الموقع الجغرافي</span>
+          <button type="button" class="loc-popover-close" id="loc-popover-close" aria-label="إغلاق القائمة">✕</button>
+        </div>
+        <button type="button" class="loc-popover-option" id="btn-share-current-location">
+          <span class="loc-option-icon">📍</span>
+          <span class="loc-option-info">
+            <strong>موقعي الحالي</strong>
+            <small>إرسال إحداثيات GPS الحالية لمرة واحدة</small>
+          </span>
+        </button>
+        <div class="loc-popover-divider"></div>
+        <div class="loc-popover-section-title">
+          <span class="live-dot-pulse"></span>
+          <strong>الموقع المباشر (تتبع حي)</strong>
+        </div>
+        <div class="loc-live-durations">
+          <button type="button" class="btn-live-duration" data-minutes="15">15 دقيقة</button>
+          <button type="button" class="btn-live-duration" data-minutes="30">30 دقيقة</button>
+          <button type="button" class="btn-live-duration" data-minutes="60">60 دقيقة</button>
+        </div>
+      </div>
+
+      <!-- Bottom Input Bar -->
+      <footer class="chat-bottom-bar fs-floating-bottom-bar">
+        <button type="button" class="icon-btn" id="chat-attach-btn" title="إرفاق مستند أو صورة" aria-label="إرفاق ملف">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+        </button>
+        <button type="button" class="icon-btn fs-mobile-camera-btn" id="fs-mobile-camera-btn" title="التقاط صورة بالكاميرا" aria-label="التقاط صورة بالكاميرا">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        </button>
+        <button type="button" class="icon-btn" id="chat-location-btn" title="مشاركة الموقع الجغرافي" aria-label="مشاركة الموقع">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg>
+        </button>
+        <input type="file" id="chat-file-input" style="display: none;">
+        <input type="file" id="fs-mobile-camera-input" accept="image/*" capture="environment" style="display: none;">
+
+        <div class="chat-input-wrapper">
+          <div class="selected-file-preview-strip" id="file-preview-strip">
+            <span id="file-name-preview">document.pdf</span>
+            <button type="button" id="file-remove-btn" style="color: inherit; font-weight: bold; cursor: pointer;">✕</button>
+          </div>
+          <textarea class="msg-textarea fs-floating-textarea" id="chat-msg-textarea" rows="1" placeholder="اكتب رسالة..." aria-label="نص الرسالة"></textarea>
+        </div>
+
+        <button type="button" class="send-msg-btn fs-floating-send-btn" id="send-msg-btn" title="إرسال الرسالة" aria-label="إرسال الرسالة">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </footer>
+    </div>
   </div>
 
   <!-- ========================================================================
@@ -1838,8 +2443,8 @@
   <div class="auth-overlay-backdrop" id="auth-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title" dir="rtl">
     <div class="auth-card-modal">
       <div class="auth-modal-header">
-        <div class="auth-brand-logo-icon">FS</div>
-        <h1 class="auth-modal-title" id="auth-modal-title">فيس ستون</h1>
+        <img src="/images/facestone-logo-transparent.png" alt="FaceStone Logo" class="auth-brand-logo-img">
+        <h1 class="auth-modal-title" id="auth-modal-title">FaceStone</h1>
         <p class="auth-modal-subtitle">بوابة تسجيل الدخول الموحدة لإدارة العمليات والمالية</p>
       </div>
 
@@ -1989,6 +2594,56 @@
   <!-- Toast Alerts Container -->
   <div class="chat-toast-container" id="chat-toast-container" aria-live="polite"></div>
 
+  <!-- ========================================================================
+       Mobile Bottom Navigation Bar (شريط التنقل السفلي للهاتف)
+       ======================================================================== -->
+  <nav class="fs-mobile-bottom-nav" id="fs-mobile-bottom-nav" dir="rtl" aria-label="شريط التنقل السفلي">
+    <div class="fs-bottom-nav-container">
+      <button type="button" class="fs-nav-tab active" id="fs-nav-depts" aria-label="الأقسام">
+        <div class="fs-nav-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </div>
+        <span class="fs-nav-label">الأقسام</span>
+      </button>
+
+      <button type="button" class="fs-nav-tab" id="fs-nav-chat" aria-label="المحادثات">
+        <div class="fs-nav-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <span class="fs-nav-badge" id="fs-chat-badge">0</span>
+        </div>
+        <span class="fs-nav-label">المحادثات</span>
+      </button>
+
+      <button type="button" class="fs-nav-tab" id="fs-nav-finance" aria-label="المالية">
+        <div class="fs-nav-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M7 15h0M2 10h20M12 15h6"/></svg>
+        </div>
+        <span class="fs-nav-label">المالية</span>
+      </button>
+
+      <button type="button" class="fs-nav-tab" id="fs-nav-trans" aria-label="النقل">
+        <div class="fs-nav-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none"><rect x="1" y="3" width="15" height="13" rx="1"/><polygon points="16 8 20 8 23 11 23 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+        </div>
+        <span class="fs-nav-label">النقل</span>
+      </button>
+
+      <button type="button" class="fs-nav-tab" id="fs-nav-storage" aria-label="المستودعات">
+        <div class="fs-nav-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+        </div>
+        <span class="fs-nav-label">المستودعات</span>
+      </button>
+
+      <button type="button" class="fs-nav-tab" id="fs-nav-mgmt" aria-label="الإدارة">
+        <div class="fs-nav-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/><path d="M7 10h2v3H7zM11 7h2v6h-2zM15 10h2v3h-2z"/></svg>
+        </div>
+        <span class="fs-nav-label">الإدارة</span>
+      </button>
+    </div>
+  </nav>
+
   <!-- Real-Time Client Libraries & Application Modules -->
   <script src="/js/signalr.min.js?v=20260927_management"></script>
   <script src="/js/api.js?v=20260927_management"></script>
@@ -1999,6 +2654,7 @@
   <script src="/js/transportation.js?v=20260928_transport"></script>
   <script src="/js/storage.js?v=20260928_storage"></script>
   <script src="/js/management.js?v=20260928_mgmt"></script>
-  <script src="/js/finance.js?v=20260929_finance"></script>
+  <script src="/js/finance.js?v=20261001_workflow"></script>
+  <script src="/js/mobile-app.js?v=20260930_pro"></script>
 </body>
 </html>

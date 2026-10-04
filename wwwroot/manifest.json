@@ -1,0 +1,76 @@
+{
+  "name": "FaceStone",
+  "short_name": "FaceStone",
+  "description": "منظومة FaceStone لإدارة العمليات الصناعية والمحاجر واللوجستيات والمالية",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0B111E",
+  "theme_color": "#F59E0B",
+  "orientation": "portrait-primary",
+  "lang": "ar",
+  "dir": "rtl",
+  "categories": ["business", "productivity", "utilities"],
+  "icons": [
+    {
+      "src": "/assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/assets/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "الأقسام والعمليات",
+      "short_name": "الأقسام",
+      "description": "لوحة التحكم واختيار الأقسام",
+      "url": "/departments",
+      "icons": [{ "src": "/assets/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "المحادثات الفورية",
+      "short_name": "المحادثات",
+      "description": "نظام المحادثات الفورية وإرسال المرفقات",
+      "url": "/finance/chat",
+      "icons": [{ "src": "/assets/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "قسم النقل واللوجستيات",
+      "short_name": "النقل",
+      "description": "تسجيل حركات النقل وموازين البسكول",
+      "url": "/transportation",
+      "icons": [{ "src": "/assets/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "قسم المستودعات والتخزين",
+      "short_name": "المستودعات",
+      "description": "أرصدة الخامات وساحات التخزين",
+      "url": "/storage",
+      "icons": [{ "src": "/assets/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "قسم المالية",
+      "short_name": "المالية",
+      "description": "أوامر الشراء والمدفوعات المالية",
+      "url": "/finance",
+      "icons": [{ "src": "/assets/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

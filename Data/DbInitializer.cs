@@ -159,6 +159,129 @@ BEGIN
 
     IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Transportation') AND name = 'DateOfSubmit')
         ALTER TABLE Transportation ADD DateOfSubmit DATETIME2 NOT NULL CONSTRAINT DF_Trans_SubmitDate DEFAULT GETUTCDATE();
+
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Transportation') AND name = 'Ikramiya')
+        ALTER TABLE Transportation ADD Ikramiya DECIMAL(18,3) NOT NULL CONSTRAINT DF_Trans_Ikramiya DEFAULT 0;
+
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Transportation') AND name = 'InvoiceAttachmentPath')
+        ALTER TABLE Transportation ADD InvoiceAttachmentPath NVARCHAR(500) NULL;
+
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Transportation') AND name = 'InvoiceFileName')
+        ALTER TABLE Transportation ADD InvoiceFileName NVARCHAR(260) NULL;
+
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Transportation') AND name = 'InvoiceFileType')
+        ALTER TABLE Transportation ADD InvoiceFileType NVARCHAR(50) NULL;
+
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Transportation') AND name = 'InvoiceFileSize')
+        ALTER TABLE Transportation ADD InvoiceFileSize BIGINT NOT NULL CONSTRAINT DF_Trans_InvoiceFileSize DEFAULT 0;
+
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Transportation') AND name = 'SubmittedBy')
+        ALTER TABLE Transportation ADD SubmittedBy NVARCHAR(150) NULL;
+
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Transportation') AND name = 'SubmittedByUserId')
+        ALTER TABLE Transportation ADD SubmittedByUserId UNIQUEIDENTIFIER NULL;
+
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Transportation') AND name = 'PurchaseOrderId')
+        ALTER TABLE Transportation ADD PurchaseOrderId INT NULL CONSTRAINT FK_Transportation_PurchaseOrders REFERENCES PurchaseOrders(Id) ON DELETE SET NULL;
+
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Transportation') AND name = 'CompanyName')
+        ALTER TABLE Transportation ADD CompanyName NVARCHAR(200) NOT NULL CONSTRAINT DF_Trans_CompanyName DEFAULT '';
+
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Transportation') AND name = 'InternalWeight')
+        ALTER TABLE Transportation ADD InternalWeight DECIMAL(18,3) NOT NULL CONSTRAINT DF_Trans_InternalWeight DEFAULT 0;
+
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Transportation') AND name = 'ExternalLoadedWeight')
+        ALTER TABLE Transportation ADD ExternalLoadedWeight DECIMAL(18,3) NOT NULL CONSTRAINT DF_Trans_ExtLoaded DEFAULT 0;
+
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Transportation') AND name = 'ExternalEmptyWeight')
+        ALTER TABLE Transportation ADD ExternalEmptyWeight DECIMAL(18,3) NOT NULL CONSTRAINT DF_Trans_ExtEmpty DEFAULT 0;
+
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Transportation') AND name = 'ExternalNetWeight')
+        ALTER TABLE Transportation ADD ExternalNetWeight DECIMAL(18,3) NOT NULL CONSTRAINT DF_Trans_ExtNet DEFAULT 0;
+
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Transportation') AND name = 'WasteQuantity')
+        ALTER TABLE Transportation ADD WasteQuantity DECIMAL(18,3) NOT NULL CONSTRAINT DF_Trans_WasteQty DEFAULT 0;
+
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Transportation') AND name = 'DriverPhone')
+        ALTER TABLE Transportation ADD DriverPhone NVARCHAR(30) NULL;
+
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Transportation') AND name = 'DepartureTime')
+        ALTER TABLE Transportation ADD DepartureTime DATETIME2 NULL;
+
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Transportation') AND name = 'ArrivalTime')
+        ALTER TABLE Transportation ADD ArrivalTime DATETIME2 NULL;
+
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Transportation') AND name = 'ShippingSupervisor')
+        ALTER TABLE Transportation ADD ShippingSupervisor NVARCHAR(100) NOT NULL CONSTRAINT DF_Trans_ShipSup DEFAULT 'محمد ناجح';
+
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Transportation') AND name = 'DepartmentSupervisor')
+        ALTER TABLE Transportation ADD DepartmentSupervisor NVARCHAR(100) NOT NULL CONSTRAINT DF_Trans_DeptSup DEFAULT 'ازهر محمد';
+
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Transportation') AND name = 'RecipientName')
+        ALTER TABLE Transportation ADD RecipientName NVARCHAR(150) NULL;
+
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Transportation') AND name = 'RecipientTitle')
+        ALTER TABLE Transportation ADD RecipientTitle NVARCHAR(100) NULL;
+
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Transportation') AND name = 'ReceivedDate')
+        ALTER TABLE Transportation ADD ReceivedDate DATETIME2 NULL;
+
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Transportation') AND name = 'InternalWeighbridgeCode')
+        ALTER TABLE Transportation ADD InternalWeighbridgeCode NVARCHAR(100) NULL;
+
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Transportation') AND name = 'InternalEmptyWeightTime')
+        ALTER TABLE Transportation ADD InternalEmptyWeightTime DATETIME2 NULL;
+
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Transportation') AND name = 'InternalLoadedWeightTime')
+        ALTER TABLE Transportation ADD InternalLoadedWeightTime DATETIME2 NULL;
+
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Transportation') AND name = 'ExternalWeighbridgeCode')
+        ALTER TABLE Transportation ADD ExternalWeighbridgeCode NVARCHAR(100) NULL;
+
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Transportation') AND name = 'ExternalEmptyWeightTime')
+        ALTER TABLE Transportation ADD ExternalEmptyWeightTime DATETIME2 NULL;
+
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Transportation') AND name = 'ExternalLoadedWeightTime')
+        ALTER TABLE Transportation ADD ExternalLoadedWeightTime DATETIME2 NULL;
+
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Transportation') AND name = 'ShippingDurationMinutes')
+        ALTER TABLE Transportation ADD ShippingDurationMinutes INT NULL;
+
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Transportation') AND name = 'WeighbridgeAttachmentPath')
+        ALTER TABLE Transportation ADD WeighbridgeAttachmentPath NVARCHAR(500) NULL;
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Transportation') AND name = 'WeighbridgeFileName')
+        ALTER TABLE Transportation ADD WeighbridgeFileName NVARCHAR(260) NULL;
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Transportation') AND name = 'WeighbridgeFileType')
+        ALTER TABLE Transportation ADD WeighbridgeFileType NVARCHAR(50) NULL;
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Transportation') AND name = 'WeighbridgeFileSize')
+        ALTER TABLE Transportation ADD WeighbridgeFileSize BIGINT NOT NULL CONSTRAINT DF_Trans_WbFileSize DEFAULT 0;
+
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Transportation') AND name = 'DailySupplyAttachmentPath')
+        ALTER TABLE Transportation ADD DailySupplyAttachmentPath NVARCHAR(500) NULL;
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Transportation') AND name = 'DailySupplyFileName')
+        ALTER TABLE Transportation ADD DailySupplyFileName NVARCHAR(260) NULL;
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Transportation') AND name = 'DailySupplyFileType')
+        ALTER TABLE Transportation ADD DailySupplyFileType NVARCHAR(50) NULL;
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Transportation') AND name = 'DailySupplyFileSize')
+        ALTER TABLE Transportation ADD DailySupplyFileSize BIGINT NOT NULL CONSTRAINT DF_Trans_DsFileSize DEFAULT 0;
+
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Transportation') AND name = 'BillOfLadingAttachmentPath')
+        ALTER TABLE Transportation ADD BillOfLadingAttachmentPath NVARCHAR(500) NULL;
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Transportation') AND name = 'BillOfLadingFileName')
+        ALTER TABLE Transportation ADD BillOfLadingFileName NVARCHAR(260) NULL;
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Transportation') AND name = 'BillOfLadingFileType')
+        ALTER TABLE Transportation ADD BillOfLadingFileType NVARCHAR(50) NULL;
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Transportation') AND name = 'BillOfLadingFileSize')
+        ALTER TABLE Transportation ADD BillOfLadingFileSize BIGINT NOT NULL CONSTRAINT DF_Trans_BolFileSize DEFAULT 0;
+
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Transportation') AND name = 'CustodyAmount')
+        ALTER TABLE Transportation ADD CustodyAmount DECIMAL(18,3) NOT NULL CONSTRAINT DF_Trans_CustodyAmount DEFAULT 0;
+
+    IF EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Transportation_TransactionNumber' AND object_id = OBJECT_ID('Transportation'))
+        DROP INDEX IX_Transportation_TransactionNumber ON Transportation;
+
+    IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Transportation_PONumber_TransactionNumber' AND object_id = OBJECT_ID('Transportation'))
+        CREATE UNIQUE INDEX IX_Transportation_PONumber_TransactionNumber ON Transportation(PONumber, TransactionNumber);
 END
 
 IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Management')
@@ -225,6 +348,8 @@ BEGIN
         Supplier NVARCHAR(200) NOT NULL,
         OrderDate DATETIME2 NOT NULL,
         Quantity DECIMAL(18,3) NOT NULL,
+        RemainingQuantity DECIMAL(18,3) NOT NULL CONSTRAINT DF_PO_RemQty DEFAULT 0,
+        Destination NVARCHAR(200) NOT NULL CONSTRAINT DF_PO_Dest DEFAULT 'Cairo Factory',
         PricePerTon DECIMAL(18,2) NOT NULL,
         TotalValue DECIMAL(18,2) NOT NULL,
         InvoiceNumber NVARCHAR(100) NULL,
@@ -236,6 +361,23 @@ BEGIN
     CREATE INDEX IX_PurchaseOrders_OrderDate ON PurchaseOrders(OrderDate);
     CREATE INDEX IX_PurchaseOrders_Supplier ON PurchaseOrders(Supplier);
     CREATE INDEX IX_PurchaseOrders_InvoiceNumber ON PurchaseOrders(InvoiceNumber);
+END
+ELSE
+BEGIN
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('PurchaseOrders') AND name = 'Destination')
+        ALTER TABLE PurchaseOrders ADD Destination NVARCHAR(200) NOT NULL CONSTRAINT DF_PO_Dest DEFAULT 'Cairo Factory';
+
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('PurchaseOrders') AND name = 'RemainingQuantity')
+    BEGIN
+        ALTER TABLE PurchaseOrders ADD RemainingQuantity DECIMAL(18,3) NOT NULL CONSTRAINT DF_PO_RemQty DEFAULT 0;
+        EXEC('UPDATE PurchaseOrders SET RemainingQuantity = Quantity WHERE RemainingQuantity = 0;');
+    END
+
+    -- Ensure existing POs have realistic remaining quantities if still 0
+    EXEC('UPDATE PurchaseOrders SET RemainingQuantity = Quantity WHERE RemainingQuantity <= 0;');
+
+    -- Backfill destination from Transportation records where applicable
+    EXEC('UPDATE po SET po.Destination = t.Destination FROM PurchaseOrders po INNER JOIN Transportation t ON po.PONumber = t.PONumber WHERE (po.Destination = ''Cairo Factory'' OR po.Destination IS NULL OR po.Destination = '''') AND t.Destination IS NOT NULL AND t.Destination <> '''';');
 END
 
 IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'FinancePayments')
@@ -349,6 +491,28 @@ IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_ChatMessages_LiveSessi
                 }, cts.Token);
             }
 
+            var accUser = await db.Users.FirstOrDefaultAsync(u => u.Role == AppRoles.Accountant || u.Email == "sarah@facestone.com" || u.Username == "sarah_acc", cts.Token);
+            if (accUser != null)
+            {
+                accUser.PasswordHash = HashPassword("Password123!");
+                accUser.Role = AppRoles.Accountant;
+            }
+            else
+            {
+                await db.Users.AddAsync(new UserAccount
+                {
+                    Id = Guid.NewGuid(),
+                    FullName = "Sarah Mitchell",
+                    Username = "sarah_acc",
+                    Email = "sarah@facestone.com",
+                    PhoneNumber = "+20 10 1122 3344",
+                    CountryCode = "+20",
+                    Role = AppRoles.Accountant,
+                    PasswordHash = HashPassword("Password123!"),
+                    CreatedAt = DateTime.UtcNow
+                }, cts.Token);
+            }
+
             var itUser = await db.Users.FirstOrDefaultAsync(u => u.Role == AppRoles.IT || u.Email == "it@facestone.com", cts.Token);
             if (itUser == null)
             {
@@ -427,6 +591,8 @@ IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_ChatMessages_LiveSessi
                 factoryManagerUser.Role = AppRoles.FactoryManager;
             }
 
+            await db.SaveChangesAsync(cts.Token);
+
             // Seed initial Storage Transactions if table is empty
             if (!await db.StorageTransactions.AnyAsync(cts.Token))
             {
@@ -487,6 +653,8 @@ IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_ChatMessages_LiveSessi
                     Supplier = "Suez Quarry Sector 4",
                     OrderDate = DateTime.UtcNow.AddDays(-10),
                     Quantity = 200.000m,
+                    RemainingQuantity = 200.000m,
+                    Destination = "Factory Sector B - Precast Yard",
                     PricePerTon = 1450.00m,
                     TotalValue = 200.000m * 1450.00m, // 290,000.00 EGP
                     InvoiceNumber = "FS-2026-INV-892",
@@ -500,6 +668,8 @@ IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_ChatMessages_LiveSessi
                     Supplier = "FaceStone Raw Materials & Silos",
                     OrderDate = DateTime.UtcNow.AddDays(-12),
                     Quantity = 300.000m,
+                    RemainingQuantity = 300.000m,
+                    Destination = "Cairo Factory - Main Silos",
                     PricePerTon = 1200.00m,
                     TotalValue = 300.000m * 1200.00m, // 360,000.00 EGP
                     InvoiceNumber = "FS-2026-INV-750",
@@ -513,6 +683,8 @@ IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_ChatMessages_LiveSessi
                     Supplier = "Misr Concrete Technologies",
                     OrderDate = DateTime.UtcNow.AddDays(-8),
                     Quantity = 150.000m,
+                    RemainingQuantity = 150.000m,
+                    Destination = "Cairo Factory - Chemical Additives Plant",
                     PricePerTon = 1850.00m,
                     TotalValue = 150.000m * 1850.00m, // 277,500.00 EGP
                     InvoiceNumber = "FS-2026-INV-810",
@@ -526,6 +698,8 @@ IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_ChatMessages_LiveSessi
                     Supplier = "Sinai Aggregates Company",
                     OrderDate = DateTime.UtcNow.AddDays(-7),
                     Quantity = 100.000m,
+                    RemainingQuantity = 100.000m,
+                    Destination = "Ain Sokhna Port Logistics Hub",
                     PricePerTon = 950.00m,
                     TotalValue = 100.000m * 950.00m, // 95,000.00 EGP
                     InvoiceNumber = "FS-2026-INV-815",
@@ -539,6 +713,8 @@ IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_ChatMessages_LiveSessi
                     Supplier = "محجر السويس",
                     OrderDate = DateTime.UtcNow.AddDays(-5),
                     Quantity = 120.000m,
+                    RemainingQuantity = 120.000m,
+                    Destination = "Factory Sector C - Silos & Aggregate Storage",
                     PricePerTon = 1350.00m,
                     TotalValue = 120.000m * 1350.00m, // 162,000.00 EGP
                     InvoiceNumber = null,
@@ -552,6 +728,8 @@ IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_ChatMessages_LiveSessi
                     Supplier = "orascom",
                     OrderDate = DateTime.UtcNow.AddDays(-3),
                     Quantity = 50.000m,
+                    RemainingQuantity = 50.000m,
+                    Destination = "Factory Sector B - Precast Yard",
                     PricePerTon = 2100.00m,
                     TotalValue = 50.000m * 2100.00m, // 105,000.00 EGP
                     InvoiceNumber = null,
@@ -565,6 +743,8 @@ IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_ChatMessages_LiveSessi
                     Supplier = "orascom",
                     OrderDate = DateTime.UtcNow.AddDays(-2),
                     Quantity = 60.000m,
+                    RemainingQuantity = 60.000m,
+                    Destination = "6th of October Industrial Complex",
                     PricePerTon = 2050.00m,
                     TotalValue = 60.000m * 2050.00m, // 123,000.00 EGP
                     InvoiceNumber = "FS-2026-INV-902",
@@ -572,7 +752,75 @@ IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_ChatMessages_LiveSessi
                     CreatedAt = DateTime.UtcNow.AddDays(-2)
                 };
 
-                await db.PurchaseOrders.AddRangeAsync(new[] { po1, po2, po3, po4, po5, po6, po7 }, cts.Token);
+            }
+
+            // Ensure PO-100 and PO-200 exist for Transportation testing
+            if (!await db.PurchaseOrders.AnyAsync(p => p.PONumber == "PO-100", cts.Token))
+            {
+                await db.PurchaseOrders.AddAsync(new PurchaseOrder
+                {
+                    PONumber = "PO-100",
+                    Supplier = "FaceStone Concrete Solutions",
+                    OrderDate = DateTime.UtcNow.AddDays(-1),
+                    Quantity = 20000.000m,
+                    RemainingQuantity = 20000.000m,
+                    Destination = "Cairo Factory",
+                    PricePerTon = 1200.00m,
+                    TotalValue = 20000.000m * 1200.00m,
+                    InvoiceNumber = "FS-PO-100-INV",
+                    Notes = "أمر شراء معتمد لاختبارات النقل المتتابعة"
+                }, cts.Token);
+            }
+
+            if (!await db.PurchaseOrders.AnyAsync(p => p.PONumber == "PO-200", cts.Token))
+            {
+                await db.PurchaseOrders.AddAsync(new PurchaseOrder
+                {
+                    PONumber = "PO-200",
+                    Supplier = "Suez Quarry Sector",
+                    OrderDate = DateTime.UtcNow.AddDays(-1),
+                    Quantity = 20000.000m,
+                    RemainingQuantity = 20000.000m,
+                    Destination = "Cairo Factory",
+                    PricePerTon = 1400.00m,
+                    TotalValue = 20000.000m * 1400.00m,
+                    InvoiceNumber = "FS-PO-200-INV",
+                    Notes = "أمر شراء معتمد لاختبارات النقل المتتابعة"
+                }, cts.Token);
+            }
+
+            if (!await db.PurchaseOrders.AnyAsync(p => p.PONumber == "PO-300", cts.Token))
+            {
+                await db.PurchaseOrders.AddAsync(new PurchaseOrder
+                {
+                    PONumber = "PO-300",
+                    Supplier = "FaceStone Concrete Solutions",
+                    OrderDate = DateTime.UtcNow.AddDays(-1),
+                    Quantity = 50000.000m,
+                    RemainingQuantity = 50000.000m,
+                    Destination = "Cairo Factory",
+                    PricePerTon = 1200.00m,
+                    TotalValue = 50000.000m * 1200.00m,
+                    InvoiceNumber = "FS-PO-300-INV",
+                    Notes = "أمر شراء معتمد لاختبارات النقل المتتابعة"
+                }, cts.Token);
+            }
+
+            if (!await db.PurchaseOrders.AnyAsync(p => p.PONumber == "PO-400", cts.Token))
+            {
+                await db.PurchaseOrders.AddAsync(new PurchaseOrder
+                {
+                    PONumber = "PO-400",
+                    Supplier = "Suez Quarry Sector",
+                    OrderDate = DateTime.UtcNow.AddDays(-1),
+                    Quantity = 50000.000m,
+                    RemainingQuantity = 50000.000m,
+                    Destination = "Cairo Factory",
+                    PricePerTon = 1400.00m,
+                    TotalValue = 50000.000m * 1400.00m,
+                    InvoiceNumber = "FS-PO-400-INV",
+                    Notes = "أمر شراء معتمد لاختبارات النقل المتتابعة"
+                }, cts.Token);
             }
 
             await db.SaveChangesAsync(cts.Token);

@@ -13,26 +13,34 @@
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 .finance-hub-header {
-  height: 68px;
+  width: 100%;
+  box-sizing: border-box;
+  height: 74px;
+  min-height: 70px;
+  max-height: 80px;
   background: #FFFFFF;
-  border-bottom: 1px solid #E2E8F0;
+  border-bottom: 2px solid #000000;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 2rem;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  padding: 0 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   position: sticky;
   top: 0;
   z-index: 50;
+  flex-wrap: nowrap;
+  gap: 0.75rem;
+  margin: 0;
 }
 
 .finance-hub-brand {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
 }
 
 .finance-hub-logo {
@@ -236,12 +244,6 @@
   margin-bottom: 0.75rem;
 }
 
-.finance-hub-card.card-chat .finance-hub-card-tag {
-  background: #EFF6FF;
-  color: #1E40AF;
-  border: 1px solid #BFDBFE;
-}
-
 .finance-hub-card.card-mgmt .finance-hub-card-tag {
   background: #F8FAFC;
   color: #334155;
@@ -313,26 +315,34 @@
   box-sizing: border-box;
   direction: rtl;
   font-family: 'Cairo', sans-serif;
+  overflow-x: hidden;
 }
 
 .finance-mgmt-header {
-  height: 68px;
+  width: 100%;
+  box-sizing: border-box;
+  height: 74px;
+  min-height: 70px;
+  max-height: 80px;
   background: #FFFFFF;
-  border-bottom: 1px solid #E2E8F0;
+  border-bottom: 2px solid #000000;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 2rem;
+  padding: 0 1.5rem;
   position: sticky;
   top: 0;
   z-index: 50;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  flex-wrap: nowrap;
+  gap: 0.75rem;
+  margin: 0;
 }
 
 .finance-mgmt-brand {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
 }
 
 .finance-mgmt-actions {
@@ -1075,3 +1085,4 @@
     padding: 0 1rem;
   }
 }
+

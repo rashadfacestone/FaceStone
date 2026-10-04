@@ -83,7 +83,7 @@
       this.modalPaymentsList = document.getElementById('finance-modal-payments-list');
       this.modalCloseBtn = document.getElementById('finance-modal-close-btn');
       this.modalBackdrop = document.getElementById('finance-modal-backdrop');
-    }
+
 
     bindEvents() {
       // Search with debounce
@@ -601,5 +601,6 @@
     }
   }
 
+  // Register instances globally
   window.FinanceManagementApp = new FinanceManagementApp();
 })();

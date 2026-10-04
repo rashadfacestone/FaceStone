@@ -52,7 +52,23 @@ public class PurchaseOrder
     public DateTime? UpdatedAt { get; set; }
 
     /// <summary>
+    /// الوجهة المحددة لأمر الشراء - Destination (Determined automatically and strictly read-only for employees)
+    /// </summary>
+    public string Destination { get; set; } = "Cairo Factory";
+
+    /// <summary>
+    /// الكمية المتبقية من أمر الشراء (بالطن) - PO Remaining Quantity
+    /// Subtracted automatically when transactions are submitted with actual weight.
+    /// </summary>
+    public decimal RemainingQuantity { get; set; }
+
+    /// <summary>
     /// Payments recorded for this PO (CEO Dashboard Architecture)
     /// </summary>
     public ICollection<FinancePayment> Payments { get; set; } = new List<FinancePayment>();
+
+    /// <summary>
+    /// Transportation transactions recorded against this PO
+    /// </summary>
+    public ICollection<Transportation> TransportationTransactions { get; set; } = new List<Transportation>();
 }

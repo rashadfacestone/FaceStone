@@ -22,5 +22,5 @@ if %errorlevel% equ 0 (
 )
 
 start /b "" cmd /c "timeout /t 3 /nobreak >nul & start https://localhost:52563/swagger"
-"%DOTNET_CMD%" run --project FaceStone.Web.csproj --urls "https://localhost:52563;http://localhost:52564;http://localhost:5124"
+"%DOTNET_CMD%" run --project FaceStone.Web.csproj --urls "http://0.0.0.0:5124;https://localhost:52563;http://localhost:5124"
 pause

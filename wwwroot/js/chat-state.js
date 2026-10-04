@@ -36,6 +36,10 @@ class ChatStateStore {
     this.emitChange('conversations:updated');
   }
 
+  getTotalUnreadCount() {
+    return (this.conversations || []).reduce((sum, c) => sum + (c.unreadCount || 0), 0);
+  }
+
   getFilteredConversations() {
     if (!this.searchQuery.trim()) return this.conversations;
     const q = this.searchQuery.trim().toLowerCase();
@@ -192,14 +196,29 @@ class ChatStateStore {
     }
   }
 
-  updateConversationSnippet(empId, lastText, sentAt, incrementUnread = false) {
-    const conv = this.conversations.find(c => c.employeeId === empId);
+  updateConversationSnippet(partnerId, lastText, sentAt, incrementUnread = false, partnerInfo = null) {
+    let conv = this.conversations.find(c => (c.employeeId === partnerId || c.id === partnerId));
+    if (!conv && partnerInfo) {
+      conv = {
+        employeeId: partnerId,
+        id: partnerId,
+        fullName: partnerInfo.fullName || partnerInfo.name || 'مستخدم',
+        username: partnerInfo.username || '',
+        role: partnerInfo.role || 'موظف',
+        lastMessageText: lastText,
+        lastMessageTime: sentAt,
+        unreadCount: incrementUnread ? 1 : 0
+      };
+      this.conversations.unshift(conv);
+      this.emitChange('conversations:updated');
+      return;
+    }
     if (conv) {
       conv.lastMessageText = lastText;
       conv.lastMessageTime = sentAt;
       if (incrementUnread) conv.unreadCount = (conv.unreadCount || 0) + 1;
 
-      // Sort: active or newest first
+      // Sort: newest first
       this.conversations.sort((a, b) => {
         const timeA = a.lastMessageTime ? new Date(a.lastMessageTime).getTime() : 0;
         const timeB = b.lastMessageTime ? new Date(b.lastMessageTime).getTime() : 0;
