@@ -448,9 +448,15 @@ class ChatApi {
     });
   }
 
-  static async getFinanceStatistics(date, po) {
+  static async getFinanceStatistics(fromDate, toDate, po) {
     const qs = new URLSearchParams();
-    if (date) qs.append('date', date);
+    // Allow either (fromDate, toDate, po) or legacy (date, po)
+    if (fromDate && !toDate && typeof fromDate === 'string' && fromDate.length === 10) {
+      qs.append('date', fromDate);
+    } else {
+      if (fromDate) qs.append('fromDate', fromDate);
+      if (toDate) qs.append('toDate', toDate);
+    }
     if (po && po !== 'all') qs.append('po', po);
     const queryStr = qs.toString() ? `?${qs.toString()}` : '';
     return await this.request(`/api/finance/statistics${queryStr}`, {
@@ -460,6 +466,121 @@ class ChatApi {
 
   static async getFinancePos() {
     return await this.request('/api/finance/pos', {
+      method: 'GET'
+    });
+  }
+
+  static async getFinancePurchaseOrders() {
+    return await this.request('/api/finance/purchase-orders', {
+      method: 'GET'
+    });
+  }
+
+  static async getFinancePurchaseOrderDetails(poNumber) {
+    return await this.request(`/api/finance/purchase-orders/${encodeURIComponent(poNumber)}`, {
+      method: 'GET'
+    });
+  }
+
+  static async updateFinancePaymentStatus(poNumber, paymentStatus, notes = '') {
+    return await this.request(`/api/finance/purchase-orders/${encodeURIComponent(poNumber)}/payment-status`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        paymentStatus,
+        notes
+      })
+    });
+  }
+
+  static async getFinancePerformanceDetails(fromDate, toDate, po) {
+    const qs = new URLSearchParams();
+    if (fromDate) qs.append('fromDate', fromDate);
+    if (toDate) qs.append('toDate', toDate);
+    if (po && po !== 'all') qs.append('po', po);
+    const queryStr = qs.toString() ? `?${qs.toString()}` : '';
+    return await this.request(`/api/finance/performance${queryStr}`, {
+      method: 'GET'
+    });
+  }
+
+  static async getFinanceHistory(params = {}) {
+    const qs = new URLSearchParams();
+    if (params.search) qs.append('search', params.search);
+    if (params.type && params.type !== 'all') qs.append('type', params.type);
+    if (params.po && params.po !== 'all') qs.append('po', params.po);
+    if (params.supplier && params.supplier !== 'all') qs.append('supplier', params.supplier);
+    if (params.fromDate) qs.append('fromDate', params.fromDate);
+    if (params.toDate) qs.append('toDate', params.toDate);
+    if (params.page) qs.append('page', params.page);
+    if (params.pageSize) qs.append('pageSize', params.pageSize);
+
+    const queryStr = qs.toString() ? `?${qs.toString()}` : '';
+    return await this.request(`/api/finance/history${queryStr}`, {
+      method: 'GET'
+    });
+  }
+
+  static async getFinanceSuppliers() {
+    return await this.request('/api/finance/suppliers', {
+      method: 'GET'
+    });
+  }
+
+  static async getFinanceSupplierDetail(id) {
+    return await this.request(`/api/finance/suppliers/${encodeURIComponent(id)}`, {
+      method: 'GET'
+    });
+  }
+
+  static async getFinanceBankSummary() {
+    return await this.request('/api/finance/bank', {
+      method: 'GET'
+    });
+  }
+
+  static async createFinanceBankTransaction(data) {
+    return await this.request('/api/finance/bank', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
+    });
+  }
+
+  static async getFinanceExpenses(params = {}) {
+    const qs = new URLSearchParams();
+    if (params.category && params.category !== 'all') qs.append('category', params.category);
+    if (params.fromDate) qs.append('fromDate', params.fromDate);
+    if (params.toDate) qs.append('toDate', params.toDate);
+
+    const queryStr = qs.toString() ? `?${qs.toString()}` : '';
+    return await this.request(`/api/finance/expenses${queryStr}`, {
+      method: 'GET'
+    });
+  }
+
+  static async createFinanceExpense(data) {
+    return await this.request('/api/finance/expenses', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
+    });
+  }
+
+  static async getFinanceEmployees() {
+    return await this.request('/api/finance/employees', {
+      method: 'GET'
+    });
+  }
+
+  static async getFinanceEmployeeDetail(id) {
+    return await this.request(`/api/finance/employees/${encodeURIComponent(id)}`, {
       method: 'GET'
     });
   }

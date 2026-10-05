@@ -305,12 +305,22 @@ public class DepartmentController : ControllerBase
     }
 
     /// <summary>
-    /// Direct browser route helper for /finance, /finance/management, and /finance/hub.
+    /// Direct browser route helper for /finance, /finance/management, /finance/hub, /finance/performance, and /finance/purchase-orders/{poNumber}.
     /// Supports both direct API callers (returns 200 / 403 / 401) and browser navigation.
     /// </summary>
     [HttpGet("/finance")]
     [HttpGet("/finance/management")]
     [HttpGet("/finance/hub")]
+    [HttpGet("/finance/performance")]
+    [HttpGet("/finance/purchase-orders/{poNumber}")]
+    [HttpGet("/finance/history")]
+    [HttpGet("/finance/suppliers")]
+    [HttpGet("/finance/suppliers/{id}")]
+    [HttpGet("/finance/purchase-orders")]
+    [HttpGet("/finance/bank")]
+    [HttpGet("/finance/expenses")]
+    [HttpGet("/finance/employees")]
+    [HttpGet("/finance/employees/{id}")]
     public IActionResult HandleFinanceDirect()
     {
         // 1. If this is a browser navigation request for HTML:

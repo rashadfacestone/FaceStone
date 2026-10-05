@@ -15,6 +15,11 @@ public static class AppRoles
     public const string Contractor = "Contractor";
     public const string FactoryManager = "FACTORY_MANAGER";
     public const string FactoryManagerDisplay = "Factory Manager";
+    public const string FinanceDirector = "FINANCE_DIRECTOR";
+    public const string FinanceDirectorDisplay = "Finance Director";
+    public const string FinanceManager = "FINANCE_MANAGER";
+    public const string FinanceManagerDisplay = "Finance Manager";
+    public const string CFO = "CFO";
 
     public static readonly string[] TransportationAllowedRoles = 
     { 
@@ -45,7 +50,23 @@ public static class AppRoles
     { 
         CEO, 
         IT, 
-        Accountant 
+        Accountant,
+        FinanceDirector,
+        FinanceDirectorDisplay,
+        FinanceManager,
+        FinanceManagerDisplay,
+        CFO
+    };
+
+    public static readonly string[] FinanceDirectorAllowedRoles = 
+    { 
+        CEO, 
+        IT, 
+        FinanceDirector, 
+        FinanceDirectorDisplay, 
+        FinanceManager, 
+        FinanceManagerDisplay, 
+        CFO 
     };
 
     public static bool HasTransportationAccess(string? role)
@@ -89,6 +110,18 @@ public static class AppRoles
         if (string.IsNullOrWhiteSpace(role)) return false;
         var r = role.Trim();
         foreach (var allowed in FinanceAllowedRoles)
+        {
+            if (r.Equals(allowed, StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+        return false;
+    }
+
+    public static bool IsFinanceDirector(string? role)
+    {
+        if (string.IsNullOrWhiteSpace(role)) return false;
+        var r = role.Trim();
+        foreach (var allowed in FinanceDirectorAllowedRoles)
         {
             if (r.Equals(allowed, StringComparison.OrdinalIgnoreCase))
                 return true;

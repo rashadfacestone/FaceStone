@@ -20,6 +20,12 @@ public class FaceStoneDbContext : DbContext
     public DbSet<StorageTransactionMovement> StorageTransactionMovements => Set<StorageTransactionMovement>();
     public DbSet<PurchaseOrder> PurchaseOrders => Set<PurchaseOrder>();
     public DbSet<FinancePayment> FinancePayments => Set<FinancePayment>();
+    public DbSet<PurchaseOrderPaymentAudit> PurchaseOrderPaymentAudits => Set<PurchaseOrderPaymentAudit>();
+    public DbSet<BankTransaction> BankTransactions => Set<BankTransaction>();
+    public DbSet<Expense> Expenses => Set<Expense>();
+    public DbSet<EmployeeFinancialRecord> EmployeeFinancialRecords => Set<EmployeeFinancialRecord>();
+    public DbSet<EmployeeLending> EmployeeLendings => Set<EmployeeLending>();
+    public DbSet<AttendanceRecord> AttendanceRecords => Set<AttendanceRecord>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -711,6 +717,18 @@ public class FaceStoneDbContext : DbContext
                   .HasPrecision(18, 3)
                   .IsRequired();
 
+            entity.Property(e => e.PaymentStatus)
+                  .HasMaxLength(50)
+                  .HasDefaultValue("غير مدفوع")
+                  .IsRequired();
+
+            entity.Property(e => e.PaymentStatusUpdatedAt)
+                  .IsRequired(false);
+
+            entity.Property(e => e.PaymentStatusUpdatedBy)
+                  .HasMaxLength(150)
+                  .IsRequired(false);
+
             entity.Property(e => e.CreatedAt)
                   .HasDefaultValueSql("GETUTCDATE()");
 
@@ -719,9 +737,15 @@ public class FaceStoneDbContext : DbContext
                   .HasForeignKey(p => p.PurchaseOrderId)
                   .OnDelete(DeleteBehavior.SetNull);
 
+            entity.HasMany(e => e.PaymentAudits)
+                  .WithOne(a => a.PurchaseOrder)
+                  .HasForeignKey(a => a.PurchaseOrderId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
             entity.HasIndex(e => e.OrderDate);
             entity.HasIndex(e => e.Supplier);
             entity.HasIndex(e => e.InvoiceNumber);
+            entity.HasIndex(e => e.PaymentStatus);
         });
 
         modelBuilder.Entity<FinancePayment>(entity =>
@@ -761,6 +785,240 @@ public class FaceStoneDbContext : DbContext
 
             entity.HasIndex(e => e.PONumber);
             entity.HasIndex(e => e.PaymentDate);
+        });
+
+        modelBuilder.Entity<PurchaseOrderPaymentAudit>(entity =>
+        {
+            entity.ToTable("PurchaseOrderPaymentAudits");
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.PONumber)
+                  .HasMaxLength(100)
+                  .IsRequired();
+
+            entity.Property(e => e.PreviousStatus)
+                  .HasMaxLength(50)
+                  .IsRequired();
+
+            entity.Property(e => e.NewStatus)
+                  .HasMaxLength(50)
+                  .IsRequired();
+
+            entity.Property(e => e.ChangedBy)
+                  .HasMaxLength(150)
+                  .IsRequired();
+
+            entity.Property(e => e.Notes)
+                  .HasMaxLength(500)
+                  .IsRequired(false);
+
+            entity.Property(e => e.ChangedAt)
+                  .HasDefaultValueSql("GETUTCDATE()");
+
+            entity.HasIndex(e => e.PONumber);
+            entity.HasIndex(e => e.PurchaseOrderId);
+            entity.HasIndex(e => e.ChangedAt);
+        });
+
+        modelBuilder.Entity<BankTransaction>(entity =>
+        {
+            entity.ToTable("BankTransactions");
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.TransactionType)
+                  .HasMaxLength(50)
+                  .IsRequired();
+
+            entity.Property(e => e.Direction)
+                  .HasMaxLength(20)
+                  .HasDefaultValue("In")
+                  .IsRequired();
+
+            entity.Property(e => e.Amount)
+                  .HasPrecision(18, 2)
+                  .IsRequired();
+
+            entity.Property(e => e.BankName)
+                  .HasMaxLength(100)
+                  .IsRequired();
+
+            entity.Property(e => e.ReferenceNumber)
+                  .HasMaxLength(100)
+                  .IsRequired(false);
+
+            entity.Property(e => e.Description)
+                  .HasMaxLength(500)
+                  .IsRequired();
+
+            entity.Property(e => e.CreatedBy)
+                  .HasMaxLength(150)
+                  .IsRequired();
+
+            entity.Property(e => e.Notes)
+                  .HasMaxLength(1000)
+                  .IsRequired(false);
+
+            entity.Property(e => e.CreatedAt)
+                  .HasDefaultValueSql("GETUTCDATE()");
+
+            entity.HasIndex(e => e.TransactionDate);
+            entity.HasIndex(e => e.BankName);
+            entity.HasIndex(e => e.Direction);
+        });
+
+        modelBuilder.Entity<Expense>(entity =>
+        {
+            entity.ToTable("Expenses");
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.Category)
+                  .HasMaxLength(100)
+                  .IsRequired();
+
+            entity.Property(e => e.Amount)
+                  .HasPrecision(18, 2)
+                  .IsRequired();
+
+            entity.Property(e => e.Title)
+                  .HasMaxLength(300)
+                  .IsRequired();
+
+            entity.Property(e => e.Beneficiary)
+                  .HasMaxLength(200)
+                  .IsRequired();
+
+            entity.Property(e => e.ReferenceNumber)
+                  .HasMaxLength(100)
+                  .IsRequired(false);
+
+            entity.Property(e => e.PaymentMethod)
+                  .HasMaxLength(50)
+                  .HasDefaultValue("Bank Transfer")
+                  .IsRequired();
+
+            entity.Property(e => e.CreatedBy)
+                  .HasMaxLength(150)
+                  .IsRequired();
+
+            entity.Property(e => e.Notes)
+                  .HasMaxLength(1000)
+                  .IsRequired(false);
+
+            entity.Property(e => e.CreatedAt)
+                  .HasDefaultValueSql("GETUTCDATE()");
+
+            entity.HasIndex(e => e.ExpenseDate);
+            entity.HasIndex(e => e.Category);
+        });
+
+        modelBuilder.Entity<EmployeeFinancialRecord>(entity =>
+        {
+            entity.ToTable("EmployeeFinancialRecords");
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.BasicSalary)
+                  .HasPrecision(18, 2)
+                  .HasDefaultValue(0m);
+
+            entity.Property(e => e.Allowances)
+                  .HasPrecision(18, 2)
+                  .HasDefaultValue(0m);
+
+            entity.Property(e => e.InsuranceDeductions)
+                  .HasPrecision(18, 2)
+                  .HasDefaultValue(0m);
+
+            entity.Property(e => e.NetSalary)
+                  .HasPrecision(18, 2)
+                  .HasDefaultValue(0m);
+
+            entity.Property(e => e.PaymentMethod)
+                  .HasMaxLength(50)
+                  .HasDefaultValue("Bank Transfer");
+
+            entity.Property(e => e.BankAccountNumber)
+                  .HasMaxLength(100)
+                  .IsRequired(false);
+
+            entity.Property(e => e.Notes)
+                  .HasMaxLength(500)
+                  .IsRequired(false);
+
+            entity.Property(e => e.UpdatedAt)
+                  .HasDefaultValueSql("GETUTCDATE()");
+
+            entity.HasOne(e => e.User)
+                  .WithMany()
+                  .HasForeignKey(e => e.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(e => e.UserId);
+        });
+
+        modelBuilder.Entity<EmployeeLending>(entity =>
+        {
+            entity.ToTable("EmployeeLendings");
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.LendingAmount)
+                  .HasPrecision(18, 2)
+                  .IsRequired();
+
+            entity.Property(e => e.PaidAmount)
+                  .HasPrecision(18, 2)
+                  .HasDefaultValue(0m);
+
+            entity.Property(e => e.RemainingAmount)
+                  .HasPrecision(18, 2)
+                  .IsRequired();
+
+            entity.Property(e => e.ApprovalStatus)
+                  .HasMaxLength(50)
+                  .HasDefaultValue("معتمد")
+                  .IsRequired();
+
+            entity.Property(e => e.ApprovedBy)
+                  .HasMaxLength(150)
+                  .IsRequired(false);
+
+            entity.Property(e => e.Notes)
+                  .HasMaxLength(500)
+                  .IsRequired(false);
+
+            entity.Property(e => e.CreatedAt)
+                  .HasDefaultValueSql("GETUTCDATE()");
+
+            entity.HasOne(e => e.User)
+                  .WithMany()
+                  .HasForeignKey(e => e.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(e => e.UserId);
+            entity.HasIndex(e => e.RequestDate);
+        });
+
+        modelBuilder.Entity<AttendanceRecord>(entity =>
+        {
+            entity.ToTable("AttendanceRecords");
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.Status)
+                  .HasMaxLength(50)
+                  .HasDefaultValue("Present")
+                  .IsRequired();
+
+            entity.Property(e => e.Notes)
+                  .HasMaxLength(500)
+                  .IsRequired(false);
+
+            entity.HasOne(e => e.User)
+                  .WithMany()
+                  .HasForeignKey(e => e.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(e => e.UserId);
+            entity.HasIndex(e => e.Date);
+            entity.HasIndex(e => new { e.UserId, e.Date });
         });
     }
 }

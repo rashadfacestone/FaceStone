@@ -757,10 +757,9 @@ class ChatApp {
     const hash = window.location.hash.toLowerCase();
     if (path === '/finance/chat' || hash === '#/finance/chat') {
       this.enterFinanceChat();
-    } else if (path === '/finance/management' || hash === '#/finance/management') {
-      this.enterFinanceManagement();
-    } else if (path === '/finance' || hash === '#/finance' || path === '/finance/hub' || hash === '#/finance/hub') {
-      this.enterDepartment('finance');
+    } else if (path.startsWith('/finance') || hash.startsWith('#/finance')) {
+      const targetSubRoute = path.startsWith('/finance') ? window.location.pathname : hash.replace('#', '');
+      this.enterDepartment('finance', targetSubRoute);
     } else if (path === '/transportation' || hash === '#/transportation') {
       this.enterDepartment('transportation');
     } else if (path === '/departments/storage' || path === '/storage' || hash === '#/departments/storage' || hash === '#/storage') {
@@ -852,8 +851,9 @@ class ChatApp {
       await this.enterFinanceChat();
     } else if (path === '/finance/management' || hash === '#/finance/management') {
       await this.enterFinanceManagement();
-    } else if (path === '/finance' || hash === '#/finance' || path === '/finance/hub' || hash === '#/finance/hub') {
-      await this.enterDepartment('finance');
+    } else if (path.startsWith('/finance') || hash.startsWith('#/finance')) {
+      const targetSubRoute = path.startsWith('/finance') ? window.location.pathname : hash.replace('#', '');
+      await this.enterDepartment('finance', targetSubRoute);
     } else if (path === '/transportation' || hash === '#/transportation') {
       await this.enterDepartment('transportation');
     } else if (path === '/departments/storage' || path === '/storage' || hash === '#/departments/storage' || hash === '#/storage') {
@@ -868,7 +868,7 @@ class ChatApp {
     }
   }
 
-  static async enterDepartment(dept) {
+  static async enterDepartment(dept, subRoute = null) {
     if (dept === 'finance') {
       // Backend authorization check for Finance Department
       const res = await ChatApi.verifyFinanceAccess();
@@ -878,9 +878,17 @@ class ChatApp {
         if (window.FinanceManagementApp) {
           window.FinanceManagementApp.init();
           window.FinanceManagementApp.updateUserBadge(user);
-          window.FinanceManagementApp.loadData();
+          if (subRoute && subRoute !== '/finance' && subRoute !== '/finance/management' && subRoute !== '/finance/hub') {
+            window.FinanceManagementApp.handleRoute(subRoute);
+          } else {
+            window.FinanceManagementApp.showHubCardsView();
+          }
         }
-        if (window.location.pathname !== '/finance') {
+        if (subRoute && subRoute !== '/finance' && subRoute !== '/finance/management' && subRoute !== '/finance/hub') {
+          if (window.location.pathname !== subRoute) {
+            history.pushState({ view: 'finance-management', subRoute }, '', subRoute);
+          }
+        } else if (window.location.pathname !== '/finance') {
           history.pushState({ view: 'finance-management' }, '', '/finance');
         }
       } else {

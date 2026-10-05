@@ -30,7 +30,7 @@
   <!-- Core Messaging Stylesheet -->
   <link rel="stylesheet" href="/css/chat-app.css?v=20260929_pro">
   <!-- Finance Department Stylesheet -->
-  <link rel="stylesheet" href="/css/finance.css?v=20261001_workflow">
+  <link rel="stylesheet" href="/css/finance.css?v=20261005_redesign">
   <!-- Mobile Application Stylesheet -->
   <link rel="stylesheet" href="/css/mobile-app.css?v=20260930_pro">
 </head>
@@ -2143,6 +2143,979 @@
     <!-- Main Container -->
     <main class="finance-mgmt-container">
       
+      <!-- ==================================================================
+           0. FINANCE MAIN HUB — 7 NAVIGATION CARDS DASHBOARD
+           ================================================================== -->
+      <div id="finance-hub-cards-view">
+        <!-- Title Banner Card -->
+        <div class="finance-mgmt-title-card">
+          <div class="finance-mgmt-title-content">
+            <h1>لوحة الإدارة والعمليات المالية</h1>
+            <p>المنظومة المركزية الشاملة لإدارة المعاملات المالية، الحسابات، أوامر الشراء، والموردين</p>
+          </div>
+          <div class="finance-badge-pill">
+            <span class="live-dot-pulse"></span>
+            <span>نظام مالي موحد ومحدث لحظياً</span>
+          </div>
+        </div>
+
+        <!-- 7 Cards Navigation Grid -->
+        <div class="finance-nav-cards-grid">
+          <!-- Card 1: التاريخ -->
+          <div class="finance-nav-card" id="card-nav-finance-history" data-route="/finance/history" tabindex="0" role="button" aria-label="التاريخ المالي">
+            <div class="finance-nav-card-header">
+              <div class="finance-nav-card-icon icon-history">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              </div>
+              <span class="finance-nav-card-badge">سجل التدقيق</span>
+            </div>
+            <div class="finance-nav-card-body">
+              <h3 class="finance-nav-card-title">التاريخ</h3>
+              <span class="finance-nav-card-subtitle">FINANCE HISTORY</span>
+              <p class="finance-nav-card-desc">السجل المالي الشامل لكافة العمليات المحاسبية، حركات التوريد، والتدقيق المالي في النظام مع فلاتر التاريخ والبحث.</p>
+            </div>
+            <div class="finance-nav-card-footer">
+              <span class="finance-nav-card-action">
+                <span>فتح السجل المالي</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+              </span>
+            </div>
+          </div>
+
+          <!-- Card 2: الموردين -->
+          <div class="finance-nav-card" id="card-nav-finance-suppliers" data-route="/finance/suppliers" tabindex="0" role="button" aria-label="الموردين">
+            <div class="finance-nav-card-header">
+              <div class="finance-nav-card-icon icon-suppliers">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              </div>
+              <span class="finance-nav-card-badge">شركات التوريد</span>
+            </div>
+            <div class="finance-nav-card-body">
+              <h3 class="finance-nav-card-title">الموردين</h3>
+              <span class="finance-nav-card-subtitle">SUPPLIERS & VENDORS</span>
+              <p class="finance-nav-card-desc">قائمة شركات توريد المواد الخام للمصنع، استعراض إجمالي التوريدات، العقود السارية، والكميات المسلمة والمتبقية.</p>
+            </div>
+            <div class="finance-nav-card-footer">
+              <span class="finance-nav-card-action">
+                <span>إدارة الموردين</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+              </span>
+            </div>
+          </div>
+
+          <!-- Card 3: PO أوامر الشراء -->
+          <div class="finance-nav-card" id="card-nav-finance-pos" data-route="/finance/purchase-orders" tabindex="0" role="button" aria-label="أوامر الشراء">
+            <div class="finance-nav-card-header">
+              <div class="finance-nav-card-icon icon-pos">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+              </div>
+              <span class="finance-nav-card-badge">عقود التوريد</span>
+            </div>
+            <div class="finance-nav-card-body">
+              <h3 class="finance-nav-card-title">أوامر الشراء (PO)</h3>
+              <span class="finance-nav-card-subtitle">PURCHASE ORDERS</span>
+              <p class="finance-nav-card-desc">كافة أوامر الشراء، الكميات التعاقدية، المسلم، المتبقي، أسعار الطن، ونسب الهالك وتحديث موقف السداد.</p>
+            </div>
+            <div class="finance-nav-card-footer">
+              <span class="finance-nav-card-action">
+                <span>عرض أوامر الشراء</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+              </span>
+            </div>
+          </div>
+
+          <!-- Card 4: الأداء والتوقعات -->
+          <div class="finance-nav-card" id="card-nav-finance-performance" data-route="/finance/performance" tabindex="0" role="button" aria-label="الأداء والتوقعات">
+            <div class="finance-nav-card-header">
+              <div class="finance-nav-card-icon icon-performance">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+              </div>
+              <span class="finance-nav-card-badge">التحليل والتنبؤ</span>
+            </div>
+            <div class="finance-nav-card-body">
+              <h3 class="finance-nav-card-title">الأداء والتوقعات</h3>
+              <span class="finance-nav-card-subtitle">PERFORMANCE & FORECAST</span>
+              <p class="finance-nav-card-desc">الشفافية الحسابية لأداء المصنع، تفكيك هالك النقل والمخازن، ومؤشرات التنبؤ الزمني والمالي للاستكمال.</p>
+            </div>
+            <div class="finance-nav-card-footer">
+              <span class="finance-nav-card-action">
+                <span>استعراض الأداء والتوقعات</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+              </span>
+            </div>
+          </div>
+
+          <!-- Card 5: البنك -->
+          <div class="finance-nav-card" id="card-nav-finance-bank" data-route="/finance/bank" tabindex="0" role="button" aria-label="البنك">
+            <div class="finance-nav-card-header">
+              <div class="finance-nav-card-icon icon-bank">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="3" y1="21" x2="21" y2="21"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="5 6 12 3 19 6"/><line x1="4" y1="10" x2="4" y2="21"/><line x1="20" y1="10" x2="20" y2="21"/><line x1="8" y1="14" x2="8" y2="17"/><line x1="12" y1="14" x2="12" y2="17"/><line x1="16" y1="14" x2="16" y2="17"/></svg>
+              </div>
+              <span class="finance-nav-card-badge">الحسابات المصرفية</span>
+            </div>
+            <div class="finance-nav-card-body">
+              <h3 class="finance-nav-card-title">البنك</h3>
+              <span class="finance-nav-card-subtitle">BANK TRANSACTIONS & BALANCE</span>
+              <p class="finance-nav-card-desc">سجل المعاملات البنكية للمصنع، تسجيل حركات الإيداع والصرف، واحتساب الرصيد الفعلي التراكمي المتاح.</p>
+            </div>
+            <div class="finance-nav-card-footer">
+              <span class="finance-nav-card-action">
+                <span>إدارة المعاملات البنكية</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+              </span>
+            </div>
+          </div>
+
+          <!-- Card 6: المصاريف -->
+          <div class="finance-nav-card" id="card-nav-finance-expenses" data-route="/finance/expenses" tabindex="0" role="button" aria-label="المصاريف">
+            <div class="finance-nav-card-header">
+              <div class="finance-nav-card-icon icon-expenses">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+              </div>
+              <span class="finance-nav-card-badge">المصروفات التشغيلية</span>
+            </div>
+            <div class="finance-nav-card-body">
+              <h3 class="finance-nav-card-title">المصاريف</h3>
+              <span class="finance-nav-card-subtitle">OPERATIONAL EXPENSES</span>
+              <p class="finance-nav-card-desc">تسجيل ومتابعة التكاليف الإضافية للمصنع (كهرباء، وقود، صيانة، لوجستيات) مع تقارير وإحصائيات حسب التصنيف.</p>
+            </div>
+            <div class="finance-nav-card-footer">
+              <span class="finance-nav-card-action">
+                <span>متابعة وتسجيل المصاريف</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+              </span>
+            </div>
+          </div>
+
+          <!-- Card 7: الموظفين -->
+          <div class="finance-nav-card" id="card-nav-finance-employees" data-route="/finance/employees" tabindex="0" role="button" aria-label="الموظفين">
+            <div class="finance-nav-card-header">
+              <div class="finance-nav-card-icon icon-employees">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              </div>
+              <span class="finance-nav-card-badge">شؤون العاملين المالية</span>
+            </div>
+            <div class="finance-nav-card-body">
+              <h3 class="finance-nav-card-title">الموظفين</h3>
+              <span class="finance-nav-card-subtitle">EMPLOYEES & SALARIES</span>
+              <p class="finance-nav-card-desc">سجل الحسابات المالية للعاملين، الرواتب والبدلات، سجلات الحضور والانصراف، وإدارة ومتابعة السلف المالية.</p>
+            </div>
+            <div class="finance-nav-card-footer">
+              <span class="finance-nav-card-action">
+                <span>استعراض بيانات الموظفين</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div> <!-- End 0. finance-hub-cards-view -->
+
+      <!-- ==================================================================
+           1. FINANCE HISTORY VIEW (/finance/history)
+           ================================================================== -->
+      <div id="finance-history-view" style="display: none;">
+        <div class="finance-subview-nav">
+          <button type="button" class="finance-btn-subview-back" id="finance-history-back-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            <span>← العودة إلى المالية</span>
+          </button>
+          <div class="finance-subview-title-pill">
+            <span>التاريخ — سجل المعاملات المالية والتدقيق المحاسبي</span>
+          </div>
+        </div>
+
+        <!-- Filters Section -->
+        <section class="finance-filters-card" aria-label="أدوات تصفية السجل المالي">
+          <div class="finance-filters-top">
+            <div class="finance-filters-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+              <span>تصفية وبحث السجل المالي (Audit Trail)</span>
+            </div>
+            <div class="finance-filter-actions">
+              <button type="button" class="finance-btn-filter-action finance-btn-apply" id="finance-hist-apply-btn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>تطبيق الفلتر</span>
+              </button>
+              <button type="button" class="finance-btn-filter-action" id="finance-hist-reset-btn">
+                <span>إعادة ضبط</span>
+              </button>
+              <button type="button" class="finance-btn-filter-action" id="finance-hist-refresh-btn">
+                <span>تحديث</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="finance-filters-grid">
+            <div class="finance-filter-item">
+              <label class="finance-filter-label" for="finance-hist-search-input">البحث الشامل</label>
+              <div class="finance-input-wrap">
+                <input type="text" id="finance-hist-search-input" class="finance-input finance-input-search" placeholder="بحث برقم المعاملة، PO، المورد، البيان..." autocomplete="off" />
+              </div>
+            </div>
+
+            <div class="finance-filter-item">
+              <label class="finance-filter-label" for="finance-hist-type-select">نوع العملية</label>
+              <div class="finance-input-wrap">
+                <select id="finance-hist-type-select" class="finance-input finance-select">
+                  <option value="all">-- كافة العمليات المالية --</option>
+                  <option value="PurchaseOrder">أمر شراء (PO)</option>
+                  <option value="Transportation">توريد نقل (Transportation)</option>
+                  <option value="Storage">صادر مخزن (Storage)</option>
+                  <option value="Bank">معاملة بنكية (Bank)</option>
+                  <option value="Expense">مصروف تشغيلي (Expense)</option>
+                  <option value="PaymentStatus">تغيير حالة سداد (Payment Status)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="finance-filter-item">
+              <label class="finance-filter-label" for="finance-hist-po-select">أمر الشراء (PO)</label>
+              <div class="finance-input-wrap">
+                <select id="finance-hist-po-select" class="finance-input finance-select">
+                  <option value="all">-- كافة أوامر الشراء --</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="finance-filter-item">
+              <label class="finance-filter-label" for="finance-hist-supplier-select">المورد</label>
+              <div class="finance-input-wrap">
+                <select id="finance-hist-supplier-select" class="finance-input finance-select">
+                  <option value="all">-- كافة الموردين --</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="finance-filter-item">
+              <label class="finance-filter-label" for="finance-hist-date-from">من تاريخ</label>
+              <div class="finance-input-wrap">
+                <input type="date" id="finance-hist-date-from" class="finance-input finance-input-date" />
+              </div>
+            </div>
+
+            <div class="finance-filter-item">
+              <label class="finance-filter-label" for="finance-hist-date-to">إلى تاريخ</label>
+              <div class="finance-input-wrap">
+                <input type="date" id="finance-hist-date-to" class="finance-input finance-input-date" />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- History Table Section -->
+        <div class="finance-card" style="margin-top: 1.5rem;">
+          <div class="finance-card-header">
+            <div class="finance-card-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+              <span>سجل الحركات والعمليات المالية المعتمدة</span>
+            </div>
+            <span class="finance-badge-pill" id="finance-hist-count-badge">0 معاملة</span>
+          </div>
+
+          <div class="finance-table-scroll">
+            <table class="finance-table">
+              <thead>
+                <tr>
+                  <th>التاريخ</th>
+                  <th>نوع العملية</th>
+                  <th>رقم العملية</th>
+                  <th>PO</th>
+                  <th>المورد / الجهة</th>
+                  <th>المبلغ (ج.م)</th>
+                  <th>الاتجاه</th>
+                  <th>الحالة</th>
+                  <th>المستخدم</th>
+                  <th>التفاصيل</th>
+                </tr>
+              </thead>
+              <tbody id="finance-hist-tbody">
+                <!-- Dynamically Populated -->
+              </tbody>
+            </table>
+          </div>
+
+          <div class="finance-loading-state" id="finance-hist-loading" style="display: none;">
+            <div class="finance-spinner"></div>
+            <span>جاري تحميل السجل المالي...</span>
+          </div>
+          <div class="finance-empty-state" id="finance-hist-empty" style="display: none;">
+            <span>لا توجد معاملات مسجلة تطابق محددات البحث.</span>
+          </div>
+
+          <!-- Pagination -->
+          <div class="finance-pagination-bar" id="finance-hist-pagination-bar" style="margin-top: 1rem;">
+            <span class="finance-pagination-info" id="finance-hist-pagination-info">صفحة 1 من 1</span>
+            <div class="finance-pagination-controls">
+              <button type="button" class="finance-page-btn" id="finance-hist-prev-page" disabled>السابق</button>
+              <div class="finance-page-numbers" id="finance-hist-page-numbers"></div>
+              <button type="button" class="finance-page-btn" id="finance-hist-next-page" disabled>التالي</button>
+            </div>
+          </div>
+        </div>
+      </div> <!-- End 1. finance-history-view -->
+
+      <!-- ==================================================================
+           2. SUPPLIERS VIEW (/finance/suppliers)
+           ================================================================== -->
+      <div id="finance-suppliers-view" style="display: none;">
+        <div class="finance-subview-nav">
+          <button type="button" class="finance-btn-subview-back" id="finance-suppliers-back-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            <span>← العودة إلى المالية</span>
+          </button>
+          <div class="finance-subview-title-pill">
+            <span>الموردين — شركات توريد المواد الخام للمصنع</span>
+          </div>
+          <div class="finance-subview-actions">
+            <button type="button" class="finance-btn-filter-action" id="finance-suppliers-refresh-btn">
+              <span>تحديث البيانات</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="finance-card">
+          <div class="finance-card-header">
+            <div class="finance-card-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+              <span>قائمة شركات التوريد المعتمدة والتعاقدات</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <input type="text" id="finance-suppliers-search-input" class="finance-input" placeholder="بحث باسم المورد أو المادة..." style="width: 240px; padding: 6px 12px; font-size: 0.85rem;" />
+              <span class="finance-badge-pill" id="finance-suppliers-count">0 مورد</span>
+            </div>
+          </div>
+
+          <div class="finance-table-scroll">
+            <table class="finance-table">
+              <thead>
+                <tr>
+                  <th>اسم المورد</th>
+                  <th>المواد الموردة</th>
+                  <th>عدد أوامر الشراء</th>
+                  <th>إجمالي المتعاقد عليه</th>
+                  <th>الكمية المسلمة</th>
+                  <th>الكمية المتبقية</th>
+                  <th>إجمالي القيمة المالية</th>
+                  <th>إجمالي المدفوع</th>
+                  <th>المستحق المتبقي</th>
+                  <th>الإجراء</th>
+                </tr>
+              </thead>
+              <tbody id="finance-suppliers-tbody">
+                <!-- Dynamically Populated -->
+              </tbody>
+            </table>
+          </div>
+          <div class="finance-loading-state" id="finance-suppliers-loading" style="display: none;">
+            <div class="finance-spinner"></div>
+            <span>جاري تحميل بيانات الموردين...</span>
+          </div>
+          <div class="finance-empty-state" id="finance-suppliers-empty" style="display: none;">
+            <span>لا توجد بيانات موردين مسجلة في أوامر الشراء حتى الآن.</span>
+          </div>
+        </div>
+      </div> <!-- End 2. finance-suppliers-view -->
+
+      <!-- ==================================================================
+           2.1 SUPPLIER DETAILS VIEW (/finance/suppliers/:id)
+           ================================================================== -->
+      <div id="finance-supplier-details-view" style="display: none;">
+        <div class="finance-subview-nav">
+          <button type="button" class="finance-btn-subview-back" id="finance-supplier-detail-back-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            <span>← العودة إلى قائمة الموردين</span>
+          </button>
+          <div class="finance-subview-title-pill">
+            <span>الملف التفصيلي للمورد: </span>
+            <strong id="supplier-detail-name">-</strong>
+          </div>
+        </div>
+
+        <!-- Supplier KPI Summary Grid -->
+        <div class="finance-po-summary-grid">
+          <div class="finance-summary-tile tile-accent">
+            <span class="finance-summary-tile-label">إجمالي الكمية المتعاقد عليها</span>
+            <span class="finance-summary-tile-val" id="supplier-detail-contracted-qty">0.000 طن</span>
+            <span class="finance-summary-tile-sub" id="supplier-detail-materials-sub">المواد: -</span>
+          </div>
+          <div class="finance-summary-tile tile-highlight">
+            <span class="finance-summary-tile-label">إجمالي الكمية المسلمة الفعلية</span>
+            <span class="finance-summary-tile-val" id="supplier-detail-delivered-qty" style="color: #059669;">0.000 طن</span>
+            <span class="finance-summary-tile-sub" id="supplier-detail-po-count-sub">عدد العقود: 0</span>
+          </div>
+          <div class="finance-summary-tile">
+            <span class="finance-summary-tile-label">إجمالي الكمية المتبقية</span>
+            <span class="finance-summary-tile-val" id="supplier-detail-remaining-qty">0.000 طن</span>
+            <span class="finance-summary-tile-sub">مجموع المتبقي الفعلي</span>
+          </div>
+          <div class="finance-summary-tile tile-accent">
+            <span class="finance-summary-tile-label">إجمالي القيمة المالية للعقود</span>
+            <span class="finance-summary-tile-val" id="supplier-detail-total-val">0.00 ج.م</span>
+            <span class="finance-summary-tile-sub">القيمة التعاقدية الشاملة</span>
+          </div>
+          <div class="finance-summary-tile tile-highlight">
+            <span class="finance-summary-tile-label">إجمالي المبالغ المدفوعة</span>
+            <span class="finance-summary-tile-val" id="supplier-detail-paid-amt" style="color: #059669;">0.00 ج.م</span>
+            <span class="finance-summary-tile-sub">وفقاً لسجلات السداد</span>
+          </div>
+          <div class="finance-summary-tile tile-waste">
+            <span class="finance-summary-tile-label">المستحق المتبقي</span>
+            <span class="finance-summary-tile-val" id="supplier-detail-outstanding-amt" style="color: #DC2626;">0.00 ج.م</span>
+            <span class="finance-summary-tile-sub">القيمة - المسدد</span>
+          </div>
+        </div>
+
+        <!-- Supplier POs Table -->
+        <div class="finance-card" style="margin-top: 1.5rem;">
+          <div class="finance-card-header">
+            <div class="finance-card-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <span>أوامر الشراء المرتبطة بهذا المورد</span>
+            </div>
+          </div>
+          <div class="finance-table-scroll">
+            <table class="finance-table">
+              <thead>
+                <tr>
+                  <th>أمر الشراء</th>
+                  <th>الكمية المتعاقدة</th>
+                  <th>سعر الطن</th>
+                  <th>القيمة المتوقعة</th>
+                  <th>الكمية المسلمة</th>
+                  <th>الكمية المتبقية</th>
+                  <th>الهالك</th>
+                  <th>نسبة الأداء</th>
+                  <th>حالة السداد</th>
+                  <th>الإجراء</th>
+                </tr>
+              </thead>
+              <tbody id="supplier-detail-pos-tbody">
+                <!-- Dynamically Populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Supplier Recent Deliveries Table -->
+        <div class="finance-card" style="margin-top: 1.5rem;">
+          <div class="finance-card-header">
+            <div class="finance-card-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+              <span>آخر حركات التوريد والنقل المنفذة للمورد</span>
+            </div>
+          </div>
+          <div class="finance-table-scroll">
+            <table class="finance-table">
+              <thead>
+                <tr>
+                  <th>رقم الحركة</th>
+                  <th>التاريخ</th>
+                  <th>رقم السيارة</th>
+                  <th>السائق</th>
+                  <th>المادة</th>
+                  <th>الوزن الصافي</th>
+                  <th>الهالك</th>
+                  <th>الحالة</th>
+                </tr>
+              </thead>
+              <tbody id="supplier-detail-deliveries-tbody">
+                <!-- Dynamically Populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div> <!-- End 2.1 finance-supplier-details-view -->
+
+      <!-- ==================================================================
+           3. PURCHASE ORDERS VIEW (/finance/purchase-orders)
+           ================================================================== -->
+      <div id="finance-pos-view" style="display: none;">
+        <div class="finance-subview-nav">
+          <button type="button" class="finance-btn-subview-back" id="finance-pos-back-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            <span>← العودة إلى المالية</span>
+          </button>
+          <div class="finance-subview-title-pill">
+            <span>أوامر الشراء — كافة عقود التوريد المتعاقد عليها</span>
+          </div>
+          <div class="finance-subview-actions">
+            <button type="button" class="finance-btn-filter-action" id="finance-pos-refresh-btn">
+              <span>تحديث البيانات</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="finance-card">
+          <div class="finance-card-header">
+            <div class="finance-card-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+              <span>قائمة أوامر الشراء الشاملة (PO Database)</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <input type="text" id="finance-pos-search-input" class="finance-input" placeholder="بحث بأمر الشراء أو المورد..." style="width: 220px; padding: 6px 12px; font-size: 0.85rem;" />
+              <select id="finance-pos-status-select" class="finance-input finance-select" style="width: 160px; padding: 6px 12px; font-size: 0.85rem;">
+                <option value="all">كافة الحالات</option>
+                <option value="unpaid">غير مدفوع</option>
+                <option value="partial">مدفوع جزئياً</option>
+                <option value="paid">مدفوع بالكامل</option>
+              </select>
+              <span class="finance-badge-pill" id="finance-pos-all-count">0 أمر شراء</span>
+            </div>
+          </div>
+
+          <div class="finance-table-scroll">
+            <table class="finance-table">
+              <thead>
+                <tr>
+                  <th>رقم أمر الشراء</th>
+                  <th>المورد</th>
+                  <th>المادة</th>
+                  <th>الوجهة</th>
+                  <th>الكمية المتعاقدة</th>
+                  <th>سعر الطن</th>
+                  <th>القيمة المتوقعة</th>
+                  <th>الكمية المسلمة</th>
+                  <th>الكمية المتبقية</th>
+                  <th>الهالك</th>
+                  <th>نسبة الأداء</th>
+                  <th>حالة السداد</th>
+                  <th>تاريخ التعاقد</th>
+                  <th>الإجراء</th>
+                </tr>
+              </thead>
+              <tbody id="finance-pos-all-tbody">
+                <!-- Dynamically Populated -->
+              </tbody>
+            </table>
+          </div>
+          <div class="finance-loading-state" id="finance-pos-all-loading" style="display: none;">
+            <div class="finance-spinner"></div>
+            <span>جاري تحميل أوامر الشراء...</span>
+          </div>
+          <div class="finance-empty-state" id="finance-pos-all-empty" style="display: none;">
+            <span>لا توجد أوامر شراء مسجلة.</span>
+          </div>
+        </div>
+      </div> <!-- End 3. finance-pos-view -->
+
+      <!-- ==================================================================
+           5. BANK VIEW (/finance/bank)
+           ================================================================== -->
+      <div id="finance-bank-view" style="display: none;">
+        <div class="finance-subview-nav">
+          <button type="button" class="finance-btn-subview-back" id="finance-bank-back-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            <span>← العودة إلى المالية</span>
+          </button>
+          <div class="finance-subview-title-pill">
+            <span>البنك — الحسابات والمعاملات المصرفية والأرصدة الفعلية</span>
+          </div>
+          <div class="finance-subview-actions">
+            <button type="button" class="finance-btn-primary-action" id="finance-btn-add-bank-trans">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              <span>+ إضافة معاملة بنكية</span>
+            </button>
+            <button type="button" class="finance-btn-filter-action" id="finance-bank-refresh-btn">
+              <span>تحديث الحساب</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Bank KPI Grid -->
+        <div class="finance-po-summary-grid">
+          <div class="finance-summary-tile tile-highlight">
+            <span class="finance-summary-tile-label">الرصيد الفعلي الحالي</span>
+            <span class="finance-summary-tile-val" id="finance-bank-balance-val" style="color: #0F172A; font-size: 1.4rem;">0.00 ج.م</span>
+            <span class="finance-summary-tile-sub">مجموع الإيداعات - مجموع المنصرفات</span>
+          </div>
+          <div class="finance-summary-tile tile-accent">
+            <span class="finance-summary-tile-label">إجمالي الإيداعات (Received)</span>
+            <span class="finance-summary-tile-val" id="finance-bank-deposits-val" style="color: #059669;">0.00 ج.م</span>
+            <span class="finance-summary-tile-sub">المعاملات البنكية الواردة</span>
+          </div>
+          <div class="finance-summary-tile tile-waste">
+            <span class="finance-summary-tile-label">إجمالي المصروفات البنكية (Sent)</span>
+            <span class="finance-summary-tile-val" id="finance-bank-withdrawals-val" style="color: #DC2626;">0.00 ج.م</span>
+            <span class="finance-summary-tile-sub">المعاملات البنكية الصادرة</span>
+          </div>
+          <div class="finance-summary-tile">
+            <span class="finance-summary-tile-label">إجمالي عدد المعاملات</span>
+            <span class="finance-summary-tile-val" id="finance-bank-count-val">0</span>
+            <span class="finance-summary-tile-sub">المسجلة في قاعدة البيانات</span>
+          </div>
+        </div>
+
+        <!-- Bank Transactions Table -->
+        <div class="finance-card" style="margin-top: 1.5rem;">
+          <div class="finance-card-header">
+            <div class="finance-card-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="21" x2="21" y2="21"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="5 6 12 3 19 6"/><line x1="4" y1="10" x2="4" y2="21"/><line x1="20" y1="10" x2="20" y2="21"/></svg>
+              <span>سجل المعاملات البنكية الفعلي</span>
+            </div>
+          </div>
+          <div class="finance-table-scroll">
+            <table class="finance-table">
+              <thead>
+                <tr>
+                  <th>تاريخ العملية</th>
+                  <th>نوع العملية</th>
+                  <th>المبلغ (ج.م)</th>
+                  <th>الاتجاه</th>
+                  <th>البنك</th>
+                  <th>رقم المرجع</th>
+                  <th>البيان / الوصف</th>
+                  <th>المستخدم</th>
+                  <th>ملاحظات</th>
+                </tr>
+              </thead>
+              <tbody id="finance-bank-tbody">
+                <!-- Dynamically Populated -->
+              </tbody>
+            </table>
+          </div>
+          <div class="finance-loading-state" id="finance-bank-loading" style="display: none;">
+            <div class="finance-spinner"></div>
+            <span>جاري تحميل المعاملات البنكية...</span>
+          </div>
+          <div class="finance-empty-state" id="finance-bank-empty" style="display: none;">
+            <span>لا توجد معاملات بنكية مسجلة حتى الآن. استخدم زر "+ إضافة معاملة بنكية" لإدراج حركة جديدة.</span>
+          </div>
+        </div>
+      </div> <!-- End 5. finance-bank-view -->
+
+      <!-- ==================================================================
+           6. EXPENSES VIEW (/finance/expenses)
+           ================================================================== -->
+      <div id="finance-expenses-view" style="display: none;">
+        <div class="finance-subview-nav">
+          <button type="button" class="finance-btn-subview-back" id="finance-expenses-back-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            <span>← العودة إلى المالية</span>
+          </button>
+          <div class="finance-subview-title-pill">
+            <span>المصاريف — المصروفات والتكاليف التشغيلية للمصنع</span>
+          </div>
+          <div class="finance-subview-actions">
+            <button type="button" class="finance-btn-primary-action" id="finance-btn-add-expense">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              <span>+ إضافة مصروف</span>
+            </button>
+            <button type="button" class="finance-btn-filter-action" id="finance-expenses-refresh-btn">
+              <span>تحديث</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Expenses Filters -->
+        <section class="finance-filters-card" aria-label="تصفية المصاريف">
+          <div class="finance-filters-top">
+            <div class="finance-filters-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+              <span>فلترة المصاريف حسب النطاق الزمني والتصنيف</span>
+            </div>
+            <div class="finance-filter-actions">
+              <button type="button" class="finance-btn-filter-action finance-btn-apply" id="finance-exp-apply-btn">
+                <span>تطبيق الفلتر</span>
+              </button>
+              <button type="button" class="finance-btn-filter-action" id="finance-exp-reset-btn">
+                <span>إعادة ضبط</span>
+              </button>
+            </div>
+          </div>
+          <div class="finance-filters-grid">
+            <div class="finance-filter-item">
+              <label class="finance-filter-label" for="finance-exp-category-filter">تصنيف المصروف</label>
+              <div class="finance-input-wrap">
+                <select id="finance-exp-category-filter" class="finance-input finance-select">
+                  <option value="all">-- كافة التصنيفات --</option>
+                  <option value="الكهرباء والطاقة">الكهرباء والطاقة (Electricity)</option>
+                  <option value="الوقود والمحروقات">الوقود والمحروقات (Fuel)</option>
+                  <option value="الصيانة وقطع الغيار">الصيانة وقطع الغيار (Maintenance)</option>
+                  <option value="النقل واللوجستيات">النقل واللوجستيات (Transportation)</option>
+                  <option value="الرواتب والأجور">الرواتب والأجور (Salaries)</option>
+                  <option value="مصاريف إدارية ومكتبية">مصاريف إدارية ومكتبية (Office Expenses)</option>
+                  <option value="المعدات والأدوات">المعدات والأدوات (Equipment)</option>
+                  <option value="أخرى">أخرى (Other)</option>
+                </select>
+              </div>
+            </div>
+            <div class="finance-filter-item">
+              <label class="finance-filter-label" for="finance-exp-date-from">من تاريخ</label>
+              <div class="finance-input-wrap">
+                <input type="date" id="finance-exp-date-from" class="finance-input finance-input-date" />
+              </div>
+            </div>
+            <div class="finance-filter-item">
+              <label class="finance-filter-label" for="finance-exp-date-to">إلى تاريخ</label>
+              <div class="finance-input-wrap">
+                <input type="date" id="finance-exp-date-to" class="finance-input finance-input-date" />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Expenses Summary Tiles -->
+        <div class="finance-po-summary-grid" style="margin-top: 1.5rem;">
+          <div class="finance-summary-tile tile-accent">
+            <span class="finance-summary-tile-label">إجمالي المصاريف التراكمية</span>
+            <span class="finance-summary-tile-val" id="finance-exp-total-val" style="color: #EA580C;">0.00 ج.م</span>
+            <span class="finance-summary-tile-sub">كافة المصروفات المسجلة</span>
+          </div>
+          <div class="finance-summary-tile tile-highlight">
+            <span class="finance-summary-tile-label">مصاريف اليوم</span>
+            <span class="finance-summary-tile-val" id="finance-exp-today-val" style="color: #059669;">0.00 ج.م</span>
+            <span class="finance-summary-tile-sub">تاريخ اليوم الحالي</span>
+          </div>
+          <div class="finance-summary-tile">
+            <span class="finance-summary-tile-label">مصاريف الفترة المحددة</span>
+            <span class="finance-summary-tile-val" id="finance-exp-range-val">0.00 ج.م</span>
+            <span class="finance-summary-tile-sub">ضمن النطاق الزمني المختار</span>
+          </div>
+        </div>
+
+        <!-- Categories Breakdown Cards -->
+        <div class="finance-card" style="margin-top: 1.5rem;">
+          <div class="finance-card-header">
+            <div class="finance-card-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+              <span>توزيع المصاريف حسب التصنيف (Expense Categories)</span>
+            </div>
+          </div>
+          <div class="finance-forecast-kpi-grid" id="finance-exp-categories-grid">
+            <!-- Dynamically populated categories -->
+          </div>
+        </div>
+
+        <!-- Expenses Table -->
+        <div class="finance-card" style="margin-top: 1.5rem;">
+          <div class="finance-card-header">
+            <div class="finance-card-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+              <span>قائمة المصروفات التفصيلية</span>
+            </div>
+          </div>
+          <div class="finance-table-scroll">
+            <table class="finance-table">
+              <thead>
+                <tr>
+                  <th>تاريخ المصروف</th>
+                  <th>نوع المصروف</th>
+                  <th>المبلغ (ج.م)</th>
+                  <th>البيان</th>
+                  <th>الجهة / المستفيد</th>
+                  <th>طريقة الدفع</th>
+                  <th>رقم المرجع</th>
+                  <th>المستخدم</th>
+                  <th>ملاحظات</th>
+                </tr>
+              </thead>
+              <tbody id="finance-expenses-tbody">
+                <!-- Dynamically Populated -->
+              </tbody>
+            </table>
+          </div>
+          <div class="finance-loading-state" id="finance-expenses-loading" style="display: none;">
+            <div class="finance-spinner"></div>
+            <span>جاري تحميل المصاريف...</span>
+          </div>
+          <div class="finance-empty-state" id="finance-expenses-empty" style="display: none;">
+            <span>لا توجد مصاريف مسجلة في هذا النطاق. استخدم زر "+ إضافة مصروف" لإدراج حركة جديدة.</span>
+          </div>
+        </div>
+      </div> <!-- End 6. finance-expenses-view -->
+
+      <!-- ==================================================================
+           7. EMPLOYEES VIEW (/finance/employees)
+           ================================================================== -->
+      <div id="finance-employees-view" style="display: none;">
+        <div class="finance-subview-nav">
+          <button type="button" class="finance-btn-subview-back" id="finance-employees-back-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            <span>← العودة إلى المالية</span>
+          </button>
+          <div class="finance-subview-title-pill">
+            <span>الموظفين — السجلات المالية والحسابية للموظفين</span>
+          </div>
+          <div class="finance-subview-actions">
+            <button type="button" class="finance-btn-filter-action" id="finance-emp-refresh-btn">
+              <span>تحديث البيانات</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="finance-card">
+          <div class="finance-card-header">
+            <div class="finance-card-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <span>قائمة العاملين والسجلات المالية</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <input type="text" id="finance-emp-search-input" class="finance-input" placeholder="بحث باسم الموظف أو الوظيفة..." style="width: 240px; padding: 6px 12px; font-size: 0.85rem;" />
+              <span class="finance-badge-pill" id="finance-emp-count">0 موظف</span>
+            </div>
+          </div>
+          <div class="finance-table-scroll">
+            <table class="finance-table">
+              <thead>
+                <tr>
+                  <th>اسم الموظف</th>
+                  <th>الرقم التعريفي / المستخدم</th>
+                  <th>القسم</th>
+                  <th>الوظيفة / الصلاحية</th>
+                  <th>الراتب الأساسي / الصافي</th>
+                  <th>الحضور</th>
+                  <th>السلف</th>
+                  <th>الحالة المالية</th>
+                  <th>الإجراء</th>
+                </tr>
+              </thead>
+              <tbody id="finance-employees-tbody">
+                <!-- Dynamically Populated -->
+              </tbody>
+            </table>
+          </div>
+          <div class="finance-loading-state" id="finance-emp-loading" style="display: none;">
+            <div class="finance-spinner"></div>
+            <span>جاري تحميل بيانات الموظفين...</span>
+          </div>
+          <div class="finance-empty-state" id="finance-emp-empty" style="display: none;">
+            <span>لا يوجد موظفون مسجلون.</span>
+          </div>
+        </div>
+      </div> <!-- End 7. finance-employees-view -->
+
+      <!-- ==================================================================
+           7.1 EMPLOYEE DETAILS VIEW (/finance/employees/:id)
+           ================================================================== -->
+      <div id="finance-employee-details-view" style="display: none;">
+        <div class="finance-subview-nav">
+          <button type="button" class="finance-btn-subview-back" id="finance-emp-detail-back-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            <span>← العودة إلى قائمة الموظفين</span>
+          </button>
+          <div class="finance-subview-title-pill">
+            <span>الملف المالي للموظف: </span>
+            <strong id="emp-detail-name">-</strong>
+          </div>
+        </div>
+
+        <!-- Employee Hero Card -->
+        <div class="finance-po-hero-card">
+          <div class="finance-po-hero-header">
+            <div class="finance-po-hero-main">
+              <span class="finance-po-hero-badge" id="emp-detail-username">USR-00</span>
+              <div>
+                <h2 id="emp-detail-fullname">اسم الموظف</h2>
+                <div class="finance-po-hero-sub">
+                  <span id="emp-detail-dept">القسم: -</span>
+                  <span class="sep">•</span>
+                  <span id="emp-detail-role">الوظيفة: -</span>
+                  <span class="sep">•</span>
+                  <span id="emp-detail-status">الحالة: نشط</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Financial Package KPI Grid -->
+        <div class="finance-po-summary-grid">
+          <div class="finance-summary-tile tile-accent">
+            <span class="finance-summary-tile-label">الراتب الأساسي</span>
+            <span class="finance-summary-tile-val" id="emp-detail-basic-salary">غير محدد</span>
+            <span class="finance-summary-tile-sub">الراتب التعاقدي الأساسي</span>
+          </div>
+          <div class="finance-summary-tile">
+            <span class="finance-summary-tile-label">البدلات والحوافز</span>
+            <span class="finance-summary-tile-val" id="emp-detail-allowances">0.00 ج.م</span>
+            <span class="finance-summary-tile-sub">إجمالي البدلات المعتمدة</span>
+          </div>
+          <div class="finance-summary-tile tile-waste">
+            <span class="finance-summary-tile-label">الاستقطاعات والتأمينات</span>
+            <span class="finance-summary-tile-val" id="emp-detail-deductions" style="color: #DC2626;">0.00 ج.م</span>
+            <span class="finance-summary-tile-sub">الخصومات الرسمية</span>
+          </div>
+          <div class="finance-summary-tile tile-highlight">
+            <span class="finance-summary-tile-label">صافي الراتب المستحق</span>
+            <span class="finance-summary-tile-val" id="emp-detail-net-salary" style="color: #059669;">غير محدد</span>
+            <span class="finance-summary-tile-sub" id="emp-detail-pay-method-sub">طريقة الدفع: -</span>
+          </div>
+        </div>
+
+        <!-- Attendance Summary & Table -->
+        <div class="finance-card" style="margin-top: 1.5rem;">
+          <div class="finance-card-header">
+            <div class="finance-card-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <span>سجل الحضور والانصراف (Attendance)</span>
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <span class="finance-badge-pill" id="emp-detail-att-present-badge">حضور: 0</span>
+              <span class="finance-badge-pill" id="emp-detail-att-absent-badge" style="background: #FEE2E2; color: #991B1B;">غياب: 0</span>
+              <span class="finance-badge-pill" id="emp-detail-att-rate-badge">النسبة: 100%</span>
+            </div>
+          </div>
+          <div class="finance-table-scroll">
+            <table class="finance-table">
+              <thead>
+                <tr>
+                  <th>التاريخ</th>
+                  <th>الحالة</th>
+                  <th>وقت الحضور</th>
+                  <th>وقت الانصراف</th>
+                  <th>ملاحظات</th>
+                </tr>
+              </thead>
+              <tbody id="emp-detail-att-tbody">
+                <!-- Dynamically Populated -->
+              </tbody>
+            </table>
+          </div>
+          <div class="finance-empty-state" id="emp-detail-att-empty" style="display: none;">
+            <span>لا توجد سجلات حضور مسجلة لهذا الموظف حتى الآن. البنية التحتية جاهزة لاستقبال البيانات.</span>
+          </div>
+        </div>
+
+        <!-- Lending Summary & Table -->
+        <div class="finance-card" style="margin-top: 1.5rem;">
+          <div class="finance-card-header">
+            <div class="finance-card-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              <span>سجل السلف والتسهيلات المالية (Lending)</span>
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <span class="finance-badge-pill" id="emp-detail-lend-total-badge">إجمالي السلف: 0.00 ج.م</span>
+              <span class="finance-badge-pill" id="emp-detail-lend-paid-badge" style="background: #ECFDF5; color: #065F46;">المسدد: 0.00 ج.م</span>
+              <span class="finance-badge-pill" id="emp-detail-lend-rem-badge" style="background: #FEF3C7; color: #92400E;">المتبقي: 0.00 ج.م</span>
+            </div>
+          </div>
+          <div class="finance-table-scroll">
+            <table class="finance-table">
+              <thead>
+                <tr>
+                  <th>تاريخ الطلب</th>
+                  <th>مبلغ السلفة (ج.م)</th>
+                  <th>المسدد</th>
+                  <th>المتبقي</th>
+                  <th>حالة الموافقة</th>
+                  <th>معتمد من</th>
+                  <th>ملاحظات</th>
+                </tr>
+              </thead>
+              <tbody id="emp-detail-lend-tbody">
+                <!-- Dynamically Populated -->
+              </tbody>
+            </table>
+          </div>
+          <div class="finance-empty-state" id="emp-detail-lend-empty" style="display: none;">
+            <span>لا توجد سلف مالية مسجلة على هذا الموظف.</span>
+          </div>
+        </div>
+      </div> <!-- End 7.1 finance-employee-details-view -->
+
+      <!-- 0. Previous Unified View Kept for Element ID Preservation -->
+      <div id="finance-dashboard-view" style="display: none;">
+
       <!-- Title Banner Card -->
       <div class="finance-mgmt-title-card">
         <div class="finance-mgmt-title-content">
@@ -2165,6 +3138,10 @@
             <span>أدوات البحث وتصفية البيانات المالية</span>
           </div>
           <div class="finance-filter-actions">
+            <button type="button" class="finance-btn-filter-action finance-btn-apply" id="finance-btn-apply-filters" title="تطبيق فلترة النطاق الزمني والتصفية">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>تطبيق / تحديث</span>
+            </button>
             <button type="button" class="finance-btn-filter-action" id="finance-btn-clear-po" title="مسح فلتر أمر الشراء وعرض كافة العقود">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               <span>مسح أمر الشراء</span>
@@ -2231,11 +3208,19 @@
             </div>
           </div>
 
-          <!-- 6. التاريخ (اليوم التلقائي) -->
+          <!-- 6. من تاريخ (فلتر النطاق الزمني) -->
           <div class="finance-filter-item">
-            <label class="finance-filter-label" for="finance-filter-main-date">التاريخ (اليوم)</label>
+            <label class="finance-filter-label" for="finance-filter-date-from">من تاريخ</label>
             <div class="finance-input-wrap">
-              <input type="date" id="finance-filter-main-date" class="finance-input finance-input-date" />
+              <input type="date" id="finance-filter-date-from" class="finance-input finance-input-date" />
+            </div>
+          </div>
+
+          <!-- 7. إلى تاريخ (فلتر النطاق الزمني) -->
+          <div class="finance-filter-item">
+            <label class="finance-filter-label" for="finance-filter-date-to">إلى تاريخ</label>
+            <div class="finance-input-wrap">
+              <input type="date" id="finance-filter-date-to" class="finance-input finance-input-date" />
             </div>
           </div>
         </div>
@@ -2247,10 +3232,10 @@
       <div class="finance-section-banner">
         <h2>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          <span>النشاط اليومي بالتاريخ المحدد</span>
+          <span>النشاط وحركات النطاق الزمني المحدد</span>
           <span class="finance-section-tag daily" id="finance-daily-date-badge">اليوم</span>
         </h2>
-        <span style="font-size: 0.8rem; color: #64748B; font-weight: 600;">يقتصر على الحركات الفعلية المنفذة في التاريخ المختار</span>
+        <span style="font-size: 0.8rem; color: #64748B; font-weight: 600;">يقتصر على الحركات الفعلية المنفذة في النطاق الزمني المختار (تاريخ المعاملة الفعلي)</span>
       </div>
 
       <section class="finance-daily-grid" aria-label="النشاط اليومي">
@@ -2328,101 +3313,39 @@
       </section>
 
       <!-- ==================================================================
-           4. PO Cumulative Financial Summary Section (PO CUMULATIVE STATUS)
+           4. PO Financial Summary — Historical List of All POs (Requirements 7 & 8)
            ================================================================== -->
       <div class="finance-section-banner">
         <h2>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          <span>الملخص المالي لأمر الشراء (الموقف التراكمي للتعاقد)</span>
-          <span class="finance-section-tag cumulative" id="finance-summary-scope-badge">تراكمي</span>
+          <span>الملخص المالي لأمر الشراء — سجل أوامر الشراء التاريخي</span>
+          <span class="finance-section-tag cumulative" id="finance-pos-count-badge">سجل العقود</span>
         </h2>
-        <span style="font-size: 0.8rem; color: #64748B; font-weight: 600;">يمثل الحالة الكلية للعقد ولا يتأثر بتغيير اليوم المحدد</span>
+        <span style="font-size: 0.8rem; color: #64748B; font-weight: 600;">سجل تاريخي لكافة أوامر الشراء في قاعدة البيانات، مع إمكانية استعراض التفاصيل الكاملة لكل أمر شراء</span>
       </div>
 
-      <section class="finance-po-summary-box" aria-label="ملخص أمر الشراء المالي">
-        <!-- Identity Header -->
-        <div class="finance-po-summary-header">
-          <div class="finance-po-identity">
-            <span class="finance-po-badge" id="finance-summary-po-number">PO-100</span>
-            <div>
-              <div style="font-size: 1.15rem; font-weight: 800; color: #0F172A;" id="finance-summary-supplier">المورد</div>
-              <div style="font-size: 0.8rem; color: #64748B; font-weight: 600;" id="finance-summary-dest">الوجهة: مصنع القاهرة</div>
-            </div>
-          </div>
-
-          <div class="finance-po-meta-tags">
-            <div class="finance-po-meta-item">
-              <span>سعر الطن:</span>
-              <span class="meta-val" id="finance-summary-ton-price" style="color: #D97706; font-size: 1.1rem;">0.00 ج.م</span>
-            </div>
-            <div class="finance-po-meta-item">
-              <span>إجمالي النقلات:</span>
-              <span class="meta-val" id="finance-summary-movements-count" style="font-size: 1.1rem;">0</span>
-            </div>
-            <div class="finance-po-meta-item">
-              <span>نسبة التنفيذ:</span>
-              <span class="meta-val" id="finance-summary-perf-rate" style="color: #059669; font-size: 1.1rem;">0.00%</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- 8 Detailed Summary Tiles (Requirement 21 & 43) -->
-        <div class="finance-po-summary-grid">
-          <!-- 1. Expected Qty & Price -->
-          <div class="finance-summary-tile tile-accent">
-            <span class="finance-summary-tile-label">الكمية التعاقدية المتوقعة</span>
-            <span class="finance-summary-tile-val" id="finance-summary-expected-qty">0.000 طن</span>
-            <span class="finance-summary-tile-sub" id="finance-summary-expected-price">السعر: 0.00 ج.م</span>
-          </div>
-
-          <!-- 2. Delivered Qty & Price -->
-          <div class="finance-summary-tile tile-highlight">
-            <span class="finance-summary-tile-label">الكمية المسلمة (بعد الهالك)</span>
-            <span class="finance-summary-tile-val" id="finance-summary-delivered-qty" style="color: #059669;">0.000 طن</span>
-            <span class="finance-summary-tile-sub" id="finance-summary-delivered-price">القيمة: 0.00 ج.م</span>
-          </div>
-
-          <!-- 3. Remaining Qty & Price -->
-          <div class="finance-summary-tile">
-            <span class="finance-summary-tile-label">الكمية المتبقية لأمر الشراء</span>
-            <span class="finance-summary-tile-val" id="finance-summary-remaining-qty">0.000 طن</span>
-            <span class="finance-summary-tile-sub" id="finance-summary-remaining-price">القيمة: 0.00 ج.م</span>
-          </div>
-
-          <!-- 4. Total Waste & Price -->
-          <div class="finance-summary-tile tile-waste">
-            <span class="finance-summary-tile-label">إجمالي الهالك (نقل + تخزين)</span>
-            <span class="finance-summary-tile-val" id="finance-summary-total-waste" style="color: #DC2626;">0.000 طن</span>
-            <span class="finance-summary-tile-sub" id="finance-summary-total-waste-price" style="color: #DC2626;">القيمة: 0.00 ج.م</span>
-          </div>
-
-          <!-- 5. Transportation Waste -->
-          <div class="finance-summary-tile">
-            <span class="finance-summary-tile-label">هالك النقل</span>
-            <span class="finance-summary-tile-val" id="finance-summary-trans-waste">0.000 طن</span>
-            <span class="finance-summary-tile-sub" id="finance-summary-trans-waste-price">القيمة: 0.00 ج.م</span>
-          </div>
-
-          <!-- 6. Storage Waste -->
-          <div class="finance-summary-tile">
-            <span class="finance-summary-tile-label">هالك التخزين</span>
-            <span class="finance-summary-tile-val" id="finance-summary-storage-waste">0.000 طن</span>
-            <span class="finance-summary-tile-sub" id="finance-summary-storage-waste-price">القيمة: 0.00 ج.م</span>
-          </div>
-
-          <!-- 7. Paid Amount -->
-          <div class="finance-summary-tile">
-            <span class="finance-summary-tile-label">المبلغ المدفوع</span>
-            <span class="finance-summary-tile-val" id="finance-summary-paid-amount">0.00 ج.م</span>
-            <span class="finance-summary-tile-sub">معتمد من الإدارة</span>
-          </div>
-
-          <!-- 8. Outstanding Amount -->
-          <div class="finance-summary-tile">
-            <span class="finance-summary-tile-label">المبلغ المستحق</span>
-            <span class="finance-summary-tile-val" id="finance-summary-outstanding-amount">0.00 ج.م</span>
-            <span class="finance-summary-tile-sub">مستحق السداد</span>
-          </div>
+      <section class="finance-table-card finance-pos-history-card" aria-label="سجل أوامر الشراء التاريخي">
+        <div class="finance-table-scroll">
+          <table class="finance-table" id="finance-pos-history-table">
+            <thead>
+              <tr>
+                <th style="min-width: 100px;">أمر الشراء</th>
+                <th style="min-width: 100px;">تاريخ الإنشاء</th>
+                <th style="min-width: 130px;">المورد</th>
+                <th style="min-width: 100px;">الكمية المتعاقدة</th>
+                <th style="min-width: 90px;">سعر الطن</th>
+                <th style="min-width: 100px;">الكمية المسلمة</th>
+                <th style="min-width: 100px;">الكمية المتبقية</th>
+                <th style="min-width: 90px;">إجمالي الهالك</th>
+                <th style="min-width: 100px;">حالة السداد</th>
+                <th style="min-width: 90px;">حالة العقد</th>
+                <th style="min-width: 100px; text-align: center;">الإجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="finance-pos-history-body">
+              <!-- Rendered dynamically from actual PO database -->
+            </tbody>
+          </table>
         </div>
       </section>
 
@@ -2435,7 +3358,13 @@
           <span>أداء المصنع ونسبة التنفيذ</span>
           <span class="finance-section-tag" id="finance-perf-section-tag">مؤشر كفاءة التشغيل</span>
         </h2>
-        <span style="font-size: 0.8rem; color: #64748B; font-weight: 600;">مقارنة الكميات والأسعار المتوقعة مقابل الكميات والأسعار الفعلية بعد خصم الهالك</span>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 0.8rem; color: #64748B; font-weight: 600;">مقارنة الكميات والأسعار المتوقعة مقابل الكميات والأسعار الفعلية بعد خصم الهالك</span>
+          <button type="button" class="finance-btn-view-details" id="finance-btn-perf-banner-details" title="عرض تفاصيل أداء المصنع والشفافية الحسابية">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            <span>عرض التفاصيل</span>
+          </button>
+        </div>
       </div>
 
       <section class="finance-performance-section" aria-label="أداء المصنع ونسبة التنفيذ">
@@ -2447,6 +3376,10 @@
             <div class="finance-perf-badge" id="finance-perf-badge">
               <span id="finance-perf-badge-text">أداء ممتاز</span>
             </div>
+            <button type="button" class="finance-btn-view-details" id="finance-btn-perf-details" style="margin-top: 10px;" title="عرض تفاصيل أداء المصنع والشفافية الحسابية">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              <span>عرض تفاصيل الأداء</span>
+            </button>
           </div>
 
           <!-- Expected vs Actual Breakdown -->
@@ -2564,8 +3497,462 @@
         </div>
       </section>
 
-    </main>
-  </div>
+      </div> <!-- End 0. finance-dashboard-view -->
+
+      <!-- ==================================================================
+           5. Dedicated PO Details View (/finance/purchase-orders/:po)
+           ================================================================== -->
+      <div id="finance-po-details-view" style="display: none;">
+        <!-- Top Back Nav Bar -->
+        <div class="finance-subview-nav">
+          <button type="button" class="finance-btn-subview-back" id="finance-po-details-back-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            <span>العودة إلى لوحة المالية الرئيسية</span>
+          </button>
+          <div class="finance-subview-title-pill">
+            <span>تفاصيل أمر الشراء: </span>
+            <strong id="po-detail-title-po-number" dir="ltr" style="font-family: monospace;">-</strong>
+          </div>
+        </div>
+
+        <!-- PO Hero Identity Card -->
+        <div class="finance-po-hero-card">
+          <div class="finance-po-hero-header">
+            <div class="finance-po-hero-main">
+              <span class="finance-po-hero-badge" id="po-detail-po-number">PO-000</span>
+              <div>
+                <h2 id="po-detail-company">شركة المورد</h2>
+                <div class="finance-po-hero-sub">
+                  <span id="po-detail-destination">الوجهة: -</span>
+                  <span class="sep">•</span>
+                  <span id="po-detail-material">المادة: -</span>
+                  <span class="sep">•</span>
+                  <span>تاريخ التعاقد: <strong id="po-detail-order-date" dir="ltr">-</strong></span>
+                </div>
+              </div>
+            </div>
+            <div class="finance-po-hero-badges">
+              <span class="finance-status-badge badge-neutral" id="po-detail-status">-</span>
+              <span class="finance-status-badge badge-neutral" id="po-detail-payment-status">-</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- PO KPI Tiles Grid -->
+        <div class="finance-po-summary-grid">
+          <div class="finance-summary-tile tile-accent">
+            <span class="finance-summary-tile-label">الكمية التعاقدية (المتوقعة)</span>
+            <span class="finance-summary-tile-val" id="po-detail-expected-qty">0.000 طن</span>
+            <span class="finance-summary-tile-sub" id="po-detail-expected-val">القيمة المتوقعة: 0.00 ج.م</span>
+          </div>
+          <div class="finance-summary-tile tile-highlight">
+            <span class="finance-summary-tile-label">الكمية المسلمة (صافي بعد الهالك)</span>
+            <span class="finance-summary-tile-val" id="po-detail-delivered-qty" style="color: #059669;">0.000 طن</span>
+            <span class="finance-summary-tile-sub" id="po-detail-delivered-val">القيمة المسلمة: 0.00 ج.م</span>
+          </div>
+          <div class="finance-summary-tile">
+            <span class="finance-summary-tile-label">الكمية المتبقية</span>
+            <span class="finance-summary-tile-val" id="po-detail-remaining-qty">0.000 طن</span>
+            <span class="finance-summary-tile-sub" id="po-detail-remaining-val">القيمة المتبقية: 0.00 ج.م</span>
+          </div>
+          <div class="finance-summary-tile tile-waste">
+            <span class="finance-summary-tile-label">إجمالي الهالك (نقل + تخزين)</span>
+            <span class="finance-summary-tile-val" id="po-detail-total-waste" style="color: #DC2626;">0.000 طن</span>
+            <span class="finance-summary-tile-sub" id="po-detail-waste-val">قيمة الهالك: 0.00 ج.م</span>
+          </div>
+          <div class="finance-summary-tile">
+            <span class="finance-summary-tile-label">هالك النقل وحركاته</span>
+            <span class="finance-summary-tile-val" id="po-detail-trans-waste">0.000 طن</span>
+            <span class="finance-summary-tile-sub" id="po-detail-trans-moves">عدد النقلات: 0</span>
+          </div>
+          <div class="finance-summary-tile">
+            <span class="finance-summary-tile-label">هالك التخزين</span>
+            <span class="finance-summary-tile-val" id="po-detail-storage-waste">0.000 طن</span>
+            <span class="finance-summary-tile-sub" id="po-detail-storage-qty">إجمالي التخزين: 0.000 طن</span>
+          </div>
+          <div class="finance-summary-tile">
+            <span class="finance-summary-tile-label">سعر الطن المتفق عليه</span>
+            <span class="finance-summary-tile-val" id="po-detail-ton-price" style="color: #D97706;">0.00 ج.م</span>
+            <span class="finance-summary-tile-sub">سعر تعاقدي رسمي</span>
+          </div>
+          <div class="finance-summary-tile">
+            <span class="finance-summary-tile-label">نسبة تنفيذ أمر الشراء</span>
+            <span class="finance-summary-tile-val" id="po-detail-perf-pct" style="color: #1D4ED8;">0.00%</span>
+            <span class="finance-summary-tile-sub">بناءً على الصافي المستلم</span>
+          </div>
+        </div>
+
+        <!-- Payment Status Management & Audit Box (Requirements 14-18) -->
+        <div class="finance-card finance-payment-card">
+          <div class="finance-card-header">
+            <div class="finance-card-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              <span>إدارة حالة السداد والمدفوعات</span>
+            </div>
+            <div class="finance-payment-meta">
+              <span>المبلغ المدفوع: <strong id="po-detail-paid-amt" style="color: #059669;">0.00 ج.م</strong></span>
+              <span class="sep">|</span>
+              <span>المبلغ المستحق: <strong id="po-detail-outstanding-amt" style="color: #DC2626;">0.00 ج.م</strong></span>
+            </div>
+          </div>
+
+          <div class="finance-payment-content">
+            <!-- Current Status & Edit controls -->
+            <div class="finance-payment-controls-row">
+              <div class="finance-payment-current">
+                <span class="finance-payment-label">حالة السداد الحالية:</span>
+                <span class="finance-status-badge badge-neutral" id="po-detail-current-payment-badge">غير مدفوع</span>
+              </div>
+
+              <!-- Only visible / active for Finance Director (Requirement 16) -->
+              <div class="finance-payment-director-actions" id="po-detail-director-controls" style="display: none;">
+                <label for="po-detail-payment-select" class="finance-payment-label">تغيير حالة السداد:</label>
+                <select id="po-detail-payment-select" class="finance-input finance-select">
+                  <option value="غير مدفوع">غير مدفوع</option>
+                  <option value="مدفوع جزئياً">مدفوع جزئياً</option>
+                  <option value="مدفوع بالكامل">مدفوع بالكامل</option>
+                  <option value="معلق">معلق</option>
+                </select>
+                <input type="text" id="po-detail-payment-notes" class="finance-input" placeholder="ملاحظات الاعتماد (اختياري)..." style="flex: 1; min-width: 180px;" />
+                <button type="button" class="finance-btn-action-primary" id="po-detail-btn-save-payment">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                  <span>حفظ وتحديث الحالة</span>
+                </button>
+              </div>
+
+              <!-- Non-director notice (Requirement 17) -->
+              <div class="finance-payment-readonly-note" id="po-detail-readonly-controls" style="display: none;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                <span>تعديل حالة السداد متاح حصرياً للمدير المالي (Finance Director).</span>
+              </div>
+            </div>
+
+            <!-- Live Status Alert Message Container -->
+            <div id="po-detail-payment-alert" class="finance-alert" style="display: none;"></div>
+
+            <!-- Payment Audit Trail Table (Requirement 18) -->
+            <div class="finance-audit-section">
+              <h4 style="margin: 1rem 0 0.5rem; font-size: 0.9rem; color: #475569;">سجل تدقيق تغييرات حالة الدفع</h4>
+              <div class="finance-table-scroll">
+                <table class="finance-table finance-table-compact">
+                  <thead>
+                    <tr>
+                      <th>الحالة السابقة</th>
+                      <th>الحالة الجديدة</th>
+                      <th>القائم بالتغيير</th>
+                      <th>التاريخ والوقت</th>
+                      <th>ملاحظات</th>
+                    </tr>
+                  </thead>
+                  <tbody id="po-detail-audit-tbody">
+                    <!-- Loaded dynamically -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chronological Timeline History (Requirement 9) -->
+        <div class="finance-card">
+          <div class="finance-card-header">
+            <div class="finance-card-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <span>التسلسل الزمني التاريخي لأمر الشراء (Chronological Timeline)</span>
+            </div>
+            <span style="font-size: 0.8rem; color: #64748B;">كافة الحركات المسجلة فعلياً في قاعدة البيانات</span>
+          </div>
+          <div class="finance-timeline" id="po-detail-timeline-list">
+            <!-- Dynamically populated events -->
+          </div>
+        </div>
+
+        <!-- Transportation Records Table for this PO -->
+        <div class="finance-card">
+          <div class="finance-card-header">
+            <div class="finance-card-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+              <span>سجل حركات النقل الفعلية لأمر الشراء</span>
+            </div>
+            <span class="finance-badge-pill" id="po-detail-trans-count-badge">0 نقلات</span>
+          </div>
+          <div class="finance-table-scroll">
+            <table class="finance-table finance-table-compact">
+              <thead>
+                <tr>
+                  <th>رقم التذكرة</th>
+                  <th>تاريخ النقل</th>
+                  <th>رقم الشاحنة</th>
+                  <th>السائق</th>
+                  <th>الوزن الصافي</th>
+                  <th>الهالك</th>
+                  <th>الحالة</th>
+                </tr>
+              </thead>
+              <tbody id="po-detail-trans-tbody">
+                <!-- Loaded dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Storage Records Table for this PO -->
+        <div class="finance-card">
+          <div class="finance-card-header">
+            <div class="finance-card-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+              <span>سجل حركات المخازن المرتبطة بأمر الشراء</span>
+            </div>
+            <span class="finance-badge-pill" id="po-detail-storage-count-badge">0 حركات</span>
+          </div>
+          <div class="finance-table-scroll">
+            <table class="finance-table finance-table-compact">
+              <thead>
+                <tr>
+                  <th>كود الحركة</th>
+                  <th>تاريخ المعاملة</th>
+                  <th>نوع العملية</th>
+                  <th>المادة</th>
+                  <th>الوزن الداخلي</th>
+                  <th>الوزن الخارجي</th>
+                  <th>الهالك</th>
+                  <th>المستودع</th>
+                </tr>
+              </thead>
+              <tbody id="po-detail-storage-tbody">
+                <!-- Loaded dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================================================================
+           6. Dedicated Performance Details View (/finance/performance)
+           ================================================================== -->
+      <div id="finance-performance-view" style="display: none;">
+        <!-- Top Back Nav Bar -->
+        <div class="finance-subview-nav">
+          <button type="button" class="finance-btn-subview-back" id="finance-perf-back-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            <span>العودة إلى لوحة المالية الرئيسية</span>
+          </button>
+          <div class="finance-subview-title-pill">
+            <span>تقرير أداء المصنع ونسب التنفيذ والشفافية الحسابية</span>
+          </div>
+        </div>
+
+        <!-- Performance Details Header Card -->
+        <div class="finance-perf-header-card">
+          <div class="finance-perf-header-content">
+            <h1>تفاصيل أداء المصنع ونسب الإنجاز</h1>
+            <p>تفكيك كامل للمعادلات المحاسبية والتشغيلية المعتمدة لحساب نسبة الأداء، مع بيان مصدر كل رقم بصورة واضحة وشفافة.</p>
+          </div>
+          <div class="finance-perf-range-controls">
+            <div class="finance-perf-date-inputs">
+              <label>من: <input type="date" id="perf-date-from" class="finance-input" /></label>
+              <label>إلى: <input type="date" id="perf-date-to" class="finance-input" /></label>
+              <button type="button" class="finance-btn-action-primary" id="perf-btn-apply-date">تحديث التقرير</button>
+            </div>
+            <div class="finance-scope-explainer">
+              <span class="badge-scope-range">نطاق الحركات: <span id="perf-range-label">-</span></span>
+              <span class="badge-scope-cumulative">الموقف التراكمي لكافة العقود</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- High-level Dial & Overall Summary -->
+        <div class="finance-perf-card">
+          <div class="finance-perf-dial-block">
+            <span class="finance-perf-title">نسبة التنفيذ / الأداء العام للمصنع</span>
+            <span class="finance-perf-value" id="perf-detail-percentage">0.00%</span>
+            <div class="finance-perf-badge" id="perf-detail-badge">
+              <span id="perf-detail-badge-text">أداء ممتاز</span>
+            </div>
+            <span class="finance-perf-dial-sub" id="perf-detail-formula-sub">المعادلة: (الكمية الفعلية المسلمة / الكمية المتوقعة) × 100</span>
+          </div>
+          <div class="finance-perf-grid">
+            <div class="finance-perf-stat-box">
+              <span class="finance-perf-stat-label">إجمالي الكمية المتوقعة (العقود)</span>
+              <span class="finance-perf-stat-qty" id="perf-detail-expected-qty">0.000 طن</span>
+              <span class="finance-perf-stat-price" id="perf-detail-expected-price">0.00 ج.م</span>
+            </div>
+            <div class="finance-perf-stat-box highlight">
+              <span class="finance-perf-stat-label">إجمالي الكمية الفعلية المسلمة</span>
+              <span class="finance-perf-stat-qty" id="perf-detail-actual-qty">0.000 طن</span>
+              <span class="finance-perf-stat-price" id="perf-detail-actual-price">0.00 ج.م</span>
+            </div>
+            <div class="finance-perf-stat-box waste">
+              <span class="finance-perf-stat-label">إجمالي الهالك (نقل + تخزين)</span>
+              <span class="finance-perf-stat-qty" id="perf-detail-total-waste">0.000 طن</span>
+              <span class="finance-perf-stat-price" id="perf-detail-waste-price">0.00 ج.م</span>
+            </div>
+            <div class="finance-perf-stat-box">
+              <span class="finance-perf-stat-label">إجمالي الكمية المتبقية</span>
+              <span class="finance-perf-stat-qty" id="perf-detail-remaining-qty">0.000 طن</span>
+              <span class="finance-perf-stat-price" id="perf-detail-remaining-price">0.00 ج.م</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Requirements 11 & 12: Transparent Calculation Breakdown Cards -->
+        <div class="finance-calc-grid">
+          <!-- Card 1: Quantitative Performance Calculation -->
+          <div class="finance-calc-card">
+            <div class="finance-calc-header">
+              <div class="finance-calc-icon" style="background: #EFF6FF; color: #1D4ED8;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+              </div>
+              <div>
+                <h3>أولاً: الشفافية الحسابية للكميات (Quantitative Calculation)</h3>
+                <span style="font-size: 0.8rem; color: #64748B;">كيف تم الوصول إلى الكمية المسلمة ونسبة الإنجاز الكمي</span>
+              </div>
+            </div>
+            <div class="finance-calc-steps" id="perf-calc-qty-steps">
+              <!-- Rendered with step-by-step arithmetic -->
+            </div>
+          </div>
+
+          <!-- Card 2: Financial Performance Calculation -->
+          <div class="finance-calc-card">
+            <div class="finance-calc-header">
+              <div class="finance-calc-icon" style="background: #ECFDF5; color: #059669;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              </div>
+              <div>
+                <h3>ثانياً: الشفافية الحسابية للقيم المالية (Financial Calculation)</h3>
+                <span style="font-size: 0.8rem; color: #64748B;">كيف تم الوصول إلى القيمة المستلمة ونسبة الأداء المالي</span>
+              </div>
+            </div>
+            <div class="finance-calc-steps" id="perf-calc-fin-steps">
+              <!-- Rendered with step-by-step arithmetic -->
+            </div>
+          </div>
+
+          <!-- Card 3: Waste Breakdown & Sources -->
+          <div class="finance-calc-card">
+            <div class="finance-calc-header">
+              <div class="finance-calc-icon" style="background: #FEF2F2; color: #DC2626;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              </div>
+              <div>
+                <h3>ثالثاً: مصادر وتفكيك الهالك (Waste Breakdown)</h3>
+                <span style="font-size: 0.8rem; color: #64748B;">هالك النقل الفعلي + هالك التخزين الفعلي</span>
+              </div>
+            </div>
+            <div class="finance-calc-steps" id="perf-calc-waste-steps">
+              <!-- Rendered with step-by-step arithmetic -->
+            </div>
+          </div>
+
+          <!-- Card 4: Date Range vs Cumulative Comparison (Requirement 13) -->
+          <div class="finance-calc-card">
+            <div class="finance-calc-header">
+              <div class="finance-calc-icon" style="background: #FFFBEB; color: #D97706;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              </div>
+              <div>
+                <h3>رابعاً: مقارنة نشاط النطاق الزمني مقابل الموقف التراكمي (Range vs Cumulative)</h3>
+                <span style="font-size: 0.8rem; color: #64748B;">الفصل الدقيق بين ما تم تنفيذه خلال الفترة وما يخص إجمالي التعاقدات</span>
+              </div>
+            </div>
+            <div class="finance-calc-steps" id="perf-calc-comparison-steps">
+              <!-- Rendered comparison -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Section: PO-by-PO Breakdown Table -->
+        <div class="finance-card" style="margin-top: 1.5rem;">
+          <div class="finance-card-header">
+            <div class="finance-card-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <span>تفصيل أداء أوامر الشراء الفردية (PO Performance Comparison)</span>
+            </div>
+            <span style="font-size: 0.8rem; color: #64748B;">مقارنة الأداء والكميات لكل أمر شراء في النظام</span>
+          </div>
+          <div class="finance-table-scroll">
+            <table class="finance-table">
+              <thead>
+                <tr>
+                  <th>أمر الشراء</th>
+                  <th>المورد</th>
+                  <th>الكمية المتوقعة</th>
+                  <th>الكمية المسلمة</th>
+                  <th>إجمالي الهالك</th>
+                  <th>الكمية المتبقية</th>
+                  <th>نسبة الأداء</th>
+                  <th>القيمة المتوقعة</th>
+                  <th>القيمة المسلمة</th>
+                  <th>الإجراء</th>
+                </tr>
+              </thead>
+              <tbody id="perf-pos-tbody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Section: Forecasting (التوقعات) based on real database records -->
+        <div class="finance-card finance-forecast-card" id="perf-forecasting-section" style="margin-top: 1.5rem;">
+          <div class="finance-card-header">
+            <div class="finance-card-title">
+              <div class="finance-calc-icon" style="background: #F0FDF4; color: #16A34A; width: 36px; height: 36px;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+              </div>
+              <div>
+                <h3 style="margin: 0; font-size: 1.05rem; font-weight: 800; color: #0F172A;">قسم التوقعات ومسار الاستكمال (Forecasting & Projections)</h3>
+                <span style="font-size: 0.8rem; color: #64748B;">تحليلات مستقبلية مبنية على البيانات الفعلية المسجلة ومعدلات التوريد الحقيقية</span>
+              </div>
+            </div>
+            <span class="finance-badge-pill" style="background: #ECFDF5; color: #065F46; border: 1px solid #A7F3D0;">مبني على بيانات حقيقية</span>
+          </div>
+
+          <!-- Dynamic Real Summary Banner -->
+          <div class="finance-forecast-banner" id="perf-forecast-summary-banner">
+            <span id="perf-forecast-summary-text">جاري احتساب التوقعات بناءً على دورة التوريد...</span>
+          </div>
+
+          <!-- Forecasting KPI Grid -->
+          <div class="finance-forecast-kpi-grid">
+            <div class="finance-forecast-tile">
+              <span class="finance-forecast-label">الكمية المتوقع استكمالها</span>
+              <span class="finance-forecast-val" id="perf-forecast-rem-qty">0.000 طن</span>
+              <span class="finance-forecast-sub">مجموع المتبقي الفعلي بأوامر الشراء</span>
+            </div>
+            <div class="finance-forecast-tile">
+              <span class="finance-forecast-label">القيمة التعاقدية للمتبقي</span>
+              <span class="finance-forecast-val" id="perf-forecast-rem-val">0.00 ج.م</span>
+              <span class="finance-forecast-sub">المتبقي × سعر الطن</span>
+            </div>
+            <div class="finance-forecast-tile highlight">
+              <span class="finance-forecast-label">متوسط وتيرة التوريد اليومي</span>
+              <span class="finance-forecast-val" id="perf-forecast-daily-pace">0.000 طن/يوم</span>
+              <span class="finance-forecast-sub">محسوب من حركات النقل الفعلية</span>
+            </div>
+            <div class="finance-forecast-tile">
+              <span class="finance-forecast-label">المدة التشغيلية المقدرة للاستكمال</span>
+              <span class="finance-forecast-val" id="perf-forecast-days">0 يوم</span>
+              <span class="finance-forecast-sub">المتبقي / متوسط التوريد اليومي</span>
+            </div>
+            <div class="finance-forecast-tile">
+              <span class="finance-forecast-label">تاريخ الاستكمال المتوقع</span>
+              <span class="finance-forecast-val" id="perf-forecast-date" dir="ltr">-</span>
+              <span class="finance-forecast-sub">توقع تقريبي مبني على الوتيرة الحالية</span>
+            </div>
+            <div class="finance-forecast-tile highlight">
+              <span class="finance-forecast-label">العائد المالي الصافي المتوقع</span>
+              <span class="finance-forecast-val" id="perf-forecast-yield">0.00 ج.م</span>
+              <span class="finance-forecast-sub">القيمة المتوقعة بعد استبعاد الهالك</span>
+            </div>
+          </div>
+        </div>
+      </div> <!-- End 6. finance-performance-view -->
+
+    </main> <!-- End finance-mgmt-container -->
+
+  </div> <!-- End finance-management-page-root -->
 
   <!-- CEO Payment Breakdown Inspection Modal -->
   <div class="finance-modal-backdrop" id="finance-modal-backdrop" style="display: none;">
@@ -2580,6 +3967,139 @@
       <div class="finance-modal-body" id="finance-modal-payments-list">
         <!-- Dynamically loaded payments -->
       </div>
+    </div>
+  </div>
+
+  <!-- Modal: Add Bank Transaction -->
+  <div class="finance-modal-backdrop" id="finance-add-bank-modal-backdrop" style="display: none;">
+    <div class="finance-modal-card" id="finance-add-bank-modal" role="dialog" aria-modal="true" style="max-width: 580px;">
+      <div class="finance-modal-header">
+        <div class="finance-modal-title">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="21" x2="21" y2="21"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="5 6 12 3 19 6"/><line x1="4" y1="10" x2="4" y2="21"/><line x1="20" y1="10" x2="20" y2="21"/></svg>
+          <span>إضافة معاملة بنكية جديدة</span>
+        </div>
+        <button type="button" class="finance-modal-close-btn" id="bank-modal-close-btn" title="إغلاق">✕</button>
+      </div>
+      <form id="finance-bank-form" class="finance-modal-body">
+        <div class="finance-modal-form-grid">
+          <div class="finance-form-group">
+            <label for="bank-trans-date">تاريخ العملية *</label>
+            <input type="date" id="bank-trans-date" required />
+          </div>
+          <div class="finance-form-group">
+            <label for="bank-trans-bank-name">البنك المصرفي *</label>
+            <input type="text" id="bank-trans-bank-name" placeholder="مثال: البنك الأهلي المصري، CIB، بنك مصر..." required />
+          </div>
+          <div class="finance-form-group">
+            <label for="bank-trans-type">نوع العملية *</label>
+            <select id="bank-trans-type" required>
+              <option value="">-- اختر نوع العملية --</option>
+              <option value="تحويل بنكي">تحويل بنكي</option>
+              <option value="شيك مصرفي">شيك مصرفي</option>
+              <option value="إيداع نقدي">إيداع نقدي</option>
+              <option value="سحب نقدي">سحب نقدي</option>
+              <option value="مقاصة">مقاصة</option>
+              <option value="رسوم بنكية">رسوم بنكية</option>
+              <option value="أخرى">أخرى</option>
+            </select>
+          </div>
+          <div class="finance-form-group">
+            <label for="bank-trans-direction">الاتجاه *</label>
+            <select id="bank-trans-direction" required>
+              <option value="إيداع">إيداع / Received (+)</option>
+              <option value="صرف">صرف / Sent (-)</option>
+            </select>
+          </div>
+          <div class="finance-form-group">
+            <label for="bank-trans-amount">المبلغ (ج.م) *</label>
+            <input type="number" step="0.01" min="0.01" id="bank-trans-amount" placeholder="0.00" required />
+          </div>
+          <div class="finance-form-group">
+            <label for="bank-trans-ref">رقم المرجع / الشيك</label>
+            <input type="text" id="bank-trans-ref" placeholder="رقم الإشعار أو الشيك" />
+          </div>
+          <div class="finance-form-group full-width">
+            <label for="bank-trans-desc">البيان / الوصف *</label>
+            <input type="text" id="bank-trans-desc" placeholder="وصف تفصيلي للعملية البنكية..." required />
+          </div>
+          <div class="finance-form-group full-width">
+            <label for="bank-trans-notes">ملاحظات إضافية</label>
+            <textarea id="bank-trans-notes" rows="2" placeholder="أي تفاصيل أو ملاحظات محاسبية..."></textarea>
+          </div>
+        </div>
+        <div class="finance-modal-footer">
+          <button type="button" class="finance-btn-subview-back" id="bank-modal-cancel-btn">إلغاء</button>
+          <button type="submit" class="finance-btn-primary-action" id="bank-modal-submit-btn">حفظ المعاملة البنكية</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Add Expense -->
+  <div class="finance-modal-backdrop" id="finance-add-expense-modal-backdrop" style="display: none;">
+    <div class="finance-modal-card" id="finance-add-expense-modal" role="dialog" aria-modal="true" style="max-width: 580px;">
+      <div class="finance-modal-header">
+        <div class="finance-modal-title">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          <span>تسجيل مصروف تشغيلي جديد</span>
+        </div>
+        <button type="button" class="finance-modal-close-btn" id="exp-modal-close-btn" title="إغلاق">✕</button>
+      </div>
+      <form id="finance-expense-form" class="finance-modal-body">
+        <div class="finance-modal-form-grid">
+          <div class="finance-form-group">
+            <label for="exp-date">تاريخ المصروف *</label>
+            <input type="date" id="exp-date" required />
+          </div>
+          <div class="finance-form-group">
+            <label for="exp-category">تصنيف المصروف *</label>
+            <select id="exp-category" required>
+              <option value="">-- اختر التصنيف --</option>
+              <option value="الكهرباء والطاقة">الكهرباء والطاقة (Electricity)</option>
+              <option value="الوقود والمحروقات">الوقود والمحروقات (Fuel)</option>
+              <option value="الصيانة وقطع الغيار">الصيانة وقطع الغيار (Maintenance)</option>
+              <option value="النقل واللوجستيات">النقل واللوجستيات (Transportation)</option>
+              <option value="الرواتب والأجور">الرواتب والأجور (Salaries)</option>
+              <option value="مصاريف إدارية ومكتبية">مصاريف إدارية ومكتبية (Office Expenses)</option>
+              <option value="المعدات والأدوات">المعدات والأدوات (Equipment)</option>
+              <option value="أخرى">أخرى (Other)</option>
+            </select>
+          </div>
+          <div class="finance-form-group">
+            <label for="exp-amount">المبلغ (ج.م) *</label>
+            <input type="number" step="0.01" min="0.01" id="exp-amount" placeholder="0.00" required />
+          </div>
+          <div class="finance-form-group">
+            <label for="exp-pay-method">طريقة الدفع</label>
+            <select id="exp-pay-method">
+              <option value="تحويل بنكي">تحويل بنكي</option>
+              <option value="نقدي / عهدة">نقدي / عهدة</option>
+              <option value="شيك">شيك</option>
+              <option value="أخرى">أخرى</option>
+            </select>
+          </div>
+          <div class="finance-form-group">
+            <label for="exp-beneficiary">الجهة / المستفيد</label>
+            <input type="text" id="exp-beneficiary" placeholder="اسم الشركة أو الموظف أو الجهة" />
+          </div>
+          <div class="finance-form-group">
+            <label for="exp-ref">رقم الفاتورة / المرجع</label>
+            <input type="text" id="exp-ref" placeholder="رقم الإيصال أو الفاتورة" />
+          </div>
+          <div class="finance-form-group full-width">
+            <label for="exp-title">البيان / الوصف *</label>
+            <input type="text" id="exp-title" placeholder="وصف وتفاصيل المصروف..." required />
+          </div>
+          <div class="finance-form-group full-width">
+            <label for="exp-notes">ملاحظات</label>
+            <textarea id="exp-notes" rows="2" placeholder="ملاحظات محاسبية إضافية..."></textarea>
+          </div>
+        </div>
+        <div class="finance-modal-footer">
+          <button type="button" class="finance-btn-subview-back" id="exp-modal-cancel-btn">إلغاء</button>
+          <button type="submit" class="finance-btn-primary-action" id="exp-modal-submit-btn">حفظ المصروف</button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -2958,7 +4478,7 @@
   <script src="/js/transportation.js?v=20260928_transport"></script>
   <script src="/js/storage.js?v=20260928_storage"></script>
   <script src="/js/management.js?v=20260928_mgmt"></script>
-  <script src="/js/finance.js?v=20261001_workflow"></script>
+  <script src="/js/finance.js?v=20261005_redesign"></script>
   <script src="/js/mobile-app.js?v=20260930_pro"></script>
 </body>
 </html>

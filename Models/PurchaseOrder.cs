@@ -68,6 +68,21 @@ public class PurchaseOrder
     public decimal RemainingQuantity { get; set; }
 
     /// <summary>
+    /// حالة السداد - Payment Status ("غير مدفوع" | "مدفوع جزئياً" | "مدفوع بالكامل")
+    /// </summary>
+    public string PaymentStatus { get; set; } = "غير مدفوع";
+
+    /// <summary>
+    /// تاريخ ووقت آخر تعديل لحالة السداد
+    /// </summary>
+    public DateTime? PaymentStatusUpdatedAt { get; set; }
+
+    /// <summary>
+    /// الموظف/المسؤول الذي عدّل حالة السداد (مدير المالية)
+    /// </summary>
+    public string? PaymentStatusUpdatedBy { get; set; }
+
+    /// <summary>
     /// Payments recorded for this PO (CEO Dashboard Architecture)
     /// </summary>
     public ICollection<FinancePayment> Payments { get; set; } = new List<FinancePayment>();
@@ -81,4 +96,9 @@ public class PurchaseOrder
     /// Storage transactions recorded against this PO
     /// </summary>
     public ICollection<StorageTransaction> StorageTransactions { get; set; } = new List<StorageTransaction>();
+
+    /// <summary>
+    /// سجل تدقيق تغييرات حالة السداد
+    /// </summary>
+    public ICollection<PurchaseOrderPaymentAudit> PaymentAudits { get; set; } = new List<PurchaseOrderPaymentAudit>();
 }
