@@ -448,6 +448,22 @@ class ChatApi {
     });
   }
 
+  static async getFinanceStatistics(date, po) {
+    const qs = new URLSearchParams();
+    if (date) qs.append('date', date);
+    if (po && po !== 'all') qs.append('po', po);
+    const queryStr = qs.toString() ? `?${qs.toString()}` : '';
+    return await this.request(`/api/finance/statistics${queryStr}`, {
+      method: 'GET'
+    });
+  }
+
+  static async getFinancePos() {
+    return await this.request('/api/finance/pos', {
+      method: 'GET'
+    });
+  }
+
   /* ------------------------------------------------------------------------
      Transportation Department Endpoints (/api/transportation)
      ------------------------------------------------------------------------ */

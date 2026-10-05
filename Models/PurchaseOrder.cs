@@ -33,6 +33,11 @@ public class PurchaseOrder
     public decimal PricePerTon { get; set; }
 
     /// <summary>
+    /// سعر الطن (ج.م) - Canonical PO Ton Price
+    /// </summary>
+    public decimal TonPrice { get; set; }
+
+    /// <summary>
     /// قيمة أمر الشراء = كمية أمر الشراء × سعر الطن
     /// </summary>
     public decimal TotalValue { get; set; }

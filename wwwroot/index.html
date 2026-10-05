@@ -2155,102 +2155,33 @@
         </div>
       </div>
 
-      <!-- 6 KPI Summary Cards -->
-      <section class="finance-kpis-grid" aria-label="ملخص المؤشرات المالية">
-        <!-- KPI 1: إجمالي قيمة أوامر الشراء -->
-        <div class="finance-kpi-card kpi-po-val">
-          <div class="finance-kpi-top">
-            <span class="finance-kpi-label">إجمالي قيمة أوامر الشراء</span>
-            <div class="finance-kpi-icon">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-            </div>
-          </div>
-          <span class="finance-kpi-val" id="finance-kpi-total-po-value">0.00 ج.م</span>
-          <span class="finance-kpi-hint">القيمة الإجمالية لجميع العقود</span>
-        </div>
-
-        <!-- KPI 2: إجمالي الكمية التي تم توريدها -->
-        <div class="finance-kpi-card kpi-supplied">
-          <div class="finance-kpi-top">
-            <span class="finance-kpi-label">إجمالي الكمية الموردة</span>
-            <div class="finance-kpi-icon">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M6 8l6-5 6 5M6 8l-4 8h8l-4-8zM18 8l-4 8h8l-4-8z"/></svg>
-            </div>
-          </div>
-          <span class="finance-kpi-val" id="finance-kpi-total-supplied-qty">0.000 طن</span>
-          <span class="finance-kpi-hint">الوزن الفعلي الوارد من المحطات</span>
-        </div>
-
-        <!-- KPI 3: إجمالي الكمية المتبقية -->
-        <div class="finance-kpi-card kpi-remaining">
-          <div class="finance-kpi-top">
-            <span class="finance-kpi-label">إجمالي الكمية المتبقية</span>
-            <div class="finance-kpi-icon">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            </div>
-          </div>
-          <span class="finance-kpi-val" id="finance-kpi-total-remaining-qty">0.000 طن</span>
-          <span class="finance-kpi-hint">الكميات الجاري استكمال توريدها</span>
-        </div>
-
-        <!-- KPI 4: إجمالي المبلغ المدفوع -->
-        <div class="finance-kpi-card kpi-paid">
-          <div class="finance-kpi-top">
-            <span class="finance-kpi-label">إجمالي المبلغ المدفوع</span>
-            <div class="finance-kpi-icon">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-            </div>
-          </div>
-          <span class="finance-kpi-val" id="finance-kpi-total-paid-amount">0.00 ج.م</span>
-          <span class="finance-kpi-hint">المدفوعات المعتمدة من الإدارة</span>
-        </div>
-
-        <!-- KPI 5: إجمالي المبلغ المستحق -->
-        <div class="finance-kpi-card kpi-outstanding">
-          <div class="finance-kpi-top">
-            <span class="finance-kpi-label">إجمالي المبلغ المستحق</span>
-            <div class="finance-kpi-icon">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            </div>
-          </div>
-          <span class="finance-kpi-val" id="finance-kpi-total-outstanding-amount">0.00 ج.م</span>
-          <span class="finance-kpi-hint">مستحقات الموردين واجبة السداد</span>
-        </div>
-
-        <!-- KPI 6: إجمالي عدد النقلات -->
-        <div class="finance-kpi-card kpi-movements">
-          <div class="finance-kpi-top">
-            <span class="finance-kpi-label">إجمالي عدد النقلات</span>
-            <div class="finance-kpi-icon">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
-            </div>
-          </div>
-          <span class="finance-kpi-val" id="finance-kpi-total-movements">0</span>
-          <span class="finance-kpi-hint">حركات النقل والشحن المسجلة</span>
-        </div>
-      </section>
-
-      <!-- Search & Filters Section -->
-      <section class="finance-filters-card" aria-label="أدوات البحث والفلترة">
+      <!-- ==================================================================
+           1. Main Filters Section (Previous FaceStone Clean Filter Design)
+           ================================================================== -->
+      <section class="finance-filters-card" aria-label="أدوات البحث وتصفية البيانات المالية">
         <div class="finance-filters-top">
           <div class="finance-filters-title">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
             <span>أدوات البحث وتصفية البيانات المالية</span>
           </div>
           <div class="finance-filter-actions">
-            <button type="button" class="finance-btn-filter-action" id="finance-reset-filters-btn" title="مسح كافة الفلاتر">
+            <button type="button" class="finance-btn-filter-action" id="finance-btn-clear-po" title="مسح فلتر أمر الشراء وعرض كافة العقود">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              <span>مسح أمر الشراء</span>
+            </button>
+            <button type="button" class="finance-btn-filter-action" id="finance-reset-filters-btn" title="إعادة ضبط التاريخ وأمر الشراء إلى اليوم الافتراضي">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
               <span>إعادة ضبط</span>
             </button>
-            <button type="button" class="finance-btn-filter-action" id="finance-refresh-btn" title="تحديث البيانات">
+            <button type="button" class="finance-btn-filter-action" id="finance-refresh-btn" title="تحديث الإحصائيات">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-              <span>تحديث</span>
+              <span>تحديث البيانات</span>
             </button>
           </div>
         </div>
 
         <div class="finance-filters-grid">
-          <!-- Search -->
+          <!-- 1. البحث الشامل -->
           <div class="finance-filter-item">
             <label class="finance-filter-label" for="finance-search-input">البحث الشامل</label>
             <div class="finance-input-wrap">
@@ -2259,47 +2190,290 @@
             </div>
           </div>
 
-          <!-- PO Filter -->
+          <!-- 2. أمر الشراء (PO) -->
           <div class="finance-filter-item">
-            <label class="finance-filter-label" for="finance-filter-po">أمر الشراء (PO)</label>
-            <input type="text" id="finance-filter-po" class="finance-input" placeholder="مثال: PO-2026-9810" dir="ltr" autocomplete="off" />
+            <label class="finance-filter-label" for="finance-filter-main-po">أمر الشراء (PO)</label>
+            <div class="finance-input-wrap">
+              <select id="finance-filter-main-po" class="finance-input finance-select">
+                <option value="all">-- جميع أوامر الشراء (كافة العقود) --</option>
+              </select>
+            </div>
           </div>
 
-          <!-- Supplier Dropdown -->
+          <!-- 3. المورد -->
           <div class="finance-filter-item">
             <label class="finance-filter-label" for="finance-filter-supplier">المورد</label>
-            <select id="finance-filter-supplier" class="finance-input finance-select">
-              <option value="all">جميع الموردين</option>
-            </select>
+            <div class="finance-input-wrap">
+              <select id="finance-filter-supplier" class="finance-input finance-select">
+                <option value="">جميع الموردين</option>
+              </select>
+            </div>
           </div>
 
-          <!-- Payment Status Dropdown -->
+          <!-- 4. حالة السداد -->
           <div class="finance-filter-item">
             <label class="finance-filter-label" for="finance-filter-payment-status">حالة السداد</label>
-            <select id="finance-filter-payment-status" class="finance-input finance-select">
-              <option value="all">جميع الحالات</option>
-              <option value="غير مدفوع">غير مدفوع</option>
-              <option value="مدفوع جزئياً">مدفوع جزئياً</option>
-              <option value="مدفوع بالكامل">مدفوع بالكامل</option>
-            </select>
+            <div class="finance-input-wrap">
+              <select id="finance-filter-payment-status" class="finance-input finance-select">
+                <option value="all">جميع الحالات</option>
+                <option value="unpaid">غير مدفوع</option>
+                <option value="partial">مدفوع جزئياً</option>
+                <option value="paid">مدفوع بالكامل</option>
+              </select>
+            </div>
           </div>
 
-          <!-- Invoice Number -->
+          <!-- 5. رقم الفاتورة -->
           <div class="finance-filter-item">
             <label class="finance-filter-label" for="finance-filter-invoice">رقم الفاتورة</label>
-            <input type="text" id="finance-filter-invoice" class="finance-input" placeholder="مثال: FS-2026-INV" dir="ltr" autocomplete="off" />
+            <div class="finance-input-wrap">
+              <input type="text" id="finance-filter-invoice" class="finance-input" placeholder="مثال: FS-2026-INV" />
+            </div>
           </div>
 
-          <!-- Date From -->
+          <!-- 6. التاريخ (اليوم التلقائي) -->
           <div class="finance-filter-item">
-            <label class="finance-filter-label" for="finance-filter-date-from">من تاريخ</label>
-            <input type="date" id="finance-filter-date-from" class="finance-input" />
+            <label class="finance-filter-label" for="finance-filter-main-date">التاريخ (اليوم)</label>
+            <div class="finance-input-wrap">
+              <input type="date" id="finance-filter-main-date" class="finance-input finance-input-date" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================================================================
+           3. Daily Activity Section (DAILY TRANSACTIONS for Selected Date)
+           ================================================================== -->
+      <div class="finance-section-banner">
+        <h2>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span>النشاط اليومي بالتاريخ المحدد</span>
+          <span class="finance-section-tag daily" id="finance-daily-date-badge">اليوم</span>
+        </h2>
+        <span style="font-size: 0.8rem; color: #64748B; font-weight: 600;">يقتصر على الحركات الفعلية المنفذة في التاريخ المختار</span>
+      </div>
+
+      <section class="finance-daily-grid" aria-label="النشاط اليومي">
+        <!-- 1. عدد النقلات -->
+        <div class="finance-daily-card">
+          <div class="finance-daily-card-top">
+            <span class="finance-daily-card-label">عدد النقلات</span>
+            <div class="finance-daily-card-icon" style="background: #EFF6FF; color: #1D4ED8;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+            </div>
+          </div>
+          <span class="finance-daily-card-val" id="finance-daily-trans-count">0</span>
+          <span class="finance-daily-card-sub" id="finance-daily-trans-net">0.000 طن صافي</span>
+        </div>
+
+        <!-- 2. هالك النقل اليومي -->
+        <div class="finance-daily-card">
+          <div class="finance-daily-card-top">
+            <span class="finance-daily-card-label">هالك النقل</span>
+            <div class="finance-daily-card-icon" style="background: #FEF2F2; color: #DC2626;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </div>
+          </div>
+          <span class="finance-daily-card-val" id="finance-daily-trans-waste">0.000 طن</span>
+          <span class="finance-daily-card-sub" id="finance-daily-trans-waste-price">0.00 ج.م</span>
+        </div>
+
+        <!-- 3. الكمية الواردة للمخزن (غير مربوطة بأمر شراء) -->
+        <div class="finance-daily-card">
+          <div class="finance-daily-card-top">
+            <span class="finance-daily-card-label">الكمية الواردة (تخزين)</span>
+            <div class="finance-daily-card-icon" style="background: #ECFDF5; color: #059669;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M6 8l6-5 6 5M6 8l-4 8h8l-4-8zM18 8l-4 8h8l-4-8z"/></svg>
+            </div>
+          </div>
+          <span class="finance-daily-card-val" id="finance-daily-storage-import-qty">0.000 طن</span>
+          <span class="finance-daily-card-sub" style="color: #059669;">إيداع مخزني مستقل</span>
+        </div>
+
+        <!-- 4. قيمة الكمية الواردة -->
+        <div class="finance-daily-card">
+          <div class="finance-daily-card-top">
+            <span class="finance-daily-card-label">قيمة الكمية الواردة</span>
+            <div class="finance-daily-card-icon" style="background: #F1F5F9; color: #64748B;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </div>
+          </div>
+          <span class="finance-daily-card-val" id="finance-daily-storage-import-price" style="font-size: 1.15rem; color: #64748B;">غير مسعر</span>
+          <span class="finance-daily-card-sub" title="قاعدة البيانات لا تحتوي على مصدر تسعير للواردات المستقلة">مستقل عن أوامر الشراء</span>
+        </div>
+
+        <!-- 5. هالك التخزين اليومي -->
+        <div class="finance-daily-card">
+          <div class="finance-daily-card-top">
+            <span class="finance-daily-card-label">هالك التخزين</span>
+            <div class="finance-daily-card-icon" style="background: #FFFBEB; color: #D97706;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+            </div>
+          </div>
+          <span class="finance-daily-card-val" id="finance-daily-storage-waste">0.000 طن</span>
+          <span class="finance-daily-card-sub" id="finance-daily-storage-waste-price">0.00 ج.م</span>
+        </div>
+
+        <!-- 6. إجمالي الهالك اليومي -->
+        <div class="finance-daily-card" style="border-color: #FECACA;">
+          <div class="finance-daily-card-top">
+            <span class="finance-daily-card-label">إجمالي الهالك لليوم</span>
+            <div class="finance-daily-card-icon" style="background: #FEE2E2; color: #991B1B;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            </div>
+          </div>
+          <span class="finance-daily-card-val" id="finance-daily-total-waste" style="color: #991B1B;">0.000 طن</span>
+          <span class="finance-daily-card-sub" id="finance-daily-total-waste-price">0.00 ج.م</span>
+        </div>
+      </section>
+
+      <!-- ==================================================================
+           4. PO Cumulative Financial Summary Section (PO CUMULATIVE STATUS)
+           ================================================================== -->
+      <div class="finance-section-banner">
+        <h2>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <span>الملخص المالي لأمر الشراء (الموقف التراكمي للتعاقد)</span>
+          <span class="finance-section-tag cumulative" id="finance-summary-scope-badge">تراكمي</span>
+        </h2>
+        <span style="font-size: 0.8rem; color: #64748B; font-weight: 600;">يمثل الحالة الكلية للعقد ولا يتأثر بتغيير اليوم المحدد</span>
+      </div>
+
+      <section class="finance-po-summary-box" aria-label="ملخص أمر الشراء المالي">
+        <!-- Identity Header -->
+        <div class="finance-po-summary-header">
+          <div class="finance-po-identity">
+            <span class="finance-po-badge" id="finance-summary-po-number">PO-100</span>
+            <div>
+              <div style="font-size: 1.15rem; font-weight: 800; color: #0F172A;" id="finance-summary-supplier">المورد</div>
+              <div style="font-size: 0.8rem; color: #64748B; font-weight: 600;" id="finance-summary-dest">الوجهة: مصنع القاهرة</div>
+            </div>
           </div>
 
-          <!-- Date To -->
-          <div class="finance-filter-item">
-            <label class="finance-filter-label" for="finance-filter-date-to">إلى تاريخ</label>
-            <input type="date" id="finance-filter-date-to" class="finance-input" />
+          <div class="finance-po-meta-tags">
+            <div class="finance-po-meta-item">
+              <span>سعر الطن:</span>
+              <span class="meta-val" id="finance-summary-ton-price" style="color: #D97706; font-size: 1.1rem;">0.00 ج.م</span>
+            </div>
+            <div class="finance-po-meta-item">
+              <span>إجمالي النقلات:</span>
+              <span class="meta-val" id="finance-summary-movements-count" style="font-size: 1.1rem;">0</span>
+            </div>
+            <div class="finance-po-meta-item">
+              <span>نسبة التنفيذ:</span>
+              <span class="meta-val" id="finance-summary-perf-rate" style="color: #059669; font-size: 1.1rem;">0.00%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 8 Detailed Summary Tiles (Requirement 21 & 43) -->
+        <div class="finance-po-summary-grid">
+          <!-- 1. Expected Qty & Price -->
+          <div class="finance-summary-tile tile-accent">
+            <span class="finance-summary-tile-label">الكمية التعاقدية المتوقعة</span>
+            <span class="finance-summary-tile-val" id="finance-summary-expected-qty">0.000 طن</span>
+            <span class="finance-summary-tile-sub" id="finance-summary-expected-price">السعر: 0.00 ج.م</span>
+          </div>
+
+          <!-- 2. Delivered Qty & Price -->
+          <div class="finance-summary-tile tile-highlight">
+            <span class="finance-summary-tile-label">الكمية المسلمة (بعد الهالك)</span>
+            <span class="finance-summary-tile-val" id="finance-summary-delivered-qty" style="color: #059669;">0.000 طن</span>
+            <span class="finance-summary-tile-sub" id="finance-summary-delivered-price">القيمة: 0.00 ج.م</span>
+          </div>
+
+          <!-- 3. Remaining Qty & Price -->
+          <div class="finance-summary-tile">
+            <span class="finance-summary-tile-label">الكمية المتبقية لأمر الشراء</span>
+            <span class="finance-summary-tile-val" id="finance-summary-remaining-qty">0.000 طن</span>
+            <span class="finance-summary-tile-sub" id="finance-summary-remaining-price">القيمة: 0.00 ج.م</span>
+          </div>
+
+          <!-- 4. Total Waste & Price -->
+          <div class="finance-summary-tile tile-waste">
+            <span class="finance-summary-tile-label">إجمالي الهالك (نقل + تخزين)</span>
+            <span class="finance-summary-tile-val" id="finance-summary-total-waste" style="color: #DC2626;">0.000 طن</span>
+            <span class="finance-summary-tile-sub" id="finance-summary-total-waste-price" style="color: #DC2626;">القيمة: 0.00 ج.م</span>
+          </div>
+
+          <!-- 5. Transportation Waste -->
+          <div class="finance-summary-tile">
+            <span class="finance-summary-tile-label">هالك النقل</span>
+            <span class="finance-summary-tile-val" id="finance-summary-trans-waste">0.000 طن</span>
+            <span class="finance-summary-tile-sub" id="finance-summary-trans-waste-price">القيمة: 0.00 ج.م</span>
+          </div>
+
+          <!-- 6. Storage Waste -->
+          <div class="finance-summary-tile">
+            <span class="finance-summary-tile-label">هالك التخزين</span>
+            <span class="finance-summary-tile-val" id="finance-summary-storage-waste">0.000 طن</span>
+            <span class="finance-summary-tile-sub" id="finance-summary-storage-waste-price">القيمة: 0.00 ج.م</span>
+          </div>
+
+          <!-- 7. Paid Amount -->
+          <div class="finance-summary-tile">
+            <span class="finance-summary-tile-label">المبلغ المدفوع</span>
+            <span class="finance-summary-tile-val" id="finance-summary-paid-amount">0.00 ج.م</span>
+            <span class="finance-summary-tile-sub">معتمد من الإدارة</span>
+          </div>
+
+          <!-- 8. Outstanding Amount -->
+          <div class="finance-summary-tile">
+            <span class="finance-summary-tile-label">المبلغ المستحق</span>
+            <span class="finance-summary-tile-val" id="finance-summary-outstanding-amount">0.00 ج.م</span>
+            <span class="finance-summary-tile-sub">مستحق السداد</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================================================================
+           4. Factory Performance Highlight Card (Clean FaceStone White Card)
+           ================================================================== -->
+      <div class="finance-section-banner">
+        <h2>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          <span>أداء المصنع ونسبة التنفيذ</span>
+          <span class="finance-section-tag" id="finance-perf-section-tag">مؤشر كفاءة التشغيل</span>
+        </h2>
+        <span style="font-size: 0.8rem; color: #64748B; font-weight: 600;">مقارنة الكميات والأسعار المتوقعة مقابل الكميات والأسعار الفعلية بعد خصم الهالك</span>
+      </div>
+
+      <section class="finance-performance-section" aria-label="أداء المصنع ونسبة التنفيذ">
+        <div class="finance-perf-card">
+          <!-- Dial Block -->
+          <div class="finance-perf-dial-block">
+            <span class="finance-perf-title">نسبة التنفيذ / أداء المصنع</span>
+            <span class="finance-perf-value" id="finance-perf-percentage">0.00%</span>
+            <div class="finance-perf-badge" id="finance-perf-badge">
+              <span id="finance-perf-badge-text">أداء ممتاز</span>
+            </div>
+          </div>
+
+          <!-- Expected vs Actual Breakdown -->
+          <div class="finance-perf-grid">
+            <div class="finance-perf-stat-box">
+              <span class="finance-perf-stat-label">الكمية المتوقعة (العقد)</span>
+              <span class="finance-perf-stat-qty" id="finance-perf-expected-qty">0.000 طن</span>
+              <span class="finance-perf-stat-price" id="finance-perf-expected-price">0.00 ج.م</span>
+            </div>
+
+            <div class="finance-perf-stat-box highlight">
+              <span class="finance-perf-stat-label">الكمية المسلمة (الفعلية)</span>
+              <span class="finance-perf-stat-qty" id="finance-perf-actual-qty">0.000 طن</span>
+              <span class="finance-perf-stat-price" id="finance-perf-actual-price">0.00 ج.م</span>
+            </div>
+
+            <div class="finance-perf-stat-box waste">
+              <span class="finance-perf-stat-label">إجمالي الهالك (النقل + التخزين)</span>
+              <span class="finance-perf-stat-qty" id="finance-perf-waste-qty">0.000 طن</span>
+              <span class="finance-perf-stat-price" id="finance-perf-waste-price">0.00 ج.م</span>
+            </div>
+
+            <div class="finance-perf-stat-box">
+              <span class="finance-perf-stat-label">الكمية المتبقية</span>
+              <span class="finance-perf-stat-qty" id="finance-perf-remaining-qty">0.000 طن</span>
+              <span class="finance-perf-stat-price" id="finance-perf-remaining-price">0.00 ج.م</span>
+            </div>
           </div>
         </div>
       </section>

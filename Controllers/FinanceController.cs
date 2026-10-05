@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
@@ -28,6 +28,426 @@ public class FinanceController : ControllerBase
     {
         _context = context;
         _logger = logger;
+    }
+
+    /// <summary>
+    /// Retrieves Finance Statistics connecting Purchase Orders, Transportation, and Storage.
+    /// Primary Filter: Date (defaults to server Today). Major Filter: PO.
+    /// Distinguishes Daily Activity from Cumulative PO Status.
+    /// Authorized only to: Accountants, IT, and CEO.
+    /// </summary>
+    [HttpGet("statistics")]
+    [ProducesResponseType(typeof(ApiResponse<FinanceStatisticsResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetStatistics([FromQuery] DateTime? date, [FromQuery] string? po)
+    {
+        try
+        {
+            var userRole = User.FindFirst(ClaimTypes.Role)?.Value ?? "Unknown";
+            var targetDate = (date ?? DateTime.Today).Date;
+            var startOfDay = targetDate;
+            var endOfDay = targetDate.AddDays(1);
+            var selectedPoTrimmed = string.IsNullOrWhiteSpace(po) || po.Equals("all", StringComparison.OrdinalIgnoreCase)
+                ? null
+                : po.Trim();
+
+            _logger.LogInformation("Finance statistics requested by '{Role}' for Date: {Date:yyyy-MM-dd}, PO: '{PO}'",
+                userRole, targetDate, selectedPoTrimmed ?? "ALL");
+
+            // 1. Authoritative Purchase Orders
+            var allPos = await _context.PurchaseOrders
+                .AsNoTracking()
+                .OrderByDescending(p => p.OrderDate)
+                .ToListAsync();
+
+            // 2. Authoritative Payments (for paid & outstanding calculations)
+            var allPayments = await _context.FinancePayments
+                .AsNoTracking()
+                .ToListAsync();
+
+            // Build available POs list for dropdown
+            var availablePos = allPos.Select(p => new FinancePoDropdownItemDto
+            {
+                PoNumber = p.PONumber,
+                Supplier = p.Supplier,
+                Destination = p.Destination,
+                TonPrice = p.TonPrice > 0 ? p.TonPrice : p.PricePerTon,
+                Quantity = p.Quantity,
+                RemainingQuantity = p.RemainingQuantity,
+                OrderDate = p.OrderDate
+            }).ToList();
+
+            // 3. Pre-fetch Transportation aggregations per PO (server-side group by)
+            var transStatsByPo = await _context.Transportations
+                .AsNoTracking()
+                .GroupBy(t => t.PONumber)
+                .Select(g => new
+                {
+                    PONumber = g.Key,
+                    Count = g.Count(),
+                    TotalNetWeight = g.Sum(t => t.NetWeight),
+                    TotalWaste = g.Sum(t => t.WasteQuantity)
+                })
+                .ToDictionaryAsync(x => x.PONumber, StringComparer.OrdinalIgnoreCase);
+
+            // 4. Pre-fetch Storage PO-related waste (server-side query)
+            var storageWasteByPoList = await _context.StorageTransactions
+                .AsNoTracking()
+                .Where(s => s.IsExportRelatedToPO && s.PONumber != null && s.HasExternalWeighbridge && s.ExternalNetWeight.HasValue)
+                .Select(s => new
+                {
+                    PONumber = s.PONumber!,
+                    Waste = Math.Abs(s.InternalNetWeight - s.ExternalNetWeight!.Value)
+                })
+                .ToListAsync();
+
+            var storageWasteByPo = storageWasteByPoList
+                .GroupBy(s => s.PONumber, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(g => g.Key, g => g.Sum(x => x.Waste), StringComparer.OrdinalIgnoreCase);
+
+            // 5. Build cumulative summaries for each PO
+            var allPosSummary = new List<FinancePoSummaryDto>();
+            foreach (var p in allPos)
+            {
+                var tonPrice = p.TonPrice > 0 ? p.TonPrice : (p.PricePerTon > 0 ? p.PricePerTon : 0m);
+                var expectedQty = p.Quantity;
+                var expectedPrice = Math.Round(expectedQty * tonPrice, 2);
+
+                transStatsByPo.TryGetValue(p.PONumber, out var tStats);
+                var transCount = tStats?.Count ?? 0;
+                var transNet = tStats?.TotalNetWeight ?? 0m;
+                var transWaste = Math.Round(tStats?.TotalWaste ?? 0m, 3);
+                var transWastePrice = Math.Round(transWaste * tonPrice, 2);
+
+                storageWasteByPo.TryGetValue(p.PONumber, out var sWaste);
+                var storageWaste = Math.Round(sWaste, 3);
+                var storageWastePrice = Math.Round(storageWaste * tonPrice, 2);
+
+                var totalWaste = Math.Round(transWaste + storageWaste, 3);
+                var totalWastePrice = Math.Round(totalWaste * tonPrice, 2);
+
+                var deliveredQty = Math.Round(Math.Max(0m, expectedQty - totalWaste), 3);
+                var deliveredPrice = Math.Round(deliveredQty * tonPrice, 2);
+
+                var remainingQty = Math.Round(p.RemainingQuantity, 3);
+                var remainingPrice = Math.Round(remainingQty * tonPrice, 2);
+
+                var perfPct = expectedQty > 0
+                    ? Math.Round((deliveredQty / expectedQty) * 100m, 2)
+                    : 100m;
+                var perfPricePct = expectedPrice > 0
+                    ? Math.Round((deliveredPrice / expectedPrice) * 100m, 2)
+                    : 100m;
+
+                var poPaymentsSum = allPayments
+                    .Where(pay => pay.PONumber.Equals(p.PONumber, StringComparison.OrdinalIgnoreCase))
+                    .Sum(pay => pay.Amount);
+                var outstanding = Math.Round(Math.Max(0m, deliveredPrice - poPaymentsSum), 2);
+
+                allPosSummary.Add(new FinancePoSummaryDto
+                {
+                    PoNumber = p.PONumber,
+                    Supplier = p.Supplier,
+                    Destination = p.Destination,
+                    TonPrice = tonPrice,
+                    OrderDate = p.OrderDate,
+                    ExpectedQuantity = expectedQty,
+                    ExpectedPrice = expectedPrice,
+                    DeliveredQuantity = deliveredQty,
+                    DeliveredPrice = deliveredPrice,
+                    RemainingQuantity = remainingQty,
+                    RemainingPrice = remainingPrice,
+                    TransportationTransactionsCount = transCount,
+                    TransportationWasteQuantity = transWaste,
+                    TransportationWastePrice = transWastePrice,
+                    StorageWasteQuantity = storageWaste,
+                    StorageWastePrice = storageWastePrice,
+                    TotalWasteQuantity = totalWaste,
+                    TotalWastePrice = totalWastePrice,
+                    ActualQuantity = deliveredQty,
+                    ActualPrice = deliveredPrice,
+                    PerformancePercentage = perfPct,
+                    PerformancePricePercentage = perfPricePct,
+                    TotalSuppliedNetWeight = transNet,
+                    PaidAmount = Math.Round(poPaymentsSum, 2),
+                    OutstandingAmount = outstanding
+                });
+            }
+
+            // 6. Selected PO Summary vs Overall Summary
+            FinancePoSummaryDto activePoSummary;
+            FactoryPerformanceDto activePerformance;
+
+            if (!string.IsNullOrEmpty(selectedPoTrimmed))
+            {
+                var targetPo = allPosSummary.FirstOrDefault(x => x.PoNumber.Equals(selectedPoTrimmed, StringComparison.OrdinalIgnoreCase));
+                if (targetPo == null)
+                {
+                    targetPo = new FinancePoSummaryDto
+                    {
+                        Scope = "SinglePo",
+                        PoNumber = selectedPoTrimmed,
+                        Supplier = "غير محدد",
+                        Destination = "-",
+                        TonPrice = 0m,
+                        PerformancePercentage = 0m
+                    };
+                }
+                targetPo.Scope = "SinglePo";
+                activePoSummary = targetPo;
+
+                var status = targetPo.PerformancePercentage >= 95m ? "High" : (targetPo.PerformancePercentage >= 80m ? "Medium" : "Low");
+                var statusArabic = status == "High" ? "أداء ممتاز" : (status == "Medium" ? "أداء مستقر" : "تنبيه هالك");
+
+                activePerformance = new FactoryPerformanceDto
+                {
+                    ExpectedQuantity = targetPo.ExpectedQuantity,
+                    ExpectedPrice = targetPo.ExpectedPrice,
+                    ActualQuantity = targetPo.DeliveredQuantity,
+                    ActualPrice = targetPo.DeliveredPrice,
+                    WasteQuantity = targetPo.TotalWasteQuantity,
+                    WastePrice = targetPo.TotalWastePrice,
+                    RemainingQuantity = targetPo.RemainingQuantity,
+                    RemainingPrice = targetPo.RemainingPrice,
+                    PerformancePercentage = targetPo.PerformancePercentage,
+                    PerformancePricePercentage = targetPo.PerformancePricePercentage,
+                    Status = status,
+                    StatusLabelArabic = statusArabic
+                };
+            }
+            else
+            {
+                var sumExpectedQty = allPosSummary.Sum(p => p.ExpectedQuantity);
+                var sumExpectedPrice = allPosSummary.Sum(p => p.ExpectedPrice);
+                var sumDeliveredQty = allPosSummary.Sum(p => p.DeliveredQuantity);
+                var sumDeliveredPrice = allPosSummary.Sum(p => p.DeliveredPrice);
+                var sumTotalWaste = allPosSummary.Sum(p => p.TotalWasteQuantity);
+                var sumTotalWastePrice = allPosSummary.Sum(p => p.TotalWastePrice);
+                var sumRemainingQty = allPosSummary.Sum(p => p.RemainingQuantity);
+                var sumRemainingPrice = allPosSummary.Sum(p => p.RemainingPrice);
+                var sumTransCount = allPosSummary.Sum(p => p.TransportationTransactionsCount);
+                var sumTransWaste = allPosSummary.Sum(p => p.TransportationWasteQuantity);
+                var sumTransWastePrice = allPosSummary.Sum(p => p.TransportationWastePrice);
+                var sumStorageWaste = allPosSummary.Sum(p => p.StorageWasteQuantity);
+                var sumStorageWastePrice = allPosSummary.Sum(p => p.StorageWastePrice);
+                var sumPaid = allPosSummary.Sum(p => p.PaidAmount);
+                var sumOutstanding = allPosSummary.Sum(p => p.OutstandingAmount);
+
+                var overallPerf = sumExpectedQty > 0
+                    ? Math.Round((sumDeliveredQty / sumExpectedQty) * 100m, 2)
+                    : 100m;
+                var overallPricePerf = sumExpectedPrice > 0
+                    ? Math.Round((sumDeliveredPrice / sumExpectedPrice) * 100m, 2)
+                    : 100m;
+
+                activePoSummary = new FinancePoSummaryDto
+                {
+                    Scope = "AllPos",
+                    PoNumber = "جميع أوامر الشراء",
+                    Supplier = "كافة الموردين",
+                    Destination = "جميع المحطات والمصانع",
+                    TonPrice = allPosSummary.Count > 0 ? Math.Round(allPosSummary.Average(p => p.TonPrice), 2) : 0m,
+                    OrderDate = allPosSummary.Count > 0 ? allPosSummary.Min(p => p.OrderDate) : targetDate,
+                    ExpectedQuantity = sumExpectedQty,
+                    ExpectedPrice = sumExpectedPrice,
+                    DeliveredQuantity = sumDeliveredQty,
+                    DeliveredPrice = sumDeliveredPrice,
+                    RemainingQuantity = sumRemainingQty,
+                    RemainingPrice = sumRemainingPrice,
+                    TransportationTransactionsCount = sumTransCount,
+                    TransportationWasteQuantity = sumTransWaste,
+                    TransportationWastePrice = sumTransWastePrice,
+                    StorageWasteQuantity = sumStorageWaste,
+                    StorageWastePrice = sumStorageWastePrice,
+                    TotalWasteQuantity = sumTotalWaste,
+                    TotalWastePrice = sumTotalWastePrice,
+                    ActualQuantity = sumDeliveredQty,
+                    ActualPrice = sumDeliveredPrice,
+                    PerformancePercentage = overallPerf,
+                    PerformancePricePercentage = overallPricePerf,
+                    PaidAmount = sumPaid,
+                    OutstandingAmount = sumOutstanding
+                };
+
+                var status = overallPerf >= 95m ? "High" : (overallPerf >= 80m ? "Medium" : "Low");
+                var statusArabic = status == "High" ? "أداء ممتاز" : (status == "Medium" ? "أداء مستقر" : "تنبيه هالك");
+
+                activePerformance = new FactoryPerformanceDto
+                {
+                    ExpectedQuantity = sumExpectedQty,
+                    ExpectedPrice = sumExpectedPrice,
+                    ActualQuantity = sumDeliveredQty,
+                    ActualPrice = sumDeliveredPrice,
+                    WasteQuantity = sumTotalWaste,
+                    WastePrice = sumTotalWastePrice,
+                    RemainingQuantity = sumRemainingQty,
+                    RemainingPrice = sumRemainingPrice,
+                    PerformancePercentage = overallPerf,
+                    PerformancePricePercentage = overallPricePerf,
+                    Status = status,
+                    StatusLabelArabic = statusArabic
+                };
+            }
+
+            // 7. DAILY ACTIVITY CALCULATION (FOR SELECTED DATE)
+            var dailyTransQuery = _context.Transportations
+                .AsNoTracking()
+                .Where(t => t.TransactionDate >= startOfDay && t.TransactionDate < endOfDay);
+
+            if (!string.IsNullOrEmpty(selectedPoTrimmed))
+            {
+                dailyTransQuery = dailyTransQuery.Where(t => t.PONumber == selectedPoTrimmed);
+            }
+
+            var dailyTransList = await dailyTransQuery
+                .Select(t => new { t.PONumber, t.NetWeight, t.WasteQuantity })
+                .ToListAsync();
+
+            var dailyTransCount = dailyTransList.Count;
+            var dailyTransNetWeight = Math.Round(dailyTransList.Sum(t => t.NetWeight), 3);
+            var dailyTransWaste = Math.Round(dailyTransList.Sum(t => t.WasteQuantity), 3);
+
+            decimal dailyTransWastePrice = 0m;
+            if (!string.IsNullOrEmpty(selectedPoTrimmed))
+            {
+                dailyTransWastePrice = Math.Round(dailyTransWaste * activePoSummary.TonPrice, 2);
+            }
+            else
+            {
+                var poPriceMap = allPosSummary.ToDictionary(p => p.PoNumber, p => p.TonPrice, StringComparer.OrdinalIgnoreCase);
+                dailyTransWastePrice = Math.Round(dailyTransList.Sum(t =>
+                {
+                    poPriceMap.TryGetValue(t.PONumber, out var price);
+                    return t.WasteQuantity * price;
+                }), 2);
+            }
+
+            // 7.2 Storage Imports (Independent, non-PO)
+            var dailyStorageImports = await _context.StorageTransactions
+                .AsNoTracking()
+                .Where(s => s.TransactionDate >= startOfDay && s.TransactionDate < endOfDay)
+                .Where(s => s.Action == "Import" || s.ServiceType == "إيداع")
+                .SumAsync(s => (decimal?)s.IncomingQuantity) ?? 0m;
+            dailyStorageImports = Math.Round(dailyStorageImports, 3);
+
+            // 7.3 Storage Exports
+            var dailyStorageExportsQuery = _context.StorageTransactions
+                .AsNoTracking()
+                .Where(s => s.TransactionDate >= startOfDay && s.TransactionDate < endOfDay)
+                .Where(s => s.Action == "Export" || s.ServiceType == "صرف");
+
+            if (!string.IsNullOrEmpty(selectedPoTrimmed))
+            {
+                dailyStorageExportsQuery = dailyStorageExportsQuery.Where(s => s.PONumber == selectedPoTrimmed && s.IsExportRelatedToPO);
+            }
+
+            var dailyStorageExports = await dailyStorageExportsQuery.SumAsync(s => (decimal?)s.OutgoingQuantity) ?? 0m;
+            dailyStorageExports = Math.Round(dailyStorageExports, 3);
+
+            // 7.4 Storage Waste
+            var dailyStorageWasteQuery = _context.StorageTransactions
+                .AsNoTracking()
+                .Where(s => s.TransactionDate >= startOfDay && s.TransactionDate < endOfDay)
+                .Where(s => s.HasExternalWeighbridge && s.ExternalNetWeight.HasValue);
+
+            if (!string.IsNullOrEmpty(selectedPoTrimmed))
+            {
+                dailyStorageWasteQuery = dailyStorageWasteQuery.Where(s => s.PONumber == selectedPoTrimmed && s.IsExportRelatedToPO);
+            }
+
+            var dailyStorageWasteRows = await dailyStorageWasteQuery
+                .Select(s => new
+                {
+                    s.PONumber,
+                    Waste = Math.Abs(s.InternalNetWeight - s.ExternalNetWeight!.Value)
+                })
+                .ToListAsync();
+
+            var dailyStorageWaste = Math.Round(dailyStorageWasteRows.Sum(s => s.Waste), 3);
+            decimal dailyStorageWastePrice = 0m;
+            if (!string.IsNullOrEmpty(selectedPoTrimmed))
+            {
+                dailyStorageWastePrice = Math.Round(dailyStorageWaste * activePoSummary.TonPrice, 2);
+            }
+            else
+            {
+                var poPriceMap = allPosSummary.ToDictionary(p => p.PoNumber, p => p.TonPrice, StringComparer.OrdinalIgnoreCase);
+                dailyStorageWastePrice = Math.Round(dailyStorageWasteRows.Sum(s =>
+                {
+                    var price = 0m;
+                    if (!string.IsNullOrWhiteSpace(s.PONumber))
+                    {
+                        poPriceMap.TryGetValue(s.PONumber, out price);
+                    }
+                    return s.Waste * price;
+                }), 2);
+            }
+
+            var totalDailyWaste = Math.Round(dailyTransWaste + dailyStorageWaste, 3);
+            var totalDailyWastePrice = Math.Round(dailyTransWastePrice + dailyStorageWastePrice, 2);
+
+            var dailyActivity = new FinanceDailyActivityDto
+            {
+                SelectedDate = targetDate,
+                TransportationTransactionsCount = dailyTransCount,
+                TransportationNetWeight = dailyTransNetWeight,
+                TransportationWasteQuantity = dailyTransWaste,
+                TransportationWastePrice = dailyTransWastePrice,
+                StorageImportedQuantity = dailyStorageImports,
+                StorageImportedPrice = null,
+                StorageImportedPriceNote = "لا يوجد مصدر تسعير للواردات المخزنية في قاعدة البيانات",
+                StorageExportedQuantity = dailyStorageExports,
+                StorageWasteQuantity = dailyStorageWaste,
+                StorageWastePrice = dailyStorageWastePrice,
+                TotalDailyWasteQuantity = totalDailyWaste,
+                TotalDailyWastePrice = totalDailyWastePrice
+            };
+
+            var response = new FinanceStatisticsResponseDto
+            {
+                SelectedDate = targetDate,
+                SelectedPo = selectedPoTrimmed,
+                DailyActivity = dailyActivity,
+                PoSummary = activePoSummary,
+                Performance = activePerformance,
+                AvailablePos = availablePos,
+                AllPosSummary = allPosSummary
+            };
+
+            return Ok(ApiResponse<FinanceStatisticsResponseDto>.Ok(response));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error computing Finance statistics.");
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                ApiResponse.Fail("حدث خطأ أثناء احتساب الإحصائيات المالية."));
+        }
+    }
+
+    /// <summary>
+    /// Retrieves list of all Purchase Orders for dropdowns and filter selection.
+    /// </summary>
+    [HttpGet("pos")]
+    [ProducesResponseType(typeof(ApiResponse<List<FinancePoDropdownItemDto>>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetPurchaseOrders()
+    {
+        var pos = await _context.PurchaseOrders
+            .AsNoTracking()
+            .OrderByDescending(p => p.OrderDate)
+            .Select(p => new FinancePoDropdownItemDto
+            {
+                PoNumber = p.PONumber,
+                Supplier = p.Supplier,
+                Destination = p.Destination,
+                TonPrice = p.TonPrice > 0 ? p.TonPrice : p.PricePerTon,
+                Quantity = p.Quantity,
+                RemainingQuantity = p.RemainingQuantity,
+                OrderDate = p.OrderDate
+            })
+            .ToListAsync();
+
+        return Ok(ApiResponse<List<FinancePoDropdownItemDto>>.Ok(pos));
     }
 
     /// <summary>
@@ -91,8 +511,8 @@ public class FinanceController : ControllerBase
                     Supplier = po.Supplier.Trim(),
                     OrderDate = po.OrderDate,
                     PoQuantity = po.Quantity,
-                    TonPrice = po.PricePerTon,
-                    PoValue = po.TotalValue > 0 ? po.TotalValue : Math.Round(po.Quantity * po.PricePerTon, 2),
+                    TonPrice = po.TonPrice > 0 ? po.TonPrice : po.PricePerTon,
+                    PoValue = po.TotalValue > 0 ? po.TotalValue : Math.Round(po.Quantity * (po.TonPrice > 0 ? po.TonPrice : po.PricePerTon), 2),
                     InvoiceNumber = string.IsNullOrWhiteSpace(po.InvoiceNumber) ? null : po.InvoiceNumber.Trim(),
                     PaidAmount = poPaymentsSum,
                     SuppliedQuantity = 0m,
@@ -202,7 +622,7 @@ public class FinanceController : ControllerBase
             // Incorporate Storage transactions if applicable
             var storageByPo = storageRecords
                 .Where(s => !string.IsNullOrWhiteSpace(s.PONumber))
-                .GroupBy(s => s.PONumber.Trim(), StringComparer.OrdinalIgnoreCase);
+                .GroupBy(s => s.PONumber!.Trim(), StringComparer.OrdinalIgnoreCase);
 
             foreach (var group in storageByPo)
             {

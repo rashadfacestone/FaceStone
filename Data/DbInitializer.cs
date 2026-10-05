@@ -420,6 +420,21 @@ BEGIN
         EXEC('UPDATE PurchaseOrders SET RemainingQuantity = Quantity WHERE RemainingQuantity = 0;');
     END
 
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('PurchaseOrders') AND name = 'TonPrice')
+    BEGIN
+        ALTER TABLE PurchaseOrders ADD TonPrice DECIMAL(18,3) NOT NULL CONSTRAINT DF_PO_TonPrice DEFAULT 0;
+        EXEC('UPDATE PurchaseOrders SET TonPrice = PricePerTon WHERE TonPrice = 0;');
+    END
+
+    -- Ensure TonPrice is synced with PricePerTon
+    EXEC('UPDATE PurchaseOrders SET TonPrice = PricePerTon WHERE TonPrice = 0 AND PricePerTon > 0;');
+
+    -- Safely backfill PurchaseOrderId in Transportation
+    EXEC('UPDATE t SET t.PurchaseOrderId = po.Id FROM Transportation t INNER JOIN PurchaseOrders po ON t.PONumber = po.PONumber WHERE t.PurchaseOrderId IS NULL;');
+
+    -- Safely backfill PurchaseOrderId in StorageTransactions for PO-linked records
+    EXEC('UPDATE s SET s.PurchaseOrderId = po.Id FROM StorageTransactions s INNER JOIN PurchaseOrders po ON s.PONumber = po.PONumber WHERE s.PurchaseOrderId IS NULL AND s.PONumber IS NOT NULL AND s.PONumber <> '''';');
+
     -- Ensure existing POs have realistic remaining quantities if still 0
     EXEC('UPDATE PurchaseOrders SET RemainingQuantity = Quantity WHERE RemainingQuantity <= 0;');
 

@@ -13,8 +13,15 @@
       this.totalPages = 1;
       this.totalRecords = 0;
       this.isLoading = false;
+      this.isLoadingStatistics = false;
 
-      // Filter state
+      // Primary & Major filters
+      this.selectedDate = '2026-10-05';
+      this.selectedPo = 'all';
+      this.availablePos = [];
+      this.statisticsData = null;
+
+      // Table filter state
       this.filters = {
         search: '',
         po: '',
@@ -33,7 +40,25 @@
       this.initialized = true;
 
       this.bindDOMElements();
+      this.initDefaultDate();
       this.bindEvents();
+      this.loadPoDropdown();
+      this.loadStatistics();
+      this.loadData();
+    }
+
+    initDefaultDate() {
+      // Default to today's date according to business/server date
+      const today = new Date();
+      const y = today.getFullYear();
+      const m = String(today.getMonth() + 1).padStart(2, '0');
+      const d = String(today.getDate()).padStart(2, '0');
+      const todayStr = `${y}-${m}-${d}`;
+      
+      this.selectedDate = todayStr || '2026-10-05';
+      if (this.mainDateInput) {
+        this.mainDateInput.value = this.selectedDate;
+      }
     }
 
     bindDOMElements() {
@@ -45,20 +70,18 @@
       this.emptyEl = document.getElementById('finance-table-empty');
       this.errorEl = document.getElementById('finance-table-error');
 
-      // KPIs
-      this.kpiTotalPoValue = document.getElementById('finance-kpi-total-po-value');
-      this.kpiTotalSuppliedQty = document.getElementById('finance-kpi-total-supplied-qty');
-      this.kpiTotalRemainingQty = document.getElementById('finance-kpi-total-remaining-qty');
-      this.kpiTotalPaidAmount = document.getElementById('finance-kpi-total-paid-amount');
-      this.kpiTotalOutstandingAmount = document.getElementById('finance-kpi-total-outstanding-amount');
-      this.kpiTotalMovements = document.getElementById('finance-kpi-total-movements');
-
       // User Profile Header
       this.userNameEl = document.getElementById('finance-mgmt-user-name');
       this.userRoleEl = document.getElementById('finance-mgmt-user-role');
       this.userAvatarEl = document.getElementById('finance-mgmt-user-avatar');
 
-      // Filter Inputs
+      // 1. Main Direct Filters (Primary Date + Major PO)
+      this.mainDateInput = document.getElementById('finance-filter-main-date');
+      this.mainPoSelect = document.getElementById('finance-filter-main-po');
+      this.btnClearPo = document.getElementById('finance-btn-clear-po');
+      this.filterStatusText = document.getElementById('finance-filter-status-text');
+
+      // Table quick search & table filters
       this.searchInput = document.getElementById('finance-search-input');
       this.searchClearBtn = document.getElementById('finance-search-clear-btn');
       this.filterPoInput = document.getElementById('finance-filter-po');
@@ -69,6 +92,55 @@
       this.filterDateTo = document.getElementById('finance-filter-date-to');
       this.resetFiltersBtn = document.getElementById('finance-reset-filters-btn');
       this.refreshBtn = document.getElementById('finance-refresh-btn');
+
+      // 2. Factory Performance Highlight Elements
+      this.perfPercentage = document.getElementById('finance-perf-percentage');
+      this.perfBadge = document.getElementById('finance-perf-badge');
+      this.perfBadgeText = document.getElementById('finance-perf-badge-text');
+      this.perfExpectedQty = document.getElementById('finance-perf-expected-qty');
+      this.perfExpectedPrice = document.getElementById('finance-perf-expected-price');
+      this.perfActualQty = document.getElementById('finance-perf-actual-qty');
+      this.perfActualPrice = document.getElementById('finance-perf-actual-price');
+      this.perfWasteQty = document.getElementById('finance-perf-waste-qty');
+      this.perfWastePrice = document.getElementById('finance-perf-waste-price');
+      this.perfRemainingQty = document.getElementById('finance-perf-remaining-qty');
+      this.perfRemainingPrice = document.getElementById('finance-perf-remaining-price');
+
+      // 3. Daily Activity Elements
+      this.dailyDateBadge = document.getElementById('finance-daily-date-badge');
+      this.dailyTransCount = document.getElementById('finance-daily-trans-count');
+      this.dailyTransNet = document.getElementById('finance-daily-trans-net');
+      this.dailyTransWaste = document.getElementById('finance-daily-trans-waste');
+      this.dailyTransWastePrice = document.getElementById('finance-daily-trans-waste-price');
+      this.dailyStorageImportQty = document.getElementById('finance-daily-storage-import-qty');
+      this.dailyStorageImportPrice = document.getElementById('finance-daily-storage-import-price');
+      this.dailyStorageWaste = document.getElementById('finance-daily-storage-waste');
+      this.dailyStorageWastePrice = document.getElementById('finance-daily-storage-waste-price');
+      this.dailyTotalWaste = document.getElementById('finance-daily-total-waste');
+      this.dailyTotalWastePrice = document.getElementById('finance-daily-total-waste-price');
+
+      // 4. PO Cumulative Summary Elements
+      this.summaryScopeBadge = document.getElementById('finance-summary-scope-badge');
+      this.summaryPoNumber = document.getElementById('finance-summary-po-number');
+      this.summarySupplier = document.getElementById('finance-summary-supplier');
+      this.summaryDest = document.getElementById('finance-summary-dest');
+      this.summaryTonPrice = document.getElementById('finance-summary-ton-price');
+      this.summaryMovementsCount = document.getElementById('finance-summary-movements-count');
+      this.summaryPerfRate = document.getElementById('finance-summary-perf-rate');
+      this.summaryExpectedQty = document.getElementById('finance-summary-expected-qty');
+      this.summaryExpectedPrice = document.getElementById('finance-summary-expected-price');
+      this.summaryDeliveredQty = document.getElementById('finance-summary-delivered-qty');
+      this.summaryDeliveredPrice = document.getElementById('finance-summary-delivered-price');
+      this.summaryRemainingQty = document.getElementById('finance-summary-remaining-qty');
+      this.summaryRemainingPrice = document.getElementById('finance-summary-remaining-price');
+      this.summaryTotalWaste = document.getElementById('finance-summary-total-waste');
+      this.summaryTotalWastePrice = document.getElementById('finance-summary-total-waste-price');
+      this.summaryTransWaste = document.getElementById('finance-summary-trans-waste');
+      this.summaryTransWastePrice = document.getElementById('finance-summary-trans-waste-price');
+      this.summaryStorageWaste = document.getElementById('finance-summary-storage-waste');
+      this.summaryStorageWastePrice = document.getElementById('finance-summary-storage-waste-price');
+      this.summaryPaidAmount = document.getElementById('finance-summary-paid-amount');
+      this.summaryOutstandingAmount = document.getElementById('finance-summary-outstanding-amount');
 
       // Pagination
       this.paginationInfo = document.getElementById('finance-pagination-info');
@@ -83,9 +155,39 @@
       this.modalPaymentsList = document.getElementById('finance-modal-payments-list');
       this.modalCloseBtn = document.getElementById('finance-modal-close-btn');
       this.modalBackdrop = document.getElementById('finance-modal-backdrop');
-
+    }
 
     bindEvents() {
+      // 1. Primary Filter: Date Change (Refreshes Daily Statistics dynamically)
+      this.mainDateInput?.addEventListener('change', (e) => {
+        this.selectedDate = e.target.value || '';
+        this.loadStatistics();
+      });
+
+      // 2. Major Filter: PO Dropdown Change
+      this.mainPoSelect?.addEventListener('change', (e) => {
+        const val = e.target.value;
+        this.selectedPo = val;
+        this.filters.po = (val === 'all' ? '' : val);
+        if (this.filterPoInput) this.filterPoInput.value = this.filters.po;
+        this.highlightSelectedTableRow(this.selectedPo);
+        this.loadStatistics();
+        this.currentPage = 1;
+        this.loadData();
+      });
+
+      // 3. Clear PO Filter Button
+      this.btnClearPo?.addEventListener('click', () => {
+        this.selectedPo = 'all';
+        if (this.mainPoSelect) this.mainPoSelect.value = 'all';
+        this.filters.po = '';
+        if (this.filterPoInput) this.filterPoInput.value = '';
+        this.highlightSelectedTableRow('all');
+        this.loadStatistics();
+        this.currentPage = 1;
+        this.loadData();
+      });
+
       // Search with debounce
       let searchTimeout = null;
       this.searchInput?.addEventListener('input', (e) => {
@@ -109,58 +211,13 @@
         this.loadData();
       });
 
-      // PO filter with debounce
-      let poTimeout = null;
-      this.filterPoInput?.addEventListener('input', (e) => {
-        clearTimeout(poTimeout);
-        poTimeout = setTimeout(() => {
-          this.filters.po = e.target.value.trim();
-          this.currentPage = 1;
-          this.loadData();
-        }, 350);
-      });
-
-      // Invoice filter with debounce
-      let invTimeout = null;
-      this.filterInvoiceInput?.addEventListener('input', (e) => {
-        clearTimeout(invTimeout);
-        invTimeout = setTimeout(() => {
-          this.filters.invoiceNumber = e.target.value.trim();
-          this.currentPage = 1;
-          this.loadData();
-        }, 350);
-      });
-
-      // Supplier select
-      this.filterSupplierSelect?.addEventListener('change', (e) => {
-        this.filters.supplier = e.target.value;
-        this.currentPage = 1;
-        this.loadData();
-      });
-
-      // Payment Status select
-      this.filterPaymentStatusSelect?.addEventListener('change', (e) => {
-        this.filters.paymentStatus = e.target.value;
-        this.currentPage = 1;
-        this.loadData();
-      });
-
-      // Date range
-      this.filterDateFrom?.addEventListener('change', (e) => {
-        this.filters.dateFrom = e.target.value;
-        this.currentPage = 1;
-        this.loadData();
-      });
-
-      this.filterDateTo?.addEventListener('change', (e) => {
-        this.filters.dateTo = e.target.value;
-        this.currentPage = 1;
-        this.loadData();
-      });
-
       // Reset & Refresh
       this.resetFiltersBtn?.addEventListener('click', () => this.resetFilters());
-      this.refreshBtn?.addEventListener('click', () => this.loadData());
+      this.refreshBtn?.addEventListener('click', () => {
+        this.loadPoDropdown();
+        this.loadStatistics();
+        this.loadData();
+      });
 
       // Page size change
       this.pageSizeSelect?.addEventListener('change', (e) => {
@@ -213,6 +270,185 @@
       if (hubUserAvatar) hubUserAvatar.textContent = initials;
     }
 
+    async loadPoDropdown() {
+      try {
+        const res = await window.ChatApi.getFinancePos();
+        if (res && res.success && Array.isArray(res.data)) {
+          this.availablePos = res.data;
+          if (this.mainPoSelect) {
+            const currentVal = this.selectedPo || 'all';
+            this.mainPoSelect.innerHTML = '<option value="all">-- جميع أوامر الشراء (كافة العقود) --</option>';
+            this.availablePos.forEach(p => {
+              const opt = document.createElement('option');
+              opt.value = p.poNumber;
+              const qtyFormatted = Number(p.quantity || 0).toLocaleString('en-US');
+              const priceFormatted = Number(p.tonPrice || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+              opt.textContent = `${p.poNumber} — ${p.supplier || 'مورد'} (${qtyFormatted} طن @ ${priceFormatted} ج.م)`;
+              this.mainPoSelect.appendChild(opt);
+            });
+            this.mainPoSelect.value = currentVal;
+          }
+        }
+      } catch (err) {
+        console.warn('Could not load PO dropdown options:', err);
+      }
+    }
+
+    async loadStatistics() {
+      this.isLoadingStatistics = true;
+      try {
+        const poParam = (this.selectedPo && this.selectedPo !== 'all') ? this.selectedPo : '';
+        const dateParam = this.selectedDate || '';
+        const res = await window.ChatApi.getFinanceStatistics(dateParam, poParam);
+        if (res && res.success && res.data) {
+          this.statisticsData = res.data;
+          this.renderStatistics(res.data);
+        }
+      } catch (err) {
+        console.error('Failed to load finance statistics:', err);
+      } finally {
+        this.isLoadingStatistics = false;
+      }
+    }
+
+    renderStatistics(stats) {
+      if (!stats) return;
+
+      const daily = stats.dailyActivity || {};
+      const sum = stats.cumulativePoSummary || {};
+      const perf = stats.factoryPerformance || {};
+
+      // 1. Status Indicator Chip
+      if (this.filterStatusText) {
+        if (stats.filterPoNumber) {
+          this.filterStatusText.textContent = `التاريخ: ${stats.filterDate} | أمر الشراء: ${stats.filterPoNumber}`;
+        } else {
+          const count = sum.totalPosCount || this.availablePos.length || 0;
+          this.filterStatusText.textContent = `التاريخ: ${stats.filterDate} | كافة أوامر الشراء (${count} عقود)`;
+        }
+      }
+
+      // 2. Factory Performance Highlight Card
+      const perfRate = Number(perf.performancePercentage || 0);
+      if (this.perfPercentage) {
+        this.perfPercentage.textContent = perfRate.toFixed(2) + '%';
+      }
+
+      if (this.perfBadge && this.perfBadgeText) {
+        this.perfBadge.className = 'finance-perf-badge';
+        if (perfRate >= 95) {
+          this.perfBadge.classList.add('perf-positive');
+          this.perfBadgeText.textContent = 'أداء ممتاز';
+        } else if (perfRate >= 75) {
+          this.perfBadge.classList.add('medium');
+          this.perfBadgeText.textContent = 'أداء متوسط / قيد التوريد';
+        } else {
+          this.perfBadge.classList.add('low');
+          this.perfBadgeText.textContent = 'أداء منخفض / يتطلب متابعة';
+        }
+      }
+
+      if (this.perfExpectedQty) this.perfExpectedQty.textContent = this.formatWeight(perf.expectedQuantity) + ' طن';
+      if (this.perfExpectedPrice) this.perfExpectedPrice.textContent = this.formatCurrency(perf.expectedPrice);
+      if (this.perfActualQty) this.perfActualQty.textContent = this.formatWeight(perf.actualDeliveredQuantity) + ' طن';
+      if (this.perfActualPrice) this.perfActualPrice.textContent = this.formatCurrency(perf.actualDeliveredPrice);
+      if (this.perfWasteQty) this.perfWasteQty.textContent = this.formatWeight(perf.totalWasteQuantity) + ' طن';
+      if (this.perfWastePrice) this.perfWastePrice.textContent = this.formatCurrency(perf.totalWastePrice);
+      if (this.perfRemainingQty) this.perfRemainingQty.textContent = this.formatWeight(perf.remainingQuantity) + ' طن';
+      if (this.perfRemainingPrice) this.perfRemainingPrice.textContent = this.formatCurrency(perf.remainingPrice);
+
+      // 3. Daily Activity Section
+      if (this.dailyDateBadge) {
+        this.dailyDateBadge.textContent = stats.filterDate || this.selectedDate;
+      }
+      if (this.dailyTransCount) {
+        this.dailyTransCount.textContent = Number(daily.transportationTransactionsCount || 0).toLocaleString('ar-EG');
+      }
+      if (this.dailyTransNet) {
+        this.dailyTransNet.textContent = this.formatWeight(daily.transportationNetWeight) + ' طن صافي';
+      }
+      if (this.dailyTransWaste) {
+        this.dailyTransWaste.textContent = this.formatWeight(daily.transportationWasteQuantity) + ' طن';
+      }
+      if (this.dailyTransWastePrice) {
+        this.dailyTransWastePrice.textContent = this.formatCurrency(daily.transportationWastePrice);
+      }
+      if (this.dailyStorageImportQty) {
+        this.dailyStorageImportQty.textContent = this.formatWeight(daily.storageImportedQuantity) + ' طن';
+      }
+      if (this.dailyStorageImportPrice) {
+        if (daily.storageImportedPrice !== null && daily.storageImportedPrice !== undefined) {
+          this.dailyStorageImportPrice.textContent = this.formatCurrency(daily.storageImportedPrice);
+        } else {
+          this.dailyStorageImportPrice.textContent = 'غير مسعر';
+        }
+      }
+      if (this.dailyStorageWaste) {
+        this.dailyStorageWaste.textContent = this.formatWeight(daily.storageWasteQuantity) + ' طن';
+      }
+      if (this.dailyStorageWastePrice) {
+        this.dailyStorageWastePrice.textContent = this.formatCurrency(daily.storageWastePrice);
+      }
+      if (this.dailyTotalWaste) {
+        this.dailyTotalWaste.textContent = this.formatWeight(daily.totalWasteQuantity) + ' طن';
+      }
+      if (this.dailyTotalWastePrice) {
+        this.dailyTotalWastePrice.textContent = this.formatCurrency(daily.totalWastePrice);
+      }
+
+      // 4. Cumulative PO Financial Summary Section
+      if (this.summaryScopeBadge) {
+        this.summaryScopeBadge.textContent = sum.scope === 'SinglePo' ? 'عقد محدد' : 'إجمالي كافة العقود';
+      }
+      if (this.summaryPoNumber) {
+        this.summaryPoNumber.textContent = sum.poNumber || 'كافة العقود';
+      }
+      if (this.summarySupplier) {
+        this.summarySupplier.textContent = sum.supplier || (sum.scope === 'AllPos' ? 'جميع الموردين المتعاقد معهم' : '-');
+      }
+      if (this.summaryDest) {
+        this.summaryDest.textContent = sum.destination ? ('الوجهة: ' + sum.destination) : 'كافة الوجهات المعتمدة';
+      }
+      if (this.summaryTonPrice) {
+        this.summaryTonPrice.textContent = sum.scope === 'SinglePo' ? this.formatCurrency(sum.tonPrice) : 'متنوع حسب العقد';
+      }
+      if (this.summaryMovementsCount) {
+        const moves = sum.transportationTransactionsCount !== undefined ? sum.transportationTransactionsCount : (sum.transportationMovementsCount || 0);
+        this.summaryMovementsCount.textContent = Number(moves).toLocaleString('ar-EG');
+      }
+      if (this.summaryPerfRate) {
+        const pRate = sum.performancePercentage !== undefined ? sum.performancePercentage : (sum.factoryPerformancePercentage || 0);
+        this.summaryPerfRate.textContent = Number(pRate).toFixed(2) + '%';
+      }
+      if (this.summaryExpectedQty) this.summaryExpectedQty.textContent = this.formatWeight(sum.expectedQuantity) + ' طن';
+      if (this.summaryExpectedPrice) this.summaryExpectedPrice.textContent = 'السعر: ' + this.formatCurrency(sum.expectedPrice);
+      if (this.summaryDeliveredQty) this.summaryDeliveredQty.textContent = this.formatWeight(sum.deliveredQuantity) + ' طن';
+      if (this.summaryDeliveredPrice) this.summaryDeliveredPrice.textContent = 'القيمة: ' + this.formatCurrency(sum.deliveredPrice);
+      if (this.summaryRemainingQty) this.summaryRemainingQty.textContent = this.formatWeight(sum.remainingQuantity) + ' طن';
+      if (this.summaryRemainingPrice) this.summaryRemainingPrice.textContent = 'القيمة: ' + this.formatCurrency(sum.remainingPrice);
+      if (this.summaryTotalWaste) this.summaryTotalWaste.textContent = this.formatWeight(sum.totalWasteQuantity) + ' طن';
+      if (this.summaryTotalWastePrice) this.summaryTotalWastePrice.textContent = 'القيمة: ' + this.formatCurrency(sum.totalWastePrice);
+      if (this.summaryTransWaste) this.summaryTransWaste.textContent = this.formatWeight(sum.transportationWasteQuantity) + ' طن';
+      if (this.summaryTransWastePrice) this.summaryTransWastePrice.textContent = 'القيمة: ' + this.formatCurrency(sum.transportationWastePrice);
+      if (this.summaryStorageWaste) this.summaryStorageWaste.textContent = this.formatWeight(sum.storageWasteQuantity) + ' طن';
+      if (this.summaryStorageWastePrice) this.summaryStorageWastePrice.textContent = 'القيمة: ' + this.formatCurrency(sum.storageWastePrice);
+      if (this.summaryPaidAmount) this.summaryPaidAmount.textContent = this.formatCurrency(sum.paidAmount);
+      if (this.summaryOutstandingAmount) this.summaryOutstandingAmount.textContent = this.formatCurrency(sum.outstandingAmount);
+    }
+
+    highlightSelectedTableRow(po) {
+      if (!this.tableBody) return;
+      const rows = this.tableBody.querySelectorAll('tr[data-po]');
+      rows.forEach(tr => {
+        const rPo = tr.getAttribute('data-po');
+        if (po && po !== 'all' && rPo === po) {
+          tr.classList.add('selected-po-row');
+        } else {
+          tr.classList.remove('selected-po-row');
+        }
+      });
+    }
+
     async loadData() {
       this.setLoadingState(true);
       try {
@@ -236,7 +472,6 @@
           this.currentPage = data.page || 1;
           this.totalPages = data.totalPages || 1;
 
-          this.renderKpis(data.kpiSummary);
           this.updateFilterDropdowns(data.filterOptions);
           this.renderTable(this.currentRecords);
           this.renderPagination();
@@ -250,28 +485,6 @@
         this.setErrorState(true, 'حدث خطأ في الاتصال بالخادم.');
       } finally {
         this.setLoadingState(false);
-      }
-    }
-
-    renderKpis(kpi) {
-      if (!kpi) return;
-      if (this.kpiTotalPoValue) {
-        this.kpiTotalPoValue.textContent = this.formatCurrency(kpi.totalPoValue);
-      }
-      if (this.kpiTotalSuppliedQty) {
-        this.kpiTotalSuppliedQty.textContent = this.formatWeight(kpi.totalSuppliedQuantity);
-      }
-      if (this.kpiTotalRemainingQty) {
-        this.kpiTotalRemainingQty.textContent = this.formatWeight(kpi.totalRemainingQuantity);
-      }
-      if (this.kpiTotalPaidAmount) {
-        this.kpiTotalPaidAmount.textContent = this.formatCurrency(kpi.totalPaidAmount);
-      }
-      if (this.kpiTotalOutstandingAmount) {
-        this.kpiTotalOutstandingAmount.textContent = this.formatCurrency(kpi.totalOutstandingAmount);
-      }
-      if (this.kpiTotalMovements) {
-        this.kpiTotalMovements.textContent = Number(kpi.totalMovementsCount || 0).toLocaleString('ar-EG');
       }
     }
 
@@ -299,6 +512,11 @@
       records.forEach((r, idx) => {
         const tr = document.createElement('tr');
         tr.className = idx % 2 === 0 ? 'finance-row-even' : 'finance-row-odd';
+        tr.setAttribute('data-po', r.poNumber || '');
+
+        if (this.selectedPo && this.selectedPo !== 'all' && r.poNumber === this.selectedPo) {
+          tr.classList.add('selected-po-row');
+        }
 
         // Payment status badge class & label
         let badgeClass = 'badge-unpaid';
@@ -330,12 +548,12 @@
             ${this.formatDate(r.orderDate)}
           </td>
 
-          <!-- 4. كمية أمر الشراء -->
+          <!-- 4. كمية أمر الشراء (الكمية المتوقعة) -->
           <td class="cell-qty font-numeric font-semibold">
             ${this.formatWeight(r.poQuantity)} طن
           </td>
 
-          <!-- 5. قيمة أمر الشراء -->
+          <!-- 5. قيمة أمر الشراء (القيمة المتوقعة) -->
           <td class="cell-val font-numeric font-semibold color-primary">
             ${this.formatCurrency(r.poValue)}
           </td>
@@ -345,7 +563,7 @@
             ${this.formatCurrency(r.tonPrice)}
           </td>
 
-          <!-- 7. الكمية التي تم توريدها -->
+          <!-- 7. الكمية التي تم توريدها (المسلمة) -->
           <td class="cell-supplied-qty font-numeric font-semibold color-info">
             ${this.formatWeight(r.suppliedQuantity)} طن
           </td>
@@ -401,11 +619,33 @@
           </td>
         `;
 
+        // Click row to filter statistics for this PO
+        tr.addEventListener('click', (e) => {
+          if (e.target.closest('.finance-paid-link')) return;
+          const poNum = tr.getAttribute('data-po');
+          if (!poNum || poNum === '-') return;
+
+          if (this.selectedPo === poNum) {
+            // Toggle off / reset to all
+            this.selectedPo = 'all';
+            if (this.mainPoSelect) this.mainPoSelect.value = 'all';
+            this.filters.po = '';
+          } else {
+            this.selectedPo = poNum;
+            if (this.mainPoSelect) this.mainPoSelect.value = poNum;
+            this.filters.po = poNum;
+          }
+          if (this.filterPoInput) this.filterPoInput.value = this.filters.po;
+          this.highlightSelectedTableRow(this.selectedPo);
+          this.loadStatistics();
+        });
+
         // Attach click listener for payment details link
         const paidLink = tr.querySelector('.finance-paid-link');
         if (paidLink) {
           paidLink.addEventListener('click', (e) => {
             e.preventDefault();
+            e.stopPropagation();
             const po = paidLink.getAttribute('data-po');
             if (po) this.showPaymentDetailsModal(po);
           });
@@ -516,6 +756,10 @@
     }
 
     resetFilters() {
+      this.initDefaultDate();
+      this.selectedPo = 'all';
+      if (this.mainPoSelect) this.mainPoSelect.value = 'all';
+
       this.filters = {
         search: '',
         po: '',
@@ -535,7 +779,9 @@
       if (this.filterDateFrom) this.filterDateFrom.value = '';
       if (this.filterDateTo) this.filterDateTo.value = '';
 
+      this.highlightSelectedTableRow('all');
       this.currentPage = 1;
+      this.loadStatistics();
       this.loadData();
     }
 
@@ -601,6 +847,6 @@
     }
   }
 
-  // Register instances globally
+  // Register instance globally
   window.FinanceManagementApp = new FinanceManagementApp();
 })();

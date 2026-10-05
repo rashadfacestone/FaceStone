@@ -402,6 +402,12 @@ namespace FaceStone.Web.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<decimal>("TonPrice")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)")
+                        .HasDefaultValue(0m);
+
                     b.Property<decimal>("TotalValue")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");

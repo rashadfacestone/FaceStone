@@ -685,6 +685,11 @@ public class FaceStoneDbContext : DbContext
                   .HasPrecision(18, 2)
                   .IsRequired();
 
+            entity.Property(e => e.TonPrice)
+                  .HasPrecision(18, 3)
+                  .HasDefaultValue(0m)
+                  .IsRequired();
+
             entity.Property(e => e.TotalValue)
                   .HasPrecision(18, 2)
                   .IsRequired();

@@ -182,3 +182,100 @@ public class FinancePaymentDto
     public DateTime CreatedAt { get; set; }
 }
 
+public class FinanceStatisticsResponseDto
+{
+    public DateTime SelectedDate { get; set; }
+    public string? SelectedPo { get; set; }
+    public string FilterDate => SelectedDate.ToString("yyyy-MM-dd");
+    public string? FilterPoNumber => SelectedPo;
+    public FinanceDailyActivityDto DailyActivity { get; set; } = new();
+    public FinancePoSummaryDto? PoSummary { get; set; }
+    public FinancePoSummaryDto? CumulativePoSummary => PoSummary;
+    public FactoryPerformanceDto? Performance { get; set; }
+    public FactoryPerformanceDto? FactoryPerformance => Performance;
+    public List<FinancePoDropdownItemDto> AvailablePos { get; set; } = new();
+    public List<FinancePoSummaryDto> AllPosSummary { get; set; } = new();
+}
+
+public class FinanceDailyActivityDto
+{
+    public DateTime SelectedDate { get; set; }
+    public int TransportationTransactionsCount { get; set; }
+    public decimal TransportationNetWeight { get; set; }
+    public decimal TransportationWasteQuantity { get; set; }
+    public decimal TransportationWastePrice { get; set; }
+    public decimal StorageImportedQuantity { get; set; }
+    public decimal? StorageImportedPrice { get; set; }
+    public string StorageImportedPriceNote { get; set; } = "لا يوجد مصدر تسعير للواردات المخزنية في قاعدة البيانات";
+    public decimal StorageExportedQuantity { get; set; }
+    public decimal StorageWasteQuantity { get; set; }
+    public decimal StorageWastePrice { get; set; }
+    public decimal TotalDailyWasteQuantity { get; set; }
+    public decimal TotalDailyWastePrice { get; set; }
+    public decimal TotalWasteQuantity => TotalDailyWasteQuantity;
+    public decimal TotalWastePrice => TotalDailyWastePrice;
+}
+
+public class FinancePoSummaryDto
+{
+    public string Scope { get; set; } = "AllPos";
+    public string PoNumber { get; set; } = string.Empty;
+    public string Supplier { get; set; } = string.Empty;
+    public string Destination { get; set; } = string.Empty;
+    public decimal TonPrice { get; set; }
+    public DateTime OrderDate { get; set; }
+    public decimal ExpectedQuantity { get; set; }
+    public decimal ExpectedPrice { get; set; }
+    public decimal DeliveredQuantity { get; set; }
+    public decimal DeliveredPrice { get; set; }
+    public decimal RemainingQuantity { get; set; }
+    public decimal RemainingPrice { get; set; }
+    public int TransportationTransactionsCount { get; set; }
+    public int TransportationMovementsCount => TransportationTransactionsCount;
+    public decimal TransportationWasteQuantity { get; set; }
+    public decimal TransportationWastePrice { get; set; }
+    public decimal StorageWasteQuantity { get; set; }
+    public decimal StorageWastePrice { get; set; }
+    public decimal TotalWasteQuantity { get; set; }
+    public decimal TotalWastePrice { get; set; }
+    public decimal ActualQuantity { get; set; }
+    public decimal ActualPrice { get; set; }
+    public decimal PerformancePercentage { get; set; }
+    public decimal FactoryPerformancePercentage => PerformancePercentage;
+    public decimal PerformancePricePercentage { get; set; }
+    public decimal TotalSuppliedNetWeight { get; set; }
+    public decimal PaidAmount { get; set; }
+    public decimal OutstandingAmount { get; set; }
+}
+
+public class FactoryPerformanceDto
+{
+    public decimal ExpectedQuantity { get; set; }
+    public decimal ExpectedPrice { get; set; }
+    public decimal ActualQuantity { get; set; }
+    public decimal ActualPrice { get; set; }
+    public decimal ActualDeliveredQuantity => ActualQuantity;
+    public decimal ActualDeliveredPrice => ActualPrice;
+    public decimal WasteQuantity { get; set; }
+    public decimal WastePrice { get; set; }
+    public decimal TotalWasteQuantity => WasteQuantity;
+    public decimal TotalWastePrice => WastePrice;
+    public decimal RemainingQuantity { get; set; }
+    public decimal RemainingPrice { get; set; }
+    public decimal PerformancePercentage { get; set; }
+    public decimal PerformancePricePercentage { get; set; }
+    public string Status { get; set; } = "High";
+    public string StatusLabelArabic { get; set; } = "أداء ممتاز";
+}
+
+public class FinancePoDropdownItemDto
+{
+    public string PoNumber { get; set; } = string.Empty;
+    public string Supplier { get; set; } = string.Empty;
+    public string Destination { get; set; } = string.Empty;
+    public decimal TonPrice { get; set; }
+    public decimal Quantity { get; set; }
+    public decimal RemainingQuantity { get; set; }
+    public DateTime OrderDate { get; set; }
+}
+
