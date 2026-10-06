@@ -1,0 +1,374 @@
+/* ==========================================================================
+   FACESTONE MANAGEMENT DEPARTMENT — UNIFIED FINANCE UX & DESIGN STYLING
+   Arabic RTL Professional Corporate Operations & Monitoring Dashboard
+   Identical aesthetic to FaceStone Finance Department
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Management Department Navigation Cards (Matching Finance Nav Cards)
+   -------------------------------------------------------------------------- */
+
+/* Specific Card Accent Hover Bars */
+#mgmt-card-transportation:hover::before { background: #3B82F6; }
+#mgmt-card-storage:hover::before { background: #059669; }
+#mgmt-card-finance:hover::before { background: #F59E0B; }
+#mgmt-card-employees:hover::before { background: #8B5CF6; }
+#mgmt-card-suppliers:hover::before { background: #0284C7; }
+
+/* Management Card Icon Themes */
+.icon-mgmt-transportation { background: #EFF6FF; color: #2563EB; }
+.icon-mgmt-storage { background: #ECFDF5; color: #059669; }
+.icon-mgmt-finance { background: #FFFBEB; color: #D97706; }
+.icon-mgmt-employees { background: #F5F3FF; color: #7C3AED; }
+.icon-mgmt-suppliers { background: #F0F9FF; color: #0284C7; }
+
+/* Card Metrics Summary Strip */
+.mgmt-hub-metrics-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 10px;
+  padding: 8px 12px;
+  margin-top: 12px;
+  margin-bottom: 4px;
+}
+
+.mgmt-hub-metric-box {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  text-align: center;
+}
+
+.mgmt-hub-metric-box:not(:last-child) {
+  border-left: 1px solid #E2E8F0;
+}
+
+.mgmt-hub-metric-box .metric-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #64748B;
+  display: block;
+}
+
+.mgmt-hub-metric-box .metric-val {
+  font-family: 'Cairo', var(--font-heading, sans-serif);
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #0F172A;
+  display: block;
+  direction: ltr;
+  text-align: center;
+}
+
+/* --------------------------------------------------------------------------
+   2. Global Search Section & Live Results Dropdown
+   -------------------------------------------------------------------------- */
+.mgmt-search-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #E2E8F0;
+  border-top-color: #F59E0B;
+  border-radius: 50%;
+  animation: mgmt-spin 0.7s linear infinite;
+}
+
+@keyframes mgmt-spin {
+  to { transform: rotate(360deg); }
+}
+
+.mgmt-search-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 14px;
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.12);
+  z-index: 1000;
+  max-height: 480px;
+  overflow-y: auto;
+  animation: mgmt-fade-down 0.2s ease-out;
+}
+
+@keyframes mgmt-fade-down {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.mgmt-search-group {
+  border-bottom: 1px solid #F1F5F9;
+  padding: 12px 16px;
+}
+
+.mgmt-search-group:last-child {
+  border-bottom: none;
+}
+
+.mgmt-search-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px dashed #E2E8F0;
+}
+
+.mgmt-search-group-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.825rem;
+  font-weight: 800;
+  color: #475569;
+}
+
+.mgmt-search-group-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  background: #FEF3C7;
+  color: #B45309;
+}
+
+.mgmt-search-group-items {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mgmt-search-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  color: inherit;
+}
+
+.mgmt-search-item:hover {
+  background: #FFFBEB;
+  border-color: #FCD34D;
+  transform: translateX(-3px);
+}
+
+.mgmt-search-item-left {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+}
+
+.mgmt-search-item-title {
+  font-size: 0.925rem;
+  font-weight: 800;
+  color: #0F172A;
+}
+
+.mgmt-search-item-subtitle {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.mgmt-search-item-details {
+  font-size: 0.75rem;
+  color: #64748B;
+}
+
+.mgmt-search-item-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.mgmt-search-pill {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: #E2E8F0;
+  color: #334155;
+}
+
+.mgmt-search-empty-box {
+  padding: 32px 24px;
+  text-align: center;
+  color: #64748B;
+}
+
+.mgmt-search-empty-box p {
+  margin: 6px 0 0 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+/* --------------------------------------------------------------------------
+   3. Custom Badges & Tags for Management Views
+   -------------------------------------------------------------------------- */
+.mgmt-pill-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 9999px;
+  font-size: 0.725rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.mgmt-pill-badge-warning {
+  background: #FEF3C7;
+  color: #B45309;
+  border: 1px solid #FCD34D;
+}
+
+.mgmt-pill-badge-danger {
+  background: #FEE2E2;
+  color: #B91C1C;
+  border: 1px solid #FCA5A5;
+}
+
+.mgmt-pill-badge-success {
+  background: #DCFCE7;
+  color: #15803D;
+  border: 1px solid #86EFAC;
+}
+
+.mgmt-pill-badge-info {
+  background: #E0F2FE;
+  color: #0369A1;
+  border: 1px solid #BAE6FD;
+}
+
+.mgmt-pill-badge-neutral {
+  background: #F1F5F9;
+  color: #475569;
+  border: 1px solid #CBD5E1;
+}
+
+/* --------------------------------------------------------------------------
+   4. Attendance Matrix / Summary Grid
+   -------------------------------------------------------------------------- */
+.mgmt-attendance-matrix {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-height: 160px;
+  overflow-y: auto;
+  padding: 8px;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 10px;
+}
+
+.mgmt-attendance-day-chip {
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.mgmt-attendance-present {
+  background: #DCFCE7;
+  color: #15803D;
+}
+
+.mgmt-attendance-absent {
+  background: #FEE2E2;
+  color: #B91C1C;
+}
+
+.mgmt-attendance-late {
+  background: #FEF3C7;
+  color: #B45309;
+}
+
+/* --------------------------------------------------------------------------
+   5. Action Buttons inside Details Tables
+   -------------------------------------------------------------------------- */
+.mgmt-btn-table-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #F1F5F9;
+  border: 1px solid #CBD5E1;
+  color: #0F172A;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.775rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mgmt-btn-table-action:hover {
+  background: #0F172A;
+  color: #FFFFFF;
+  border-color: #0F172A;
+}
+
+/* --------------------------------------------------------------------------
+   6. Modal Detail Key-Value Grids
+   -------------------------------------------------------------------------- */
+.mgmt-modal-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.mgmt-modal-detail-item {
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 10px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mgmt-modal-detail-item .lbl {
+  font-size: 0.725rem;
+  font-weight: 700;
+  color: #64748B;
+}
+
+.mgmt-modal-detail-item .val {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #0F172A;
+}
+
+/* --------------------------------------------------------------------------
+   7. Supplier Overview Progress Bar
+   -------------------------------------------------------------------------- */
+.mgmt-progress-bar-wrap {
+  width: 100%;
+  height: 8px;
+  background: #E2E8F0;
+  border-radius: 9999px;
+  overflow: hidden;
+  margin-top: 6px;
+}
+
+.mgmt-progress-bar-fill {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.4s ease;
+}

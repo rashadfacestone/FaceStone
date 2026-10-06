@@ -72,4 +72,14 @@ public class ChatHub : Hub
             await Groups.RemoveFromGroupAsync(Context.ConnectionId, roomName);
         }
     }
+
+    public async Task NotifyDepartmentChange(string department, string action)
+    {
+        await Clients.All.SendAsync("OnDepartmentDataChanged", new
+        {
+            department,
+            action,
+            timestamp = DateTime.UtcNow
+        });
+    }
 }

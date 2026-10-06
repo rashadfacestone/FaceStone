@@ -1035,6 +1035,382 @@ IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_ChatMessages_LiveSessi
                 }, cts.Token);
             }
 
+            // ========================================================================
+            // FAKE TEST DATA (Requirement 5: Clearly identifiable fake test data)
+            // Stored in the existing source tables; used to test Management monitoring.
+            // ========================================================================
+            if (!await db.PurchaseOrders.AnyAsync(p => p.PONumber == "TEST-PO-001", cts.Token))
+            {
+                logger.LogInformation("Seeding clearly identifiable fake test POs and supplier records...");
+                var testPo1 = new PurchaseOrder
+                {
+                    PONumber = "TEST-PO-001",
+                    Supplier = "TEST-SUPPLIER-001",
+                    OrderDate = DateTime.UtcNow.AddDays(-4),
+                    Quantity = 500.000m,
+                    RemainingQuantity = 320.000m,
+                    Destination = "مصنع حلوان - قطاع ج",
+                    PricePerTon = 1500.00m,
+                    TotalValue = 750000.00m,
+                    PaymentStatus = "مدفوع جزئياً",
+                    InvoiceNumber = "INV-TEST-001",
+                    Notes = "أمر شراء تجريبي معتمد لاختبار منظومة المراقبة والإدارة",
+                    CreatedAt = DateTime.UtcNow.AddDays(-4)
+                };
+
+                var testPo2 = new PurchaseOrder
+                {
+                    PONumber = "TEST-PO-002",
+                    Supplier = "TEST-SUPPLIER-002",
+                    OrderDate = DateTime.UtcNow.AddDays(-2),
+                    Quantity = 300.000m,
+                    RemainingQuantity = 300.000m,
+                    Destination = "صوامع الإسمنت الرئيسية",
+                    PricePerTon = 1800.00m,
+                    TotalValue = 540000.00m,
+                    PaymentStatus = "غير مدفوع",
+                    InvoiceNumber = "INV-TEST-002",
+                    Notes = "أمر شراء تجريبي غير مسدد لاختبار تنوع حالات الدفع",
+                    CreatedAt = DateTime.UtcNow.AddDays(-2)
+                };
+
+                await db.PurchaseOrders.AddRangeAsync(new[] { testPo1, testPo2 }, cts.Token);
+            }
+
+            // Fake Transportation Transactions
+            if (!await db.Transportations.AnyAsync(t => t.PONumber == "TEST-PO-001", cts.Token))
+            {
+                logger.LogInformation("Seeding fake transportation transactions...");
+                var transTx1 = new Transportation
+                {
+                    TransactionNumber = 8801,
+                    TransactionDate = DateTime.UtcNow.AddHours(-18),
+                    CarNumber = "ت س ت 1234",
+                    DriverName = "سائق تجريبي - أحمد فؤاد",
+                    Source = "محاجر بني سويف - قطاع الاختبار",
+                    PONumber = "TEST-PO-001",
+                    CompanyName = "TEST-SUPPLIER-001",
+                    MaterialType = "سن وركام خرساني تدرج 1",
+                    ExpectedWeight = 100.000m,
+                    WeightBeforeLoading = 36.500m,
+                    WeightWhenEnteringFactory = 135.000m,
+                    WeightWhenExitingFactory = 36.500m,
+                    InternalWeight = 98.500m,
+                    ExternalLoadedWeight = 136.500m,
+                    ExternalEmptyWeight = 36.500m,
+                    ExternalNetWeight = 100.000m,
+                    NetWeight = 98.500m,
+                    WasteQuantity = 1.500m, // Difference example
+                    Destination = "مصنع حلوان - قطاع ج",
+                    TransactionStatus = "Approved",
+                    ReceivingStatus = "Approved / Accepted",
+                    DepartureTime = DateTime.UtcNow.AddHours(-22),
+                    ArrivalTime = DateTime.UtcNow.AddHours(-19),
+                    ShippingDurationMinutes = 180,
+                    InternalWeighbridgeCode = "WB-INT-TEST-01",
+                    ExternalWeighbridgeCode = "WB-EXT-TEST-01",
+                    Notes = "حركة نقل تجريبية معتمدة توضح فرق الميزان وهالك النقل (1.5 طن)",
+                    DateOfSubmit = DateTime.UtcNow.AddHours(-18)
+                };
+
+                var transTx2 = new Transportation
+                {
+                    TransactionNumber = 8802,
+                    TransactionDate = DateTime.UtcNow.AddHours(-8),
+                    CarNumber = "ت س ت 5678",
+                    DriverName = "سائق تجريبي - محمود علي",
+                    Source = "محاجر بني سويف - قطاع الاختبار",
+                    PONumber = "TEST-PO-001",
+                    CompanyName = "TEST-SUPPLIER-001",
+                    MaterialType = "سن وركام خرساني تدرج 1",
+                    ExpectedWeight = 81.500m,
+                    WeightBeforeLoading = 34.000m,
+                    WeightWhenEnteringFactory = 115.500m,
+                    WeightWhenExitingFactory = 34.000m,
+                    InternalWeight = 81.500m,
+                    ExternalLoadedWeight = 115.500m,
+                    ExternalEmptyWeight = 34.000m,
+                    ExternalNetWeight = 81.500m,
+                    NetWeight = 81.500m,
+                    WasteQuantity = 0.000m,
+                    Destination = "مصنع حلوان - قطاع ج",
+                    TransactionStatus = "Approved",
+                    ReceivingStatus = "Approved / Accepted",
+                    DepartureTime = DateTime.UtcNow.AddHours(-11),
+                    ArrivalTime = DateTime.UtcNow.AddHours(-9),
+                    ShippingDurationMinutes = 120,
+                    InternalWeighbridgeCode = "WB-INT-TEST-02",
+                    ExternalWeighbridgeCode = "WB-EXT-TEST-02",
+                    Notes = "حركة نقل تجريبية ثانية مطابقة تماماً دون هالك",
+                    DateOfSubmit = DateTime.UtcNow.AddHours(-8)
+                };
+
+                var transTx3 = new Transportation
+                {
+                    TransactionNumber = 8803,
+                    TransactionDate = DateTime.UtcNow.AddHours(-2),
+                    CarNumber = "ت س ت 9999",
+                    DriverName = "سائق تجريبي - حسن إبراهيم",
+                    Source = "صوامع السويس الحديثة",
+                    PONumber = "TEST-PO-002",
+                    CompanyName = "TEST-SUPPLIER-002",
+                    MaterialType = "إسمنت بورتلاندي فائق",
+                    ExpectedWeight = 50.000m,
+                    WeightBeforeLoading = 32.800m,
+                    WeightWhenEnteringFactory = 82.000m,
+                    WeightWhenExitingFactory = 32.800m,
+                    InternalWeight = 49.200m,
+                    ExternalLoadedWeight = 82.800m,
+                    ExternalEmptyWeight = 32.800m,
+                    ExternalNetWeight = 50.000m,
+                    NetWeight = 49.200m,
+                    WasteQuantity = 0.800m,
+                    Destination = "صوامع الإسمنت الرئيسية",
+                    TransactionStatus = "InTransit",
+                    ReceivingStatus = "قيد المراجعة",
+                    DepartureTime = DateTime.UtcNow.AddHours(-3),
+                    ArrivalTime = DateTime.UtcNow.AddHours(-2),
+                    ShippingDurationMinutes = 60,
+                    InternalWeighbridgeCode = "WB-INT-TEST-03",
+                    ExternalWeighbridgeCode = "WB-EXT-TEST-03",
+                    Notes = "شحنة تجريبية قيد المراجعة والاستلام",
+                    DateOfSubmit = DateTime.UtcNow.AddHours(-2)
+                };
+
+                await db.Transportations.AddRangeAsync(new[] { transTx1, transTx2, transTx3 }, cts.Token);
+            }
+
+            // Fake Storage Transactions
+            if (!await db.StorageTransactions.AnyAsync(s => s.PONumber == "TEST-PO-001", cts.Token))
+            {
+                logger.LogInformation("Seeding fake storage transactions...");
+                var st1 = new StorageTransaction
+                {
+                    MovementNumber = 8901,
+                    TransactionDate = DateTime.UtcNow.AddHours(-16),
+                    Action = "Import",
+                    ServiceType = "إضافة",
+                    ReferenceNumber = 8901,
+                    PONumber = "TEST-PO-001",
+                    Material = "سن وركام خرساني تدرج 1",
+                    IncomingQuantity = 180.000m,
+                    OutgoingQuantity = 0.000m,
+                    OpeningBalance = 200.000m,
+                    ClosingBalance = 380.000m,
+                    StorageLocation = "مستودع الخامات الرئيسي - قطاع C",
+                    ReceivingEmployee = "أمين مخزن تجريبي - هاني شاكر",
+                    InternalWeighbridgeReference = "WB-REF-TEST-01",
+                    InternalLoadedWeight = 216.500m,
+                    InternalEmptyWeight = 36.500m,
+                    InternalNetWeight = 180.000m,
+                    HasExternalWeighbridge = true,
+                    ExternalWeighbridgeReference = "WB-EXT-REF-01",
+                    ExternalLoadedWeight = 216.500m,
+                    ExternalEmptyWeight = 36.500m,
+                    ExternalNetWeight = 180.000m,
+                    IsExportRelatedToPO = false,
+                    Notes = "إيداع مخزني تجريبي معتمد مرتبط بأمر الشراء TEST-PO-001",
+                    CreatedAt = DateTime.UtcNow.AddHours(-16)
+                };
+
+                var st2 = new StorageTransaction
+                {
+                    MovementNumber = 8902,
+                    TransactionDate = DateTime.UtcNow.AddHours(-6),
+                    Action = "Export",
+                    ServiceType = "صرف",
+                    ReferenceNumber = 8902,
+                    PONumber = "TEST-PO-001",
+                    Material = "سن وركام خرساني تدرج 1",
+                    IncomingQuantity = 0.000m,
+                    OutgoingQuantity = 40.000m,
+                    OpeningBalance = 380.000m,
+                    ClosingBalance = 340.000m,
+                    StorageLocation = "مستودع الخامات الرئيسي - قطاع C",
+                    ReceivingEmployee = "أمين مخزن تجريبي - هاني شاكر",
+                    InternalWeighbridgeReference = "WB-REF-TEST-02",
+                    InternalLoadedWeight = 74.000m,
+                    InternalEmptyWeight = 34.000m,
+                    InternalNetWeight = 40.000m,
+                    HasExternalWeighbridge = false,
+                    IsExportRelatedToPO = true,
+                    Notes = "صرف مخزني تجريبي لصالح خط خلط الخرسانة الجاهزة مرتبط بأمر الشراء TEST-PO-001",
+                    CreatedAt = DateTime.UtcNow.AddHours(-6)
+                };
+
+                var st3 = new StorageTransaction
+                {
+                    MovementNumber = 8903,
+                    TransactionDate = DateTime.UtcNow.AddHours(-2),
+                    Action = "Import",
+                    ServiceType = "إضافة",
+                    ReferenceNumber = 8903,
+                    PONumber = null,
+                    Material = "إضافات خرسانية كيميائية",
+                    IncomingQuantity = 25.000m,
+                    OutgoingQuantity = 0.000m,
+                    OpeningBalance = 50.000m,
+                    ClosingBalance = 75.000m,
+                    StorageLocation = "مستودع الكيماويات والمحسنات",
+                    ReceivingEmployee = "مسؤول المستودع - خالد سالم",
+                    InternalWeighbridgeReference = "WB-REF-TEST-03",
+                    InternalLoadedWeight = 55.000m,
+                    InternalEmptyWeight = 30.000m,
+                    InternalNetWeight = 25.000m,
+                    HasExternalWeighbridge = false,
+                    IsExportRelatedToPO = false,
+                    Notes = "وارد مخزني مستقل غير مربوط بأمر شراء",
+                    CreatedAt = DateTime.UtcNow.AddHours(-2)
+                };
+
+                await db.StorageTransactions.AddRangeAsync(new[] { st1, st2, st3 }, cts.Token);
+            }
+
+            // Fake Finance Records (Payment, Expense, Bank Transaction)
+            if (!await db.FinancePayments.AnyAsync(fp => fp.PONumber == "TEST-PO-001", cts.Token))
+            {
+                logger.LogInformation("Seeding fake finance payments and expenses...");
+                await db.FinancePayments.AddAsync(new FinancePayment
+                {
+                    PONumber = "TEST-PO-001",
+                    Amount = 270000.00m,
+                    PaymentDate = DateTime.UtcNow.AddDays(-1),
+                    PaidBy = "المحاسب المالي",
+                    PaymentMethod = "تحويل بنكي",
+                    Notes = "سداد دفعة نقدية بنكية عن كمية 180 طن مستلمة بأمر الشراء TEST-PO-001",
+                    CreatedAt = DateTime.UtcNow.AddDays(-1)
+                }, cts.Token);
+            }
+
+            if (!await db.Expenses.AnyAsync(e => e.ReferenceNumber == "CHK-TEST-001", cts.Token))
+            {
+                await db.Expenses.AddAsync(new Expense
+                {
+                    ExpenseDate = DateTime.UtcNow.AddDays(-2),
+                    Category = "النقل واللوجستيات",
+                    Amount = 14500.00m,
+                    Title = "مصاريف شحن واختبارات معملية - TEST-EXP-001",
+                    Beneficiary = "معمل ضبط الجودة الهندسي",
+                    PaymentMethod = "شيك",
+                    ReferenceNumber = "CHK-TEST-001",
+                    CreatedBy = "sarah@facestone.com",
+                    Notes = "سداد تكاليف فحص وضبط جودة الركام والشحنات",
+                    CreatedAt = DateTime.UtcNow.AddDays(-2)
+                }, cts.Token);
+            }
+
+            if (!await db.BankTransactions.AnyAsync(b => b.ReferenceNumber == "TRF-TEST-8891", cts.Token))
+            {
+                await db.BankTransactions.AddAsync(new BankTransaction
+                {
+                    TransactionDate = DateTime.UtcNow.AddDays(-1),
+                    BankName = "البنك الأهلي المصري",
+                    TransactionType = "تحويل بنكي",
+                    Direction = "Out",
+                    Amount = 270000.00m,
+                    Description = "سداد دفعة للمورد TEST-SUPPLIER-001 عن أمر الشراء TEST-PO-001",
+                    ReferenceNumber = "TRF-TEST-8891",
+                    CreatedBy = "sarah@facestone.com",
+                    Notes = "معاملة بنكية صادرة مؤكدة بالإشعار البنكي",
+                    CreatedAt = DateTime.UtcNow.AddDays(-1)
+                }, cts.Token);
+            }
+
+            // Fake Employees & Financial / Attendance / Lending Records
+            var testEmpId1 = Guid.Parse("11111111-2222-3333-4444-555555555551");
+            if (!await db.Users.AnyAsync(u => u.Id == testEmpId1, cts.Token))
+            {
+                logger.LogInformation("Seeding fake employee accounts and HR/Lending data...");
+                var testUser1 = new UserAccount
+                {
+                    Id = testEmpId1,
+                    FullName = "المهندس أسامة عبد الله - TEST",
+                    Username = "test_engineer",
+                    Email = "test.engineer@facestone.com",
+                    PhoneNumber = "+201099990001",
+                    Role = "SENIOR STRUCTURAL ENGINEER",
+                    PasswordHash = HashPassword("TestPass123!"),
+                    CreatedAt = DateTime.UtcNow.AddMonths(-6)
+                };
+                await db.Users.AddAsync(testUser1, cts.Token);
+
+                await db.EmployeeFinancialRecords.AddAsync(new EmployeeFinancialRecord
+                {
+                    UserId = testEmpId1,
+                    BasicSalary = 18000.00m,
+                    NetSalary = 17200.00m,
+                    Allowances = 1200.00m,
+                    InsuranceDeductions = 2000.00m,
+                    UpdatedAt = DateTime.UtcNow.AddDays(-1)
+                }, cts.Token);
+
+                await db.EmployeeLendings.AddAsync(new EmployeeLending
+                {
+                    UserId = testEmpId1,
+                    LendingAmount = 10000.00m,
+                    PaidAmount = 4000.00m,
+                    RemainingAmount = 6000.00m,
+                    RequestDate = DateTime.UtcNow.AddDays(-20),
+                    ApprovalStatus = "Approved",
+                    ApprovedBy = "الرئيس التنفيذي",
+                    Notes = "سلفة شخصية بخصم شهري 1000 ج.م",
+                    CreatedAt = DateTime.UtcNow.AddDays(-20)
+                }, cts.Token);
+
+                for (int i = 1; i <= 20; i++)
+                {
+                    await db.AttendanceRecords.AddAsync(new AttendanceRecord
+                    {
+                        UserId = testEmpId1,
+                        Date = DateTime.UtcNow.Date.AddDays(-i),
+                        Status = i == 5 ? "Absent" : "Present",
+                        CheckInTime = DateTime.UtcNow.Date.AddDays(-i).AddHours(8).AddMinutes(15),
+                        CheckOutTime = DateTime.UtcNow.Date.AddDays(-i).AddHours(16).AddMinutes(30),
+                        Notes = i == 5 ? "إجازة اعتيادية معتمدة" : "حضور منتظم"
+                    }, cts.Token);
+                }
+            }
+
+            var testEmpId2 = Guid.Parse("11111111-2222-3333-4444-555555555552");
+            if (!await db.Users.AnyAsync(u => u.Id == testEmpId2, cts.Token))
+            {
+                var testUser2 = new UserAccount
+                {
+                    Id = testEmpId2,
+                    FullName = "فني التشغيل عادل مراد - TEST",
+                    Username = "test_operator",
+                    Email = "test.operator@facestone.com",
+                    PhoneNumber = "+201099990002",
+                    Role = "Employee",
+                    PasswordHash = HashPassword("TestPass123!"),
+                    CreatedAt = DateTime.UtcNow.AddMonths(-4)
+                };
+                await db.Users.AddAsync(testUser2, cts.Token);
+
+                await db.EmployeeFinancialRecords.AddAsync(new EmployeeFinancialRecord
+                {
+                    UserId = testEmpId2,
+                    BasicSalary = 9500.00m,
+                    NetSalary = 9100.00m,
+                    Allowances = 600.00m,
+                    InsuranceDeductions = 1000.00m,
+                    UpdatedAt = DateTime.UtcNow.AddDays(-1)
+                }, cts.Token);
+
+                for (int i = 1; i <= 20; i++)
+                {
+                    await db.AttendanceRecords.AddAsync(new AttendanceRecord
+                    {
+                        UserId = testEmpId2,
+                        Date = DateTime.UtcNow.Date.AddDays(-i),
+                        Status = "Present",
+                        CheckInTime = DateTime.UtcNow.Date.AddDays(-i).AddHours(8),
+                        CheckOutTime = DateTime.UtcNow.Date.AddDays(-i).AddHours(16),
+                        Notes = "حضور منتظم"
+                    }, cts.Token);
+                }
+            }
+
             await db.SaveChangesAsync(cts.Token);
         }
         catch (Exception ex)

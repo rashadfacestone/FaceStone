@@ -735,6 +735,113 @@ class ChatApi {
     });
   }
 
+  static async getManagementOverview() {
+    return await this.request('/api/management/overview', {
+      method: 'GET'
+    });
+  }
+
+  static async getManagementSearch(query) {
+    const qs = query ? `?q=${encodeURIComponent(query)}` : '';
+    return await this.request(`/api/management/search${qs}`, {
+      method: 'GET'
+    });
+  }
+
+  static async getManagementTransportation(params = {}) {
+    const qs = new URLSearchParams();
+    if (params.fromDate) qs.append('fromDate', params.fromDate);
+    if (params.toDate) qs.append('toDate', params.toDate);
+    if (params.search) qs.append('search', params.search);
+    if (params.po) qs.append('po', params.po);
+    if (params.driver) qs.append('driver', params.driver);
+    if (params.material) qs.append('material', params.material);
+    if (params.destination) qs.append('destination', params.destination);
+    const queryStr = qs.toString() ? `?${qs.toString()}` : '';
+    return await this.request(`/api/management/transportation${queryStr}`, {
+      method: 'GET'
+    });
+  }
+
+  static async getManagementTransportationDetail(id) {
+    return await this.request(`/api/management/transportation/${encodeURIComponent(id)}`, {
+      method: 'GET'
+    });
+  }
+
+  static async getManagementStorage(params = {}) {
+    const qs = new URLSearchParams();
+    if (params.fromDate) qs.append('fromDate', params.fromDate);
+    if (params.toDate) qs.append('toDate', params.toDate);
+    if (params.search) qs.append('search', params.search);
+    if (params.material) qs.append('material', params.material);
+    if (params.action) qs.append('action', params.action);
+    if (params.po) qs.append('po', params.po);
+    const queryStr = qs.toString() ? `?${qs.toString()}` : '';
+    return await this.request(`/api/management/storage${queryStr}`, {
+      method: 'GET'
+    });
+  }
+
+  static async getManagementStorageDetail(id) {
+    return await this.request(`/api/management/storage/${encodeURIComponent(id)}`, {
+      method: 'GET'
+    });
+  }
+
+  static async getManagementFinance(params = {}) {
+    const qs = new URLSearchParams();
+    if (params.fromDate) qs.append('fromDate', params.fromDate);
+    if (params.toDate) qs.append('toDate', params.toDate);
+    if (params.search) qs.append('search', params.search);
+    if (params.po) qs.append('po', params.po);
+    if (params.paymentStatus) qs.append('paymentStatus', params.paymentStatus);
+    const queryStr = qs.toString() ? `?${qs.toString()}` : '';
+    return await this.request(`/api/management/finance${queryStr}`, {
+      method: 'GET'
+    });
+  }
+
+  static async getManagementPurchaseOrderDetail(poNumber) {
+    return await this.request(`/api/management/purchase-orders/${encodeURIComponent(poNumber)}`, {
+      method: 'GET'
+    });
+  }
+
+  static async getManagementEmployees(params = {}) {
+    const qs = new URLSearchParams();
+    if (params.search) qs.append('search', params.search);
+    if (params.department) qs.append('department', params.department);
+    if (params.position) qs.append('position', params.position);
+    const queryStr = qs.toString() ? `?${qs.toString()}` : '';
+    return await this.request(`/api/management/employees${queryStr}`, {
+      method: 'GET'
+    });
+  }
+
+  static async getManagementEmployeeDetail(id) {
+    return await this.request(`/api/management/employees/${encodeURIComponent(id)}`, {
+      method: 'GET'
+    });
+  }
+
+  static async getManagementSuppliers(params = {}) {
+    const qs = new URLSearchParams();
+    if (params.search) qs.append('search', params.search);
+    if (params.po) qs.append('po', params.po);
+    if (params.material) qs.append('material', params.material);
+    const queryStr = qs.toString() ? `?${qs.toString()}` : '';
+    return await this.request(`/api/management/suppliers${queryStr}`, {
+      method: 'GET'
+    });
+  }
+
+  static async getManagementSupplierDetail(id) {
+    return await this.request(`/api/management/suppliers/${encodeURIComponent(id)}`, {
+      method: 'GET'
+    });
+  }
+
   static async syncManagement() {
     return await this.request('/api/management/sync', {
       method: 'POST'

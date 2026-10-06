@@ -140,6 +140,11 @@ class RealTimeChatService {
         window.dispatchEvent(new CustomEvent('realtime:live-location:ended', { detail: data }));
       });
 
+      this.hubConnection.on('OnDepartmentDataChanged', (data) => {
+        console.log('[Management/RealTime] Department data changed via SignalR:', data);
+        window.dispatchEvent(new CustomEvent('facestone:data-changed', { detail: data }));
+      });
+
       // Lifecycle hooks
       this.hubConnection.onreconnecting(() => {
         if (ChatApi.isHandlingSessionExpiry || !ChatApi.getToken()) {
@@ -376,6 +381,19 @@ class RealTimeChatService {
       osc.start();
       osc.stop(this.audioContext.currentTime + 0.3);
     } catch {}
+  }
+
+  async broadcastDepartmentChange(department, action) {
+    try {
+      if (this.hubConnection && typeof signalR !== 'undefined' && this.hubConnection.state === signalR.HubConnectionState.Connected) {
+        await this.hubConnection.invoke('NotifyDepartmentChange', department, action || 'Updated');
+      }
+    } catch (e) {
+      console.warn('Could not broadcast department change via SignalR:', e);
+    }
+    window.dispatchEvent(new CustomEvent('facestone:data-changed', {
+      detail: { department, action: action || 'Updated', timestamp: new Date().toISOString() }
+    }));
   }
 }
 

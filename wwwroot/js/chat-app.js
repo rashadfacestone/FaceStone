@@ -764,8 +764,9 @@ class ChatApp {
       this.enterDepartment('transportation');
     } else if (path === '/departments/storage' || path === '/storage' || hash === '#/departments/storage' || hash === '#/storage') {
       this.enterDepartment('storage');
-    } else if (path === '/management' || hash === '#/management') {
-      this.enterDepartment('management');
+    } else if (path.startsWith('/management') || hash.startsWith('#/management')) {
+      const targetSubRoute = path.startsWith('/management') ? window.location.pathname : hash.replace('#', '');
+      this.enterDepartment('management', targetSubRoute);
     } else {
       this.showView('departments');
       const u = chatState.currentUser || ChatApi.getCurrentUser();
@@ -858,8 +859,9 @@ class ChatApp {
       await this.enterDepartment('transportation');
     } else if (path === '/departments/storage' || path === '/storage' || hash === '#/departments/storage' || hash === '#/storage') {
       await this.enterDepartment('storage');
-    } else if (path === '/management' || hash === '#/management') {
-      await this.enterDepartment('management');
+    } else if (path.startsWith('/management') || hash.startsWith('#/management')) {
+      const targetSubRoute = path.startsWith('/management') ? window.location.pathname : hash.replace('#', '');
+      await this.enterDepartment('management', targetSubRoute);
     } else {
       this.showView('departments');
       if (window.location.pathname !== '/departments') {
@@ -936,7 +938,21 @@ class ChatApp {
       const res = await ChatApi.verifyManagementAccess();
       if (res.success && res.status !== 403) {
         this.showView('management');
-        if (window.location.pathname !== '/management') {
+        const user = chatState.currentUser || ChatApi.getCurrentUser();
+        if (window.ManagementApp) {
+          window.ManagementApp.init();
+          window.ManagementApp.updateUserBadge(user);
+          if (subRoute && subRoute !== '/management') {
+            window.ManagementApp.handleRoute(subRoute);
+          } else {
+            window.ManagementApp.showLandingHub();
+          }
+        }
+        if (subRoute && subRoute !== '/management') {
+          if (window.location.pathname !== subRoute) {
+            history.pushState({ view: 'management', subRoute }, '', subRoute);
+          }
+        } else if (window.location.pathname !== '/management') {
           history.pushState({ view: 'management' }, '', '/management');
         }
       } else {
