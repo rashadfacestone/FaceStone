@@ -20,6 +20,16 @@ public static class AppRoles
     public const string FinanceManager = "FINANCE_MANAGER";
     public const string FinanceManagerDisplay = "Finance Manager";
     public const string CFO = "CFO";
+    public const string ControlMonitoring = "CONTROL_MONITORING";
+    public const string ControlMonitoringDisplay = "Control & Monitoring Employee";
+
+    public static readonly string[] ControlMonitoringAllowedRoles =
+    {
+        CEO,
+        IT,
+        ControlMonitoring,
+        ControlMonitoringDisplay
+    };
 
     public static readonly string[] TransportationAllowedRoles = 
     { 
@@ -122,6 +132,18 @@ public static class AppRoles
         if (string.IsNullOrWhiteSpace(role)) return false;
         var r = role.Trim();
         foreach (var allowed in FinanceDirectorAllowedRoles)
+        {
+            if (r.Equals(allowed, StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+        return false;
+    }
+
+    public static bool HasControlMonitoringAccess(string? role)
+    {
+        if (string.IsNullOrWhiteSpace(role)) return false;
+        var r = role.Trim();
+        foreach (var allowed in ControlMonitoringAllowedRoles)
         {
             if (r.Equals(allowed, StringComparison.OrdinalIgnoreCase))
                 return true;

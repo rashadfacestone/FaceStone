@@ -18,5 +18,6 @@ public class DepartmentListResponseDto
     public bool HasTransportationAccess { get; set; }
     public bool HasStorageAccess { get; set; }
     public bool HasManagementAccess { get; set; }
+    public bool HasControlMonitoringAccess { get; set; }
     public List<DepartmentSummaryDto> Departments { get; set; } = new();
 }

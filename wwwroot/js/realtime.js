@@ -143,6 +143,21 @@ class RealTimeChatService {
       this.hubConnection.on('OnDepartmentDataChanged', (data) => {
         console.log('[Management/RealTime] Department data changed via SignalR:', data);
         window.dispatchEvent(new CustomEvent('facestone:data-changed', { detail: data }));
+        if (data?.department === 'control-monitoring') {
+          window.dispatchEvent(new CustomEvent('facestone:realtime:control-monitoring', { detail: data }));
+        }
+      });
+
+      this.hubConnection.on('OnFormSubmittedForReview', (data) => {
+        console.log('[ControlMonitoring/RealTime] Form submitted for review:', data);
+        window.dispatchEvent(new CustomEvent('facestone:realtime:control-monitoring', { detail: data }));
+        window.dispatchEvent(new CustomEvent('facestone:data-changed', { detail: data }));
+      });
+
+      this.hubConnection.on('OnFormApprovalStatusChanged', (data) => {
+        console.log('[ControlMonitoring/RealTime] Form approval status changed:', data);
+        window.dispatchEvent(new CustomEvent('facestone:realtime:control-monitoring', { detail: data }));
+        window.dispatchEvent(new CustomEvent('facestone:data-changed', { detail: data }));
       });
 
       // Lifecycle hooks

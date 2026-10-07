@@ -103,7 +103,12 @@ builder.Services.AddAuthentication(options =>
                               ?? context.Request.Query["token"].FirstOrDefault();
             var path = context.HttpContext.Request.Path;
             if (!string.IsNullOrEmpty(accessToken) && 
-                (path.StartsWithSegments("/chatHub") || path.StartsWithSegments("/api/chat/attachments")))
+                (path.StartsWithSegments("/chatHub", StringComparison.OrdinalIgnoreCase) || 
+                 path.StartsWithSegments("/api/chat/attachments", StringComparison.OrdinalIgnoreCase) ||
+                 path.StartsWithSegments("/api/control-monitoring/attachments", StringComparison.OrdinalIgnoreCase) ||
+                 path.StartsWithSegments("/api/attachments", StringComparison.OrdinalIgnoreCase) ||
+                 path.StartsWithSegments("/api/transportation/attachments", StringComparison.OrdinalIgnoreCase) ||
+                 path.StartsWithSegments("/api/storage/attachments", StringComparison.OrdinalIgnoreCase)))
             {
                 context.Token = accessToken;
             }
@@ -140,6 +145,13 @@ builder.Services.AddAuthorization(options =>
         {
             var role = ctx.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
             return FaceStone.Web.Models.AppRoles.HasFinanceAccess(role);
+        }));
+
+    options.AddPolicy("ControlMonitoringAccess", policy =>
+        policy.RequireAssertion(ctx =>
+        {
+            var role = ctx.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+            return FaceStone.Web.Models.AppRoles.HasControlMonitoringAccess(role);
         }));
 });
 

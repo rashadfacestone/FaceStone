@@ -14,16 +14,23 @@ class ChatApi {
    * to ensure simultaneous multi-account browsing across separate browser tabs.
    */
   static getToken() {
-    return sessionStorage.getItem(JWT_STORAGE_KEY) || localStorage.getItem(JWT_STORAGE_KEY);
+    return sessionStorage.getItem(JWT_STORAGE_KEY) || 
+           localStorage.getItem(JWT_STORAGE_KEY) ||
+           sessionStorage.getItem('facestone_token') || 
+           localStorage.getItem('facestone_token') || '';
   }
 
   static setToken(token) {
     if (token) {
       sessionStorage.setItem(JWT_STORAGE_KEY, token);
       localStorage.setItem(JWT_STORAGE_KEY, token);
+      sessionStorage.setItem('facestone_token', token);
+      localStorage.setItem('facestone_token', token);
     } else {
       sessionStorage.removeItem(JWT_STORAGE_KEY);
       localStorage.removeItem(JWT_STORAGE_KEY);
+      sessionStorage.removeItem('facestone_token');
+      localStorage.removeItem('facestone_token');
     }
   }
 
@@ -312,6 +319,94 @@ class ChatApi {
     }
   }
 
+  /**
+   * Appends active JWT authentication token to any attachment or resource URL.
+   */
+  static getAuthenticatedUrl(rawUrl) {
+    if (!rawUrl) return '';
+    const token = this.getToken();
+    if (!token) return rawUrl;
+    const fullUrl = (rawUrl.startsWith('http://') || rawUrl.startsWith('https://'))
+      ? rawUrl
+      : `${API_BASE_URL}${rawUrl.startsWith('/') ? '' : '/'}${rawUrl}`;
+    const separator = fullUrl.includes('?') ? '&' : '?';
+    return `${fullUrl}${separator}token=${encodeURIComponent(token)}`;
+  }
+
+  /**
+   * Securely fetches attachment as a Blob using Bearer token Authorization header
+   * and fallbacks to query parameter token.
+   */
+  static async fetchAuthenticatedBlob(urlOrEndpoint) {
+    const token = this.getToken();
+    const rawUrl = (urlOrEndpoint.startsWith('http://') || urlOrEndpoint.startsWith('https://'))
+      ? urlOrEndpoint
+      : `${API_BASE_URL}${urlOrEndpoint.startsWith('/') ? '' : '/'}${urlOrEndpoint}`;
+    const authedUrl = this.getAuthenticatedUrl(rawUrl);
+    const headers = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const res = await fetch(authedUrl, { headers });
+    if (!res.ok) {
+      if (res.status === 401) {
+        this.handleSessionExpired();
+      }
+      throw new Error(`تعذر تنزيل الملف (رمز الاستجابة: ${res.status})`);
+    }
+
+    // Try to extract original file name from Content-Disposition header if available
+    let dispositionFileName = '';
+    const cd = res.headers.get('content-disposition');
+    if (cd) {
+      const fnMatch = cd.match(/filename\*=UTF-8''([^;]+)|filename="?([^";]+)"?/i);
+      if (fnMatch) {
+        dispositionFileName = decodeURIComponent(fnMatch[1] || fnMatch[2] || '');
+      }
+    }
+
+    const blob = await res.blob();
+    return { blob, fileName: dispositionFileName, contentType: res.headers.get('content-type') };
+  }
+
+  /**
+   * Triggers native browser download for any authenticated attachment endpoint.
+   */
+  static async downloadAttachmentFromUrl(urlOrEndpoint, fallbackFileName) {
+    const token = this.getToken();
+    const authedUrl = this.getAuthenticatedUrl(urlOrEndpoint);
+
+    try {
+      const { blob, fileName } = await this.fetchAuthenticatedBlob(urlOrEndpoint);
+      const downloadName = fileName || fallbackFileName || 'attachment';
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = blobUrl;
+      a.download = downloadName;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(blobUrl);
+      }, 5000);
+      return true;
+    } catch (err) {
+      console.warn('Authenticated blob fetch failed, falling back to direct authed link:', err);
+      if (!token) throw err;
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = authedUrl;
+      a.download = fallbackFileName || 'attachment';
+      a.target = '_blank';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => document.body.removeChild(a), 3000);
+      return true;
+    }
+  }
+
   /* ------------------------------------------------------------------------
      Location Endpoints (/api/chat/location & /api/chat/live-location)
      ------------------------------------------------------------------------ */
@@ -417,6 +512,73 @@ class ChatApi {
 
   static async verifyFinanceAccess() {
     return await this.request('/api/department/finance', {
+      method: 'GET'
+    });
+  }
+
+  static async verifyControlMonitoringAccess() {
+    return await this.request('/api/department/control-monitoring', {
+      method: 'GET'
+    });
+  }
+
+  /* ------------------------------------------------------------------------
+     Control & Monitoring Department Endpoints (/api/control-monitoring)
+     ------------------------------------------------------------------------ */
+  static async getControlMonitoringStats() {
+    return await this.request('/api/control-monitoring/stats', {
+      method: 'GET'
+    });
+  }
+
+  static async getControlMonitoringForms(params = {}) {
+    const qs = new URLSearchParams();
+    if (params.status && params.status !== 'all') qs.append('status', params.status);
+    if (params.formType && params.formType !== 'all') qs.append('formType', params.formType);
+    if (params.po && params.po !== 'all') qs.append('po', params.po);
+    if (params.employee) qs.append('employee', params.employee);
+    if (params.search) qs.append('search', params.search);
+    if (params.fromDate) qs.append('fromDate', params.fromDate);
+    if (params.toDate) qs.append('toDate', params.toDate);
+    const queryStr = qs.toString() ? `?${qs.toString()}` : '';
+    return await this.request(`/api/control-monitoring/forms${queryStr}`, {
+      method: 'GET'
+    });
+  }
+
+  static async getControlMonitoringFormDetail(formType, id) {
+    if (id === undefined || id === null) {
+      return await this.request(`/api/control-monitoring/forms/${encodeURIComponent(formType)}`, {
+        method: 'GET'
+      });
+    }
+    return await this.request(`/api/control-monitoring/forms/${encodeURIComponent(formType)}/${encodeURIComponent(id)}`, {
+      method: 'GET'
+    });
+  }
+
+  static async acceptControlMonitoringForm(formType, id) {
+    return await this.request(`/api/control-monitoring/forms/${encodeURIComponent(formType)}/${encodeURIComponent(id)}/accept`, {
+      method: 'POST'
+    });
+  }
+
+  static async rejectControlMonitoringForm(formType, id, reason) {
+    return await this.request(`/api/control-monitoring/forms/${encodeURIComponent(formType)}/${encodeURIComponent(id)}/reject`, {
+      method: 'POST',
+      body: JSON.stringify({ reason: reason || '' })
+    });
+  }
+
+  static async resubmitControlMonitoringForm(formType, id, comment) {
+    return await this.request(`/api/control-monitoring/forms/${encodeURIComponent(formType)}/${encodeURIComponent(id)}/resubmit`, {
+      method: 'POST',
+      body: JSON.stringify({ comment: comment || '' })
+    });
+  }
+
+  static async getControlMonitoringHistory(formType, id) {
+    return await this.request(`/api/control-monitoring/forms/${encodeURIComponent(formType)}/${encodeURIComponent(id)}/history`, {
       method: 'GET'
     });
   }

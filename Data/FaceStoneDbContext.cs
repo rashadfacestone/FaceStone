@@ -26,6 +26,7 @@ public class FaceStoneDbContext : DbContext
     public DbSet<EmployeeFinancialRecord> EmployeeFinancialRecords => Set<EmployeeFinancialRecord>();
     public DbSet<EmployeeLending> EmployeeLendings => Set<EmployeeLending>();
     public DbSet<AttendanceRecord> AttendanceRecords => Set<AttendanceRecord>();
+    public DbSet<FormApprovalHistory> FormApprovalHistories => Set<FormApprovalHistory>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -418,6 +419,25 @@ public class FaceStoneDbContext : DbContext
 
             entity.Property(e => e.DateOfSubmit)
                   .IsRequired();
+
+            entity.Property(e => e.ApprovalStatus)
+                  .HasMaxLength(50)
+                  .HasDefaultValue("PENDING")
+                  .IsRequired();
+
+            entity.Property(e => e.ReviewedBy)
+                  .HasMaxLength(150)
+                  .IsRequired(false);
+
+            entity.Property(e => e.ReviewedByUserId)
+                  .IsRequired(false);
+
+            entity.Property(e => e.ReviewedAt)
+                  .IsRequired(false);
+
+            entity.Property(e => e.RejectionReason)
+                  .HasMaxLength(1000)
+                  .IsRequired(false);
         });
 
         modelBuilder.Entity<Management>(entity =>
@@ -638,6 +658,25 @@ public class FaceStoneDbContext : DbContext
 
             entity.Property(e => e.CreatedAt)
                   .HasDefaultValueSql("GETUTCDATE()");
+
+            entity.Property(e => e.ApprovalStatus)
+                  .HasMaxLength(50)
+                  .HasDefaultValue("PENDING")
+                  .IsRequired();
+
+            entity.Property(e => e.ReviewedBy)
+                  .HasMaxLength(150)
+                  .IsRequired(false);
+
+            entity.Property(e => e.ReviewedByUserId)
+                  .IsRequired(false);
+
+            entity.Property(e => e.ReviewedAt)
+                  .IsRequired(false);
+
+            entity.Property(e => e.RejectionReason)
+                  .HasMaxLength(1000)
+                  .IsRequired(false);
 
             entity.HasMany(e => e.TransportationMovements)
                   .WithOne(m => m.StorageTransaction)
@@ -1019,6 +1058,57 @@ public class FaceStoneDbContext : DbContext
             entity.HasIndex(e => e.UserId);
             entity.HasIndex(e => e.Date);
             entity.HasIndex(e => new { e.UserId, e.Date });
+        });
+
+        modelBuilder.Entity<FormApprovalHistory>(entity =>
+        {
+            entity.ToTable("FormApprovalHistories");
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.FormType)
+                  .HasMaxLength(50)
+                  .IsRequired();
+
+            entity.Property(e => e.FormId)
+                  .IsRequired();
+
+            entity.Property(e => e.PONumber)
+                  .HasMaxLength(100)
+                  .IsRequired(false);
+
+            entity.Property(e => e.TransactionOrMovementNumber)
+                  .HasMaxLength(50)
+                  .IsRequired(false);
+
+            entity.Property(e => e.PreviousStatus)
+                  .HasMaxLength(50)
+                  .IsRequired();
+
+            entity.Property(e => e.NewStatus)
+                  .HasMaxLength(50)
+                  .IsRequired();
+
+            entity.Property(e => e.Action)
+                  .HasMaxLength(50)
+                  .IsRequired();
+
+            entity.Property(e => e.ActorName)
+                  .HasMaxLength(150)
+                  .IsRequired(false);
+
+            entity.Property(e => e.ActorRole)
+                  .HasMaxLength(50)
+                  .IsRequired(false);
+
+            entity.Property(e => e.Comment)
+                  .HasMaxLength(1000)
+                  .IsRequired(false);
+
+            entity.Property(e => e.Timestamp)
+                  .HasDefaultValueSql("GETUTCDATE()");
+
+            entity.HasIndex(e => new { e.FormType, e.FormId });
+            entity.HasIndex(e => e.Timestamp);
         });
     }
 }

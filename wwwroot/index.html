@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
@@ -35,6 +35,8 @@
   <link rel="stylesheet" href="/css/management.css?v=20261006_unified">
   <!-- Mobile Application Stylesheet -->
   <link rel="stylesheet" href="/css/mobile-app.css?v=20260930_pro">
+  <!-- Control & Monitoring Department Stylesheet -->
+  <link rel="stylesheet" href="/css/control-monitoring.css?v=20261007_v3">
 </head>
 <body>
 
@@ -228,6 +230,32 @@
             <div class="dept-card-footer">
               <button type="button" class="btn-enter-dept btn-enter-management" id="btn-enter-management">
                 <span>دخول قسم الإدارة</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- CONTROL & MONITORING CARD -->
+          <div class="dept-card dept-card-control" id="card-dept-control" style="display: none;">
+            <div class="dept-card-top">
+              <div class="dept-card-icon-wrap control-icon">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                  <polyline points="9 12 11 14 15 10"/>
+                </svg>
+              </div>
+              <span class="dept-card-badge restricted">قسم رقابي معتمد</span>
+            </div>
+            <div class="dept-card-body">
+              <h3 class="dept-card-title">قسم التحكم والمراقبة</h3>
+              <p class="dept-card-tagline">Control & Monitoring • تدقيق واعتماد النماذج</p>
+              <p class="dept-card-desc">
+                مراجعة وتدقيق واعتماد أو رفض نماذج النقل والمستودعات ومطابقة البيانات المرفقة قبل تمريرها للأنظمة المالية والإدارية.
+              </p>
+            </div>
+            <div class="dept-card-footer">
+              <button type="button" class="btn-enter-dept btn-enter-control" id="btn-enter-control">
+                <span>دخول قسم التحكم والمراقبة</span>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
               </button>
             </div>
@@ -1250,11 +1278,12 @@
                 <th>المسؤول عن الشحن</th>
                 <th>حالة الاستلام</th>
                 <th>وقت الحفظ</th>
+                <th>اعتماد الرقابة</th>
               </tr>
             </thead>
             <tbody id="trans-recent-tbody">
               <tr>
-                <td colspan="16" class="trans-empty-row">جاري تحميل سجل الحركات...</td>
+                <td colspan="17" class="trans-empty-row">جاري تحميل سجل الحركات...</td>
               </tr>
             </tbody>
           </table>
@@ -1780,11 +1809,12 @@
                   <th>الميزان الخارجي</th>
                   <th>الموظف المسؤول</th>
                   <th>إيصال الميزان</th>
+                  <th>اعتماد الرقابة</th>
                 </tr>
               </thead>
               <tbody id="storage-table-body">
                 <tr id="storage-loading-row">
-                  <td colspan="10" class="storage-loading-cell">
+                  <td colspan="11" class="storage-loading-cell">
                     <div class="storage-spinner-box">
                       <span class="storage-btn-spinner"></span>
                       <span>جاري تحميل بيانات حركات المخزن...</span>
@@ -5527,6 +5557,421 @@
     </div>
   </div>
 
+  <!-- ========================================================================
+       Control & Monitoring Department Page - Arabic RTL (Unified with Finance UX & Design)
+       قسم التحكم والمراقبة
+       ======================================================================== -->
+  <div class="finance-mgmt-root" id="control-monitoring-page-root" dir="rtl" style="display: none;">
+    <!-- Top Header (Same as Finance Header) -->
+    <header class="finance-mgmt-header">
+      <div class="finance-mgmt-brand">
+        <img src="/images/facestone-logo-transparent.png" alt="FaceStone Logo" class="dept-brand-logo-img">
+        <div>
+          <span class="finance-hub-title">FaceStone Control & Monitoring</span>
+          <span class="finance-hub-subtitle">قسم التحكم والمراقبة — تدقيق واعتماد النماذج الميدانية (نقل وتخزين)</span>
+        </div>
+      </div>
+
+      <div class="finance-mgmt-actions">
+        <div class="finance-hub-user-pill">
+          <div class="finance-hub-user-avatar" id="cm-user-avatar" style="background:#0284C7;">CM</div>
+          <div class="finance-hub-user-meta">
+            <span class="finance-hub-user-name" id="cm-user-name">مراقب العمليات</span>
+            <span class="finance-hub-user-role" id="cm-user-role">قسم التحكم والمراقبة</span>
+          </div>
+        </div>
+
+        <button type="button" class="finance-btn-nav finance-btn-nav-primary" id="control-monitoring-back-to-departments-btn" title="العودة إلى شاشة اختيار الأقسام">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          <span>العودة إلى الأقسام</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="finance-mgmt-container">
+      <!-- ====================================================================
+           1. CONTROL & MONITORING MAIN DASHBOARD VIEW
+           لوحة متابعة وتدقيق الطلبات الرئيسية
+           ==================================================================== -->
+      <div id="control-monitoring-main-view">
+        <!-- Title Banner Card -->
+        <div class="finance-mgmt-title-card" style="border-right: 4px solid #0284C7;">
+          <div class="finance-mgmt-title-content">
+            <h1>لوحة المتابعة وتدقيق النماذج الميدانية</h1>
+            <p>متابعة وتدقيق طلبات النقل والمستودعات الواردة مع التحقق المباشر من المرفقات الثبوتية وسجل الاعتمادات</p>
+          </div>
+          <div class="finance-badge-pill" style="border-color: rgba(2, 132, 199, 0.3); color: #0284C7;">
+            <span class="live-dot-pulse" style="background: #0284C7;"></span>
+            <span>بوابة التدقيق المركزي • FaceStone Audit Gate</span>
+          </div>
+        </div>
+
+        <!-- 5 Statistics Cards Grid -->
+        <div class="cm-stats-grid">
+          <!-- Card 1: Pending Total -->
+          <div class="cm-stat-card cm-stat-pending">
+            <div class="cm-stat-header">
+              <h3 class="cm-stat-title">إجمالي قيد المراجعة</h3>
+              <div class="cm-stat-icon cm-stat-icon-pending">⏳</div>
+            </div>
+            <div class="cm-stat-val" id="cm-stat-pending-val">0</div>
+            <div class="cm-stat-sub">Pending Reviews • تتطلب تدقيق واعتماد</div>
+          </div>
+
+          <!-- Card 2: Transportation Pending -->
+          <div class="cm-stat-card cm-stat-trans">
+            <div class="cm-stat-header">
+              <h3 class="cm-stat-title">قيد مراجعة النقل</h3>
+              <div class="cm-stat-icon cm-stat-icon-trans">🚛</div>
+            </div>
+            <div class="cm-stat-val" id="cm-stat-trans-val" style="color:#2563EB;">0</div>
+            <div class="cm-stat-sub">Transportation Pending • حركات النقل والبسكول</div>
+          </div>
+
+          <!-- Card 3: Storage Pending -->
+          <div class="cm-stat-card cm-stat-storage">
+            <div class="cm-stat-header">
+              <h3 class="cm-stat-title">قيد مراجعة المستودعات</h3>
+              <div class="cm-stat-icon cm-stat-icon-storage">📦</div>
+            </div>
+            <div class="cm-stat-val" id="cm-stat-storage-val" style="color:#7C3AED;">0</div>
+            <div class="cm-stat-sub">Storage Pending • حركات الصرف والإضافة</div>
+          </div>
+
+          <!-- Card 4: Approved Today -->
+          <div class="cm-stat-card cm-stat-approved">
+            <div class="cm-stat-header">
+              <h3 class="cm-stat-title">معتمد اليوم</h3>
+              <div class="cm-stat-icon cm-stat-icon-approved">✓</div>
+            </div>
+            <div class="cm-stat-val" id="cm-stat-approved-val" style="color:#059669;">0</div>
+            <div class="cm-stat-sub">Approved Today • تم تمريرها للمالية والإدارة</div>
+          </div>
+
+          <!-- Card 5: Rejected Today -->
+          <div class="cm-stat-card cm-stat-rejected">
+            <div class="cm-stat-header">
+              <h3 class="cm-stat-title">مرفوض اليوم</h3>
+              <div class="cm-stat-icon cm-stat-icon-rejected">✕</div>
+            </div>
+            <div class="cm-stat-val" id="cm-stat-rejected-val" style="color:#DC2626;">0</div>
+            <div class="cm-stat-sub">Rejected Today • أُعيدت للموظف للتصحيح</div>
+          </div>
+        </div>
+
+        <!-- Filters & Search Card (Exact Finance Filter Card Architecture) -->
+        <section class="finance-filters-card" aria-label="فلاتر النماذج">
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+            <!-- Quick Status Tabs -->
+            <div class="finance-tabs-nav" style="margin: 0;">
+              <button type="button" class="finance-tab-btn cm-filter-tab-btn active" data-status="PENDING">
+                <span>⏳ قيد المراجعة (Pending)</span>
+              </button>
+              <button type="button" class="finance-tab-btn cm-filter-tab-btn" data-status="all">
+                <span>الكل (All)</span>
+              </button>
+              <button type="button" class="finance-tab-btn cm-filter-tab-btn" data-status="APPROVED">
+                <span>✓ معتمد (Approved)</span>
+              </button>
+              <button type="button" class="finance-tab-btn cm-filter-tab-btn" data-status="REJECTED">
+                <span>✕ مرفوض (Rejected)</span>
+              </button>
+            </div>
+
+            <!-- Type Selector -->
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <label for="cm-filter-type-select" style="font-size: 0.85rem; font-weight: 700; color: #475569;">نوع القسم:</label>
+              <select id="cm-filter-type-select" class="finance-select" style="min-width: 170px;">
+                <option value="all">جميع الأقسام (All)</option>
+                <option value="Transportation">🚛 النقل واللوجستيات</option>
+                <option value="Storage">📦 المستودعات والتخزين</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Filter Controls Row -->
+          <div class="finance-filters-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+            <div class="finance-filter-group">
+              <label class="finance-label" for="cm-filter-search-input">بحث عام</label>
+              <input type="text" id="cm-filter-search-input" class="finance-input" placeholder="رقم الحركة، سائق، سيارة، موظف، مورد، خامة..." />
+            </div>
+
+            <div class="finance-filter-group">
+              <label class="finance-label" for="cm-filter-po-input">أمر الشراء (PO)</label>
+              <input type="text" id="cm-filter-po-input" class="finance-input" placeholder="PO-XXXX" />
+            </div>
+
+            <div class="finance-filter-group">
+              <label class="finance-label" for="cm-filter-employee-input">مقدم الطلب</label>
+              <input type="text" id="cm-filter-employee-input" class="finance-input" placeholder="اسم الموظف أو المستخدم" />
+            </div>
+
+            <div class="finance-filter-group">
+              <label class="finance-label" for="cm-filter-from-date">من تاريخ</label>
+              <input type="date" id="cm-filter-from-date" class="finance-input" />
+            </div>
+
+            <div class="finance-filter-group">
+              <label class="finance-label" for="cm-filter-to-date">إلى تاريخ</label>
+              <input type="date" id="cm-filter-to-date" class="finance-input" />
+            </div>
+
+            <div class="finance-filter-group" style="align-self: flex-end; display: flex; gap: 8px;">
+              <button type="button" class="finance-btn-filter-apply" id="cm-btn-filter-apply" style="flex: 1;">تطبيق الفلتر</button>
+              <button type="button" class="finance-btn-filter-reset" id="cm-btn-filter-reset" title="إعادة تعيين الفلاتر">↺</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Data Table Card (Exact Finance Table Design) -->
+        <section class="finance-table-card" aria-label="جدول طلبات العمليات قيد المراجعة">
+          <div class="finance-table-header">
+            <div class="finance-table-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0284C7" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+              <span>سجل طلبات العمليات الميدانية والتدقيق</span>
+            </div>
+            <button type="button" class="finance-btn-filter-action" id="cm-btn-refresh-table" title="تحديث السجلات فوراً">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+              <span>تحديث السجلات</span>
+            </button>
+          </div>
+
+          <div class="finance-table-wrapper" id="cm-finance-table-wrapper" tabindex="0" role="region" aria-label="جدول طلبات قسم التحكم والمراقبة">
+            <!-- Horizontal Slider Controls inside finance-table-wrapper -->
+            <div class="cm-table-slider-controls" aria-label="أدوات التمرير الأفقي للجدول">
+              <button type="button" class="cm-slider-btn cm-slider-prev" id="cm-table-slider-prev" title="التمرير لليمين / السابق" aria-label="السابق">
+                <span class="cm-slider-icon">←</span>
+                <span class="cm-slider-text">السابق</span>
+              </button>
+              <div class="cm-slider-info-badge">
+                <span class="cm-slider-drag-hint">↔ تصفح أفقي: اسحب أو انقر الأسهم للتنقل بين أعمدة الجدول</span>
+              </div>
+              <button type="button" class="cm-slider-btn cm-slider-next" id="cm-table-slider-next" title="التمرير لليسار / التالي" aria-label="التالي">
+                <span class="cm-slider-text">التالي</span>
+                <span class="cm-slider-icon">→</span>
+              </button>
+            </div>
+
+            <!-- Floating Side Navigation Arrows inside finance-table-wrapper -->
+            <button type="button" class="cm-slider-side-nav cm-slider-side-prev" id="cm-slider-side-prev" title="التمرير لليمين / السابق" aria-label="السابق">
+              <span>←</span>
+            </button>
+            <button type="button" class="cm-slider-side-nav cm-slider-side-next" id="cm-slider-side-next" title="التمرير لليسار / التالي" aria-label="التالي">
+              <span>→</span>
+            </button>
+
+            <table class="finance-table" id="cm-finance-table">
+              <thead>
+                <tr>
+                  <th>نوع ومعرف الطلب</th>
+                  <th>أمر الشراء (PO)</th>
+                  <th>رقم الحركة</th>
+                  <th>البيانات التعريفية / الخامة</th>
+                  <th>مقدم الطلب</th>
+                  <th>تاريخ ووقت التقديم</th>
+                  <th>الحالة</th>
+                  <th>عدد المرفقات</th>
+                  <th>الإجراء</th>
+                </tr>
+              </thead>
+              <tbody id="cm-forms-table-body">
+                <!-- Dynamically populated rows -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Table Loading Spinner -->
+          <div class="finance-table-loading" id="cm-table-loading" style="display: none; padding: 2.5rem; text-align: center;">
+            <div class="finance-spinner"></div>
+            <p style="margin-top: 10px; color: #64748B; font-weight: 600;">جاري تحميل وتدقيق الطلبات...</p>
+          </div>
+
+          <!-- Table Empty State -->
+          <div class="finance-table-empty" id="cm-table-empty" style="display: none; padding: 3rem 1rem; text-align: center;">
+            <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">📋</div>
+            <h3 style="font-size: 1.1rem; color: #0F172A; margin: 0 0 6px;">لا توجد طلبات مطابقة للفلتر المحدد</h3>
+            <p style="font-size: 0.85rem; color: #64748B; margin: 0;">جميع الطلبات معالجة أو لا توجد طلبات مسجلة ضمن نطاق البحث.</p>
+          </div>
+        </section>
+      </div>
+
+      <!-- ====================================================================
+           2. DEDICATED REQUEST DETAILS PAGE (Sub-View matching Finance UX Architecture)
+           صفحة تفاصيل الطلب المستقلة
+           ==================================================================== -->
+      <div id="control-monitoring-request-details-view" style="display: none;">
+        <!-- Top Subview Navigation Bar with Back Button -->
+        <div class="finance-subview-nav">
+          <button type="button" class="finance-btn-subview-back" id="cm-details-back-btn" title="العودة إلى قائمة الطلبات">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            <span>← العودة إلى قائمة الطلبات (Back to Requests)</span>
+          </button>
+          <div class="finance-subview-title-pill">
+            <span>قسم التحكم والمراقبة / </span>
+            <span id="cm-details-crumb-dept" style="font-weight: 700; color: #0284C7;">طلب</span>
+            <span> / </span>
+            <strong id="cm-details-crumb-tx" dir="ltr" style="font-family: monospace;">#0</strong>
+          </div>
+        </div>
+
+        <!-- Request Hero Identity Card -->
+        <div class="finance-po-hero-card" style="border-right: 4px solid #0284C7; margin-bottom: 1.25rem;">
+          <div class="finance-po-hero-header">
+            <div class="finance-po-hero-main">
+              <span class="finance-po-hero-badge" id="cm-details-hero-badge" style="background: #0284C7;">#0</span>
+              <div>
+                <h2 id="cm-details-hero-title">تفاصيل الطلب</h2>
+                <div class="finance-po-hero-sub">
+                  <span>نوع الطلب: <strong id="cm-details-hero-type-text" style="color: #0284C7;">-</strong></span>
+                  <span class="sep">•</span>
+                  <span>معرف الطلب: <strong id="cm-details-hero-id-text" dir="ltr">-</strong></span>
+                  <span class="sep">•</span>
+                  <span>أمر الشراء: <strong id="cm-details-hero-po-text" dir="ltr">-</strong></span>
+                  <span class="sep">•</span>
+                  <span>مقدم الطلب: <strong id="cm-details-hero-submitter-text">-</strong></span>
+                  <span class="sep">•</span>
+                  <span>القسم: <strong id="cm-details-hero-dept-text">-</strong></span>
+                  <span class="sep">•</span>
+                  <span>تاريخ التقديم: <strong id="cm-details-hero-date-text" dir="ltr">-</strong></span>
+                  <span class="sep">•</span>
+                  <span>وقت التقديم: <strong id="cm-details-hero-time-text" dir="ltr">-</strong></span>
+                </div>
+              </div>
+            </div>
+            <div class="finance-po-hero-badges">
+              <span class="cm-badge cm-badge-pending" id="cm-details-hero-status-badge" style="font-size: 0.95rem; padding: 6px 14px;">⏳ قيد المراجعة</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Status Notification Banner (Approved / Rejected info) -->
+        <div id="cm-details-status-banner" style="display: none; margin-bottom: 1.25rem;"></div>
+
+        <!-- Section 1: Detailed Form Data (Transportation or Storage) -->
+        <section class="finance-table-card" style="margin-bottom: 1.25rem;">
+          <div class="finance-table-header">
+            <div class="finance-table-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0284C7" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+              <span>بيانات النموذج الأصلية الميدانية (Original Form Data)</span>
+            </div>
+            <div class="finance-badge-pill" id="cm-details-form-source-badge" style="color: #0284C7; border-color: rgba(2, 132, 199, 0.3);">
+              قاعدة البيانات المباشرة
+            </div>
+          </div>
+          <div style="padding: 1.25rem;" id="cm-details-form-data-body">
+            <!-- Dynamically populated fields -->
+          </div>
+        </section>
+
+        <!-- Section 2: Dedicated Attachments Section -->
+        <section class="finance-table-card" style="margin-bottom: 1.25rem;">
+          <div class="finance-table-header">
+            <div class="finance-table-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0284C7" stroke-width="2.2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+              <span>المرفقات والمستندات الثبوتية (Attachments)</span>
+            </div>
+            <span class="finance-badge-pill" id="cm-details-attachment-count-pill" style="color: #334155;">0 مرفقات</span>
+          </div>
+          <div style="padding: 1.25rem;">
+            <p style="margin: 0 0 1rem; font-size: 0.85rem; color: #64748B;">
+              كافة المستندات الثبوتية وإيصالات الميزان وبوالص الشحن المرفقة بالطلب. يمكنك معاينتها مباشرة أو تحميلها لمطابقة التفاصيل.
+            </p>
+            <div id="cm-details-attachments-list" class="cm-attachments-grid">
+              <!-- Dynamically populated attachment cards -->
+            </div>
+          </div>
+        </section>
+
+        <!-- Section 3: Review & Approval Decision Section -->
+        <section class="finance-table-card" style="margin-bottom: 1.25rem;" id="cm-details-decision-card">
+          <div class="finance-table-header">
+            <div class="finance-table-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0284C7" stroke-width="2.2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              <span>قرار المراجعة والاعتماد (Review & Approval Decision)</span>
+            </div>
+          </div>
+          <div style="padding: 1.5rem;">
+            <!-- Pending State: Accept / Reject actions -->
+            <div id="cm-details-pending-actions-wrap">
+              <p style="margin: 0 0 1.25rem; font-size: 0.9rem; color: #475569; line-height: 1.6;">
+                ⚠️ يرجى التأكد التام من صحة الأوزان والأرقام المدخلة ومطابقتها مع بوالص الشحن وإيصالات الميزان المرفقة قبل اتخاذ قرار القبول أو الرفض.
+              </p>
+              <div class="cm-decision-actions" style="margin-bottom: 1rem; flex-wrap: wrap; gap: 12px;">
+                <button type="button" class="cm-btn-accept" id="cm-details-btn-accept">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                  <span>✓ قبول واعتماد النموذج (ACCEPT)</span>
+                </button>
+                <button type="button" class="cm-btn-reject" id="cm-details-btn-reject">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  <span>✕ رفض النموذج للتصحيح (REJECT)</span>
+                </button>
+              </div>
+
+              <!-- Inline Accept Confirmation Box (Expands when ACCEPT is clicked) -->
+              <div id="cm-details-accept-box" style="display: none; background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 12px; padding: 1.25rem; margin-top: 1rem;">
+                <h4 style="margin: 0 0 0.5rem; color: #166534; font-size: 0.95rem;">هل أنت متأكد من قبول واعتماد هذا الطلب؟</h4>
+                <p style="margin: 0 0 0.85rem; font-size: 0.85rem; color: #15803D;">عند التأكيد، ستتغير حالة الطلب فوراً إلى "معتمد" (APPROVED)، وسيتم حفظ بيانات المراجع وتاريخ الاعتماد وتحديث الأرصدة.</p>
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                  <button type="button" class="finance-btn-filter-reset" id="cm-details-btn-cancel-accept" style="padding: 8px 18px;">إلغاء</button>
+                  <button type="button" class="cm-btn-accept" id="cm-details-btn-confirm-accept" style="padding: 8px 24px;">تأكيد القبول (Confirm Accept)</button>
+                </div>
+              </div>
+
+              <!-- Inline Rejection Box (Expands when REJECT is clicked) -->
+              <div id="cm-details-reject-box" style="display: none; background: #FEF2F2; border: 1px solid #FECACA; border-radius: 12px; padding: 1.25rem; margin-top: 1rem;">
+                <h4 style="margin: 0 0 0.5rem; color: #991B1B; font-size: 0.95rem;">سبب الرفض / Rejection Reason (اختياري):</h4>
+                <p style="margin: 0 0 0.75rem; font-size: 0.825rem; color: #7F1D1D;">يمكنك تدوين سبب الرفض لتوضيح الخطأ لموظف الميدان ليتمكن من تصحيحه وإعادة الإرسال:</p>
+                <textarea id="cm-details-reject-reason-input" class="finance-input" style="height: 100px; resize: vertical; padding: 10px; font-size: 0.9rem; margin-bottom: 1rem; width: 100%; box-sizing: border-box;" placeholder="اكتب سبب الرفض هنا إن وجد (اختياري)..."></textarea>
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                  <button type="button" class="finance-btn-filter-reset" id="cm-details-btn-cancel-reject" style="padding: 8px 18px;">إلغاء</button>
+                  <button type="button" class="cm-btn-reject" id="cm-details-btn-confirm-reject" style="padding: 8px 24px;">تأكيد الرفض (Confirm Rejection)</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Non-pending state: Details of previous decision -->
+            <div id="cm-details-final-decision-info" style="display: none;"></div>
+          </div>
+        </section>
+
+        <!-- Section 4: Audit History Section -->
+        <section class="finance-table-card" style="margin-bottom: 1.25rem;">
+          <div class="finance-table-header">
+            <div class="finance-table-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0284C7" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <span>سجل تدقيق ومراجعة الطلب (Request History)</span>
+            </div>
+            <div class="finance-badge-pill" style="color: #64748B;">سجل معتمد وغير قابل للتعديل</div>
+          </div>
+          <div style="padding: 1.5rem;">
+            <div id="cm-details-timeline" class="cm-timeline">
+              <!-- Dynamically populated timeline items -->
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <!-- ========================================================================
+       ATTACHMENT PREVIEW OVERLAY
+       ======================================================================== -->
+  <div class="cm-preview-overlay" id="cm-preview-overlay" style="display: none;">
+    <div class="cm-preview-header">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 1.2rem;">👁️</span>
+        <span id="cm-preview-title" style="font-weight: 700; font-size: 0.95rem;">معاينة المرفق</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <a href="#" target="_blank" rel="noopener" id="cm-preview-popout-link" class="cm-btn-view" style="background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25); color: #FFFFFF;" title="فتح في نافذة مستقلة">↗️ نافذة مستقلة</a>
+        <a href="#" download id="cm-preview-download-link" class="cm-btn-download" style="background: #1E293B; color: #FFFFFF; border-color: #334155;">⬇️ تحميل</a>
+        <button type="button" class="cm-modal-close" id="cm-preview-close" style="color: #FFFFFF;">✕</button>
+      </div>
+    </div>
+    <div class="cm-preview-content" id="cm-preview-body"></div>
+  </div>
+
   <!-- Toast Alerts Container -->
   <div class="chat-toast-container" id="chat-toast-container" aria-live="polite"></div>
 
@@ -5582,7 +6027,7 @@
 
   <!-- Real-Time Client Libraries & Application Modules -->
   <script src="/js/signalr.min.js?v=20260927_management"></script>
-  <script src="/js/api.js?v=20260927_management"></script>
+  <script src="/js/api.js?v=20261007_v4"></script>
   <script src="/js/map.js?v=20260927_management"></script>
   <script src="/js/realtime.js?v=20260927_management"></script>
   <script src="/js/chat-state.js?v=20260927_management"></script>
@@ -5591,6 +6036,7 @@
   <script src="/js/storage.js?v=20260928_storage"></script>
   <script src="/js/management.js?v=20260928_mgmt"></script>
   <script src="/js/finance.js?v=20261005_redesign"></script>
+  <script src="/js/control-monitoring.js?v=20261007_v4"></script>
   <script src="/js/mobile-app.js?v=20260930_pro"></script>
 </body>
 </html>

@@ -202,6 +202,10 @@ public class TransportationDto
     public string? SubmittedBy { get; set; }
     public decimal PoRemainingQuantityAfter { get; set; }
     public DateTime DateOfSubmit { get; set; }
+    public string ApprovalStatus { get; set; } = "PENDING";
+    public string? ReviewedBy { get; set; }
+    public DateTime? ReviewedAt { get; set; }
+    public string? RejectionReason { get; set; }
 }
 
 public class TransportationConfigDto

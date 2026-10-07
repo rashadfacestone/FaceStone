@@ -851,7 +851,7 @@
         const json = await res.json();
 
         if (res.status === 201 && json.success) {
-          this.showAlert('success', 'نجاح الحفظ', 'تم حفظ حركة المخزن بنجاح.');
+          this.showAlert('success', 'نجاح الإرسال', 'تم إرسال وحفظ حركة المخزن بنجاح وهي الآن قيد مراجعة وتدقيق قسم التحكم والمراقبة.');
           this.resetForm(false); // Don't clear success alert
           await this.loadRecentTransactions();
         } else {
@@ -967,7 +967,7 @@
         console.error('Failed to load recent storage transactions:', err);
         this.tableBody.innerHTML = `
           <tr>
-            <td colspan="10" style="text-align:center; padding: 2rem; color: #DC2626; font-weight:700;">
+            <td colspan="11" style="text-align:center; padding: 2rem; color: #DC2626; font-weight:700;">
               تعذر تحميل بيانات حركات المخزن. اضغط تحديث للمحاولة مرة أخرى.
             </td>
           </tr>
@@ -982,7 +982,7 @@
       if (!transactions || transactions.length === 0) {
         this.tableBody.innerHTML = `
           <tr>
-            <td colspan="10" style="text-align:center; padding: 2.5rem; color: #6B7280; font-weight: 700;">
+            <td colspan="11" style="text-align:center; padding: 2.5rem; color: #6B7280; font-weight: 700;">
               لا توجد حركات مخزن مسجلة حالياً. استخدم النموذج أعلاه لتسجيل أول حركة.
             </td>
           </tr>
@@ -1069,6 +1069,24 @@
           `;
         }
 
+        // Control & Monitoring Approval Badge
+        let approvalBadge = '';
+        const st = (tx.approvalStatus || 'PENDING').toUpperCase();
+        if (st === 'APPROVED') {
+          approvalBadge = '<span class="cm-badge cm-badge-approved">✓ معتمد</span>';
+        } else if (st === 'REJECTED') {
+          const reasonText = tx.rejectionReason ? `<div style="font-size:0.75rem; color:#dc2626; margin-top:2px;">السبب: ${this.escapeHtml(tx.rejectionReason)}</div>` : '';
+          approvalBadge = `
+            <div>
+              <span class="cm-badge cm-badge-rejected">✕ مرفوض</span>
+              ${reasonText}
+              <button type="button" class="storage-resubmit-btn" data-id="${tx.id}" style="display:inline-block; margin-top:4px; padding:3px 8px; font-size:0.75rem; background:#2563eb; color:#fff; border:none; border-radius:4px; cursor:pointer;">إعادة تقديم</button>
+            </div>
+          `;
+        } else {
+          approvalBadge = '<span class="cm-badge cm-badge-pending">⏳ قيد مراجعة الرقابة</span>';
+        }
+
         tr.innerHTML = `
           <td><strong>#${tx.movementNumber || tx.id}</strong></td>
           <td dir="ltr" style="text-align:right;">${dateStr}</td>
@@ -1080,10 +1098,48 @@
           <td>${extWbDisplay}</td>
           <td>${tx.responsibleEmployee || tx.createdBy || '-'}</td>
           <td>${receiptDisplay}</td>
+          <td>${approvalBadge}</td>
         `;
 
         this.tableBody.appendChild(tr);
       });
+
+      this.tableBody.querySelectorAll('.storage-resubmit-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          const txId = e.currentTarget.getAttribute('data-id');
+          const comment = prompt('هل ترغب بإضافة توضيح للمراجعة عند إعادة التقديم؟ (اختياري)');
+          if (comment !== null) {
+            btn.disabled = true;
+            btn.textContent = 'جاري التقديم...';
+            try {
+              const res = await window.ChatApi?.resubmitControlMonitoringForm('Storage', txId, comment);
+              if (res && res.success) {
+                alert('تمت إعادة تقديم النموذج بنجاح لقسم التحكم والمراقبة.');
+                this.loadRecentTransactions();
+              } else {
+                alert('تعذر إعادة التقديم: ' + (res?.message || 'خطأ غير معروف'));
+                btn.disabled = false;
+                btn.textContent = 'إعادة تقديم';
+              }
+            } catch (err) {
+              console.error(err);
+              alert('حدث خطأ أثناء الاتصال بالخادم.');
+              btn.disabled = false;
+              btn.textContent = 'إعادة تقديم';
+            }
+          }
+        });
+      });
+    }
+
+    escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
     }
 
     // =========================================================================

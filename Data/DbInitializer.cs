@@ -277,6 +277,21 @@ BEGIN
     IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Transportation') AND name = 'CustodyAmount')
         ALTER TABLE Transportation ADD CustodyAmount DECIMAL(18,3) NOT NULL CONSTRAINT DF_Trans_CustodyAmount DEFAULT 0;
 
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Transportation') AND name = 'ApprovalStatus')
+        ALTER TABLE Transportation ADD ApprovalStatus NVARCHAR(50) NOT NULL CONSTRAINT DF_Trans_ApprovalStatus DEFAULT 'APPROVED';
+
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Transportation') AND name = 'ReviewedBy')
+        ALTER TABLE Transportation ADD ReviewedBy NVARCHAR(150) NULL;
+
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Transportation') AND name = 'ReviewedByUserId')
+        ALTER TABLE Transportation ADD ReviewedByUserId UNIQUEIDENTIFIER NULL;
+
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Transportation') AND name = 'ReviewedAt')
+        ALTER TABLE Transportation ADD ReviewedAt DATETIME2 NULL;
+
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Transportation') AND name = 'RejectionReason')
+        ALTER TABLE Transportation ADD RejectionReason NVARCHAR(1000) NULL;
+
     IF EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Transportation_TransactionNumber' AND object_id = OBJECT_ID('Transportation'))
         DROP INDEX IX_Transportation_TransactionNumber ON Transportation;
 
@@ -373,6 +388,48 @@ BEGIN
         ALTER TABLE StorageTransactions ADD WeighbridgeFileSize BIGINT NOT NULL CONSTRAINT DF_StorageTx_WbFileSize DEFAULT 0;
     IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('StorageTransactions') AND name = 'CreatedBy')
         ALTER TABLE StorageTransactions ADD CreatedBy NVARCHAR(150) NULL;
+
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('StorageTransactions') AND name = 'ApprovalStatus')
+        ALTER TABLE StorageTransactions ADD ApprovalStatus NVARCHAR(50) NOT NULL CONSTRAINT DF_StorageTx_ApprovalStatus DEFAULT 'APPROVED';
+
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('StorageTransactions') AND name = 'ReviewedBy')
+        ALTER TABLE StorageTransactions ADD ReviewedBy NVARCHAR(150) NULL;
+
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('StorageTransactions') AND name = 'ReviewedByUserId')
+        ALTER TABLE StorageTransactions ADD ReviewedByUserId UNIQUEIDENTIFIER NULL;
+
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('StorageTransactions') AND name = 'ReviewedAt')
+        ALTER TABLE StorageTransactions ADD ReviewedAt DATETIME2 NULL;
+
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('StorageTransactions') AND name = 'RejectionReason')
+        ALTER TABLE StorageTransactions ADD RejectionReason NVARCHAR(1000) NULL;
+END
+
+IF EXISTS (SELECT * FROM sys.tables WHERE name = 'FormApprovalHistories')
+    AND EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('FormApprovalHistories') AND name = 'TransactionOrMovementNumber' AND system_type_id = 56)
+BEGIN
+    DROP TABLE FormApprovalHistories;
+END
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'FormApprovalHistories')
+BEGIN
+    CREATE TABLE FormApprovalHistories (
+        Id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        FormType NVARCHAR(50) NOT NULL,
+        FormId INT NOT NULL,
+        PONumber NVARCHAR(100) NULL,
+        TransactionOrMovementNumber NVARCHAR(100) NULL,
+        PreviousStatus NVARCHAR(50) NOT NULL,
+        NewStatus NVARCHAR(50) NOT NULL,
+        Action NVARCHAR(50) NOT NULL,
+        ActorName NVARCHAR(150) NOT NULL,
+        ActorUserId UNIQUEIDENTIFIER NULL,
+        ActorRole NVARCHAR(100) NULL,
+        Comment NVARCHAR(1000) NULL,
+        Timestamp DATETIME2 NOT NULL CONSTRAINT DF_FormApprHist_Timestamp DEFAULT GETUTCDATE()
+    );
+    CREATE INDEX IX_FormApprovalHistories_FormType_FormId ON FormApprovalHistories(FormType, FormId);
+    CREATE INDEX IX_FormApprovalHistories_Timestamp ON FormApprovalHistories(Timestamp DESC);
 END
 
 IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'StorageTransactionMovements')
@@ -801,6 +858,33 @@ IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_ChatMessages_LiveSessi
             {
                 financeDirectorUser.PasswordHash = HashPassword("Director123!");
                 financeDirectorUser.Role = AppRoles.FinanceDirector;
+            }
+
+            // Ensure Control & Monitoring user exists
+            var controlMonitoringUser = await db.Users.FirstOrDefaultAsync(u => 
+                u.Role == AppRoles.ControlMonitoring || 
+                u.Role == AppRoles.ControlMonitoringDisplay ||
+                u.Username == "control_monitoring" || 
+                u.Email == "control@facestone.com", cts.Token);
+            if (controlMonitoringUser == null)
+            {
+                await db.Users.AddAsync(new UserAccount
+                {
+                    Id = Guid.NewGuid(),
+                    FullName = "مراقب ومراجع العمليات (Control & Monitoring)",
+                    Username = "control_monitoring",
+                    Email = "control@facestone.com",
+                    PhoneNumber = "+20 10 8877 6655",
+                    CountryCode = "+20",
+                    Role = AppRoles.ControlMonitoring,
+                    PasswordHash = HashPassword("Password123!"),
+                    CreatedAt = DateTime.UtcNow
+                }, cts.Token);
+            }
+            else
+            {
+                controlMonitoringUser.PasswordHash = HashPassword("Password123!");
+                controlMonitoringUser.Role = AppRoles.ControlMonitoring;
             }
 
             await db.SaveChangesAsync(cts.Token);
@@ -1409,6 +1493,288 @@ IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_ChatMessages_LiveSessi
                         Notes = "حضور منتظم"
                     }, cts.Token);
                 }
+            }
+
+            // ========================================================================
+            // CONTROL & MONITORING TEST DATA (Requirement 18: Clearly identifiable TEST data)
+            // - TEST-PO-CM-001
+            // - One pending Transportation form (TEST-TRANSPORT-001)
+            // - One pending Storage form (TEST-STORAGE-001)
+            // - One approved form (TEST-TRANSPORT-002 / APPROVED)
+            // - One rejected form (TEST-TRANSPORT-003 / REJECTED with reason)
+            // ========================================================================
+            if (!await db.PurchaseOrders.AnyAsync(p => p.PONumber == "TEST-PO-CM-001", cts.Token))
+            {
+                logger.LogInformation("Seeding Control & Monitoring test purchase order and verification records...");
+                var cmPo = new PurchaseOrder
+                {
+                    PONumber = "TEST-PO-CM-001",
+                    Supplier = "شركة السويس للركام والمحاجر (مورد تجريبي)",
+                    OrderDate = DateTime.UtcNow.AddDays(-3),
+                    Quantity = 500.000m,
+                    RemainingQuantity = 475.000m,
+                    Destination = "مصنع حلوان - قطاع ج",
+                    PricePerTon = 1600.00m,
+                    TotalValue = 800000.00m,
+                    PaymentStatus = "غير مدفوع",
+                    InvoiceNumber = "INV-CM-TEST-001",
+                    Notes = "أمر شراء تجريبي مخصص للتحقق من تدفقات الرقابة والمتابعة",
+                    CreatedAt = DateTime.UtcNow.AddDays(-3)
+                };
+                await db.PurchaseOrders.AddAsync(cmPo, cts.Token);
+                await db.SaveChangesAsync(cts.Token);
+            }
+
+            // 1. One Pending Transportation Form (TEST-TRANSPORT-001)
+            if (!await db.Transportations.AnyAsync(t => t.PONumber == "TEST-PO-CM-001" && t.TransactionNumber == 9901, cts.Token))
+            {
+                var transPending = new Transportation
+                {
+                    TransactionNumber = 9901,
+                    TransactionDate = DateTime.UtcNow.AddHours(-3),
+                    CarNumber = "ن ق ل 1001",
+                    DriverName = "أحمد رضوان (سائق تجريبي)",
+                    Source = "محجر السويس قطاع 2",
+                    PONumber = "TEST-PO-CM-001",
+                    CompanyName = "شركة السويس للركام والمحاجر (مورد تجريبي)",
+                    MaterialType = "سن وركام خرساني تدرج 1",
+                    ExpectedWeight = 25.000m,
+                    WeightBeforeLoading = 15.000m,
+                    WeightWhenEnteringFactory = 40.000m,
+                    WeightWhenExitingFactory = 15.000m,
+                    InternalWeight = 25.000m,
+                    ExternalLoadedWeight = 40.000m,
+                    ExternalEmptyWeight = 15.000m,
+                    ExternalNetWeight = 25.000m,
+                    NetWeight = 25.000m,
+                    WasteQuantity = 0.000m,
+                    Destination = "مصنع حلوان - قطاع ج",
+                    TransactionStatus = "Pending",
+                    ReceivingStatus = "قيد المراجعة",
+                    DepartureTime = DateTime.UtcNow.AddHours(-4),
+                    ArrivalTime = DateTime.UtcNow.AddHours(-3),
+                    ShippingDurationMinutes = 60,
+                    InternalWeighbridgeCode = "WB-INT-CM-01",
+                    ExternalWeighbridgeCode = "WB-EXT-CM-01",
+                    ApprovalStatus = "PENDING",
+                    SubmittedBy = "transport_manager",
+                    Notes = "نموذج نقل تجريبي قيد المراجعة (TEST-TRANSPORT-001)",
+                    DateOfSubmit = DateTime.UtcNow.AddHours(-3)
+                };
+                await db.Transportations.AddAsync(transPending, cts.Token);
+                await db.SaveChangesAsync(cts.Token);
+
+                await db.FormApprovalHistories.AddAsync(new FormApprovalHistory
+                {
+                    FormType = "Transportation",
+                    FormId = transPending.Id,
+                    PONumber = transPending.PONumber,
+                    TransactionOrMovementNumber = transPending.TransactionNumber.ToString(),
+                    PreviousStatus = "NONE",
+                    NewStatus = "PENDING",
+                    Action = "SUBMITTED",
+                    ActorName = "Transportation Manager",
+                    ActorRole = "TRANSPORTATION_MANAGER",
+                    Comment = "تم إرسال نموذج النقل بانتظار مراجعة قسم التحكم والمراقبة",
+                    Timestamp = DateTime.UtcNow.AddHours(-3)
+                }, cts.Token);
+            }
+
+            // 2. One Pending Storage Form (TEST-STORAGE-001)
+            if (!await db.StorageTransactions.AnyAsync(s => s.PONumber == "TEST-PO-CM-001" && s.MovementNumber == 9902, cts.Token))
+            {
+                var storagePending = new StorageTransaction
+                {
+                    MovementNumber = 9902,
+                    TransactionDate = DateTime.UtcNow.AddHours(-2),
+                    Action = "Import",
+                    ServiceType = "إضافة",
+                    ReferenceNumber = 9902,
+                    PONumber = "TEST-PO-CM-001",
+                    Material = "سن وركام خرساني تدرج 1",
+                    IncomingQuantity = 25.000m,
+                    OutgoingQuantity = 0.000m,
+                    OpeningBalance = 100.000m,
+                    ClosingBalance = 125.000m,
+                    StorageLocation = "مستودع الخامات الرئيسي - قطاع C",
+                    ReceivingEmployee = "أمين المخزن التجريبي",
+                    InternalWeighbridgeReference = "WB-REF-CM-02",
+                    InternalLoadedWeight = 40.000m,
+                    InternalEmptyWeight = 15.000m,
+                    InternalNetWeight = 25.000m,
+                    HasExternalWeighbridge = false,
+                    IsExportRelatedToPO = false,
+                    ApprovalStatus = "PENDING",
+                    CreatedBy = "storage_manager",
+                    Notes = "نموذج مخزن تجريبي قيد المراجعة (TEST-STORAGE-001)",
+                    CreatedAt = DateTime.UtcNow.AddHours(-2)
+                };
+                await db.StorageTransactions.AddAsync(storagePending, cts.Token);
+                await db.SaveChangesAsync(cts.Token);
+
+                await db.FormApprovalHistories.AddAsync(new FormApprovalHistory
+                {
+                    FormType = "Storage",
+                    FormId = storagePending.Id,
+                    PONumber = storagePending.PONumber,
+                    TransactionOrMovementNumber = storagePending.MovementNumber.ToString(),
+                    PreviousStatus = "NONE",
+                    NewStatus = "PENDING",
+                    Action = "SUBMITTED",
+                    ActorName = "Storage Manager",
+                    ActorRole = "STORAGE_MANAGER",
+                    Comment = "تم إرسال حركة المستودع بانتظار مراجعة قسم التحكم والمراقبة",
+                    Timestamp = DateTime.UtcNow.AddHours(-2)
+                }, cts.Token);
+            }
+
+            // 3. One Approved Form (Transportation)
+            if (!await db.Transportations.AnyAsync(t => t.PONumber == "TEST-PO-CM-001" && t.TransactionNumber == 9903, cts.Token))
+            {
+                var transApproved = new Transportation
+                {
+                    TransactionNumber = 9903,
+                    TransactionDate = DateTime.UtcNow.AddHours(-5),
+                    CarNumber = "ن ق ل 1002",
+                    DriverName = "طارق سليم (سائق تجريبي)",
+                    Source = "محجر السويس قطاع 2",
+                    PONumber = "TEST-PO-CM-001",
+                    CompanyName = "شركة السويس للركام والمحاجر (مورد تجريبي)",
+                    MaterialType = "سن وركام خرساني تدرج 1",
+                    ExpectedWeight = 25.000m,
+                    WeightBeforeLoading = 14.500m,
+                    WeightWhenEnteringFactory = 39.500m,
+                    WeightWhenExitingFactory = 14.500m,
+                    InternalWeight = 25.000m,
+                    ExternalLoadedWeight = 39.500m,
+                    ExternalEmptyWeight = 14.500m,
+                    ExternalNetWeight = 25.000m,
+                    NetWeight = 25.000m,
+                    WasteQuantity = 0.000m,
+                    Destination = "مصنع حلوان - قطاع ج",
+                    TransactionStatus = "Approved",
+                    ReceivingStatus = "Approved / Accepted",
+                    DepartureTime = DateTime.UtcNow.AddHours(-6),
+                    ArrivalTime = DateTime.UtcNow.AddHours(-5),
+                    ShippingDurationMinutes = 60,
+                    InternalWeighbridgeCode = "WB-INT-CM-03",
+                    ExternalWeighbridgeCode = "WB-EXT-CM-03",
+                    ApprovalStatus = "APPROVED",
+                    ReviewedBy = "Control & Monitoring Employee",
+                    ReviewedAt = DateTime.UtcNow.AddHours(-4),
+                    SubmittedBy = "transport_manager",
+                    Notes = "نموذج نقل تجريبي معتمد مسبقاً (TEST-TRANSPORT-002)",
+                    DateOfSubmit = DateTime.UtcNow.AddHours(-5)
+                };
+                await db.Transportations.AddAsync(transApproved, cts.Token);
+                await db.SaveChangesAsync(cts.Token);
+
+                await db.FormApprovalHistories.AddRangeAsync(new[]
+                {
+                    new FormApprovalHistory
+                    {
+                        FormType = "Transportation",
+                        FormId = transApproved.Id,
+                        PONumber = transApproved.PONumber,
+                        TransactionOrMovementNumber = transApproved.TransactionNumber.ToString(),
+                        PreviousStatus = "NONE",
+                        NewStatus = "PENDING",
+                        Action = "SUBMITTED",
+                        ActorName = "Transportation Manager",
+                        ActorRole = "TRANSPORTATION_MANAGER",
+                        Comment = "تم إرسال نموذج النقل",
+                        Timestamp = DateTime.UtcNow.AddHours(-5)
+                    },
+                    new FormApprovalHistory
+                    {
+                        FormType = "Transportation",
+                        FormId = transApproved.Id,
+                        PONumber = transApproved.PONumber,
+                        TransactionOrMovementNumber = transApproved.TransactionNumber.ToString(),
+                        PreviousStatus = "PENDING",
+                        NewStatus = "APPROVED",
+                        Action = "ACCEPTED",
+                        ActorName = "Control & Monitoring Employee",
+                        ActorRole = "CONTROL_MONITORING",
+                        Comment = "تم التحقق ومطابقة أوزان التذاكر مع المرفقات والموافقة",
+                        Timestamp = DateTime.UtcNow.AddHours(-4)
+                    }
+                }, cts.Token);
+            }
+
+            // 4. One Rejected Form (Transportation with rejection reason)
+            if (!await db.Transportations.AnyAsync(t => t.PONumber == "TEST-PO-CM-001" && t.TransactionNumber == 9904, cts.Token))
+            {
+                var transRejected = new Transportation
+                {
+                    TransactionNumber = 9904,
+                    TransactionDate = DateTime.UtcNow.AddHours(-4),
+                    CarNumber = "ن ق ل 1003",
+                    DriverName = "سالم فؤاد (سائق تجريبي)",
+                    Source = "محجر السويس قطاع 2",
+                    PONumber = "TEST-PO-CM-001",
+                    CompanyName = "شركة السويس للركام والمحاجر (مورد تجريبي)",
+                    MaterialType = "سن وركام خرساني تدرج 1",
+                    ExpectedWeight = 30.000m,
+                    WeightBeforeLoading = 16.000m,
+                    WeightWhenEnteringFactory = 47.000m,
+                    WeightWhenExitingFactory = 16.000m,
+                    InternalWeight = 31.000m,
+                    ExternalLoadedWeight = 46.000m,
+                    ExternalEmptyWeight = 16.000m,
+                    ExternalNetWeight = 30.000m,
+                    NetWeight = 31.000m,
+                    WasteQuantity = 1.000m,
+                    Destination = "مصنع حلوان - قطاع ج",
+                    TransactionStatus = "Rejected",
+                    ReceivingStatus = "مرفوض",
+                    DepartureTime = DateTime.UtcNow.AddHours(-5),
+                    ArrivalTime = DateTime.UtcNow.AddHours(-4),
+                    ShippingDurationMinutes = 60,
+                    InternalWeighbridgeCode = "WB-INT-CM-04",
+                    ExternalWeighbridgeCode = "WB-EXT-CM-04",
+                    ApprovalStatus = "REJECTED",
+                    ReviewedBy = "Control & Monitoring Employee",
+                    ReviewedAt = DateTime.UtcNow.AddHours(-3),
+                    RejectionReason = "وزن البوليصة لا يطابق المرفق.",
+                    SubmittedBy = "transport_manager",
+                    Notes = "نموذج نقل تجريبي مرفوض للتصحيح (TEST-TRANSPORT-003)",
+                    DateOfSubmit = DateTime.UtcNow.AddHours(-4)
+                };
+                await db.Transportations.AddAsync(transRejected, cts.Token);
+                await db.SaveChangesAsync(cts.Token);
+
+                await db.FormApprovalHistories.AddRangeAsync(new[]
+                {
+                    new FormApprovalHistory
+                    {
+                        FormType = "Transportation",
+                        FormId = transRejected.Id,
+                        PONumber = transRejected.PONumber,
+                        TransactionOrMovementNumber = transRejected.TransactionNumber.ToString(),
+                        PreviousStatus = "NONE",
+                        NewStatus = "PENDING",
+                        Action = "SUBMITTED",
+                        ActorName = "Transportation Manager",
+                        ActorRole = "TRANSPORTATION_MANAGER",
+                        Comment = "تم إرسال نموذج النقل",
+                        Timestamp = DateTime.UtcNow.AddHours(-4)
+                    },
+                    new FormApprovalHistory
+                    {
+                        FormType = "Transportation",
+                        FormId = transRejected.Id,
+                        PONumber = transRejected.PONumber,
+                        TransactionOrMovementNumber = transRejected.TransactionNumber.ToString(),
+                        PreviousStatus = "PENDING",
+                        NewStatus = "REJECTED",
+                        Action = "REJECTED",
+                        ActorName = "Control & Monitoring Employee",
+                        ActorRole = "CONTROL_MONITORING",
+                        Comment = "وزن البوليصة لا يطابق المرفق.",
+                        Timestamp = DateTime.UtcNow.AddHours(-3)
+                    }
+                }, cts.Token);
             }
 
             await db.SaveChangesAsync(cts.Token);

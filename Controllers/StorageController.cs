@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using FaceStone.Web.Data;
@@ -25,15 +26,18 @@ public class StorageController : ControllerBase
     private readonly FaceStoneDbContext _db;
     private readonly ILogger<StorageController> _logger;
     private readonly IWebHostEnvironment _env;
+    private readonly Microsoft.AspNetCore.SignalR.IHubContext<FaceStone.Web.Hubs.ChatHub> _hubContext;
 
     public StorageController(
         FaceStoneDbContext db, 
         ILogger<StorageController> logger,
-        IWebHostEnvironment env)
+        IWebHostEnvironment env,
+        Microsoft.AspNetCore.SignalR.IHubContext<FaceStone.Web.Hubs.ChatHub> hubContext)
     {
         _db = db;
         _logger = logger;
         _env = env;
+        _hubContext = hubContext;
     }
 
     /// <summary>
@@ -687,7 +691,8 @@ public class StorageController : ControllerBase
             ReceivingEmployee = responsibleEmp,
             Notes = dto.Notes?.Trim(),
             CreatedBy = callerName,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            ApprovalStatus = "PENDING"
         };
 
         try
@@ -695,12 +700,59 @@ public class StorageController : ControllerBase
             await _db.StorageTransactions.AddAsync(transaction);
             await _db.SaveChangesAsync();
 
-            _logger.LogInformation("Storage Transaction #{MovementNumber} created successfully. Action={Action}, Material={Material}",
+            // Record initial audit trail entry
+            var history = new FormApprovalHistory
+            {
+                FormType = "Storage",
+                FormId = transaction.Id,
+                PONumber = transaction.PONumber,
+                TransactionOrMovementNumber = $"#{transaction.MovementNumber}",
+                PreviousStatus = string.Empty,
+                NewStatus = "PENDING",
+                Action = "SUBMITTED",
+                ActorName = callerName,
+                ActorRole = role,
+                Comment = "تم إرسال حركة المستودع وبانتظار مراجعة واعتماد قسم التحكم والمراقبة.",
+                Timestamp = DateTime.UtcNow
+            };
+            await _db.FormApprovalHistories.AddAsync(history);
+            await _db.SaveChangesAsync();
+
+            _logger.LogInformation("Storage Transaction #{MovementNumber} created successfully as PENDING. Action={Action}, Material={Material}",
                 transaction.MovementNumber, transaction.Action, transaction.Material);
+
+            try
+            {
+                await _hubContext.Clients.All.SendAsync("OnDepartmentDataChanged", new
+                {
+                    department = "control-monitoring",
+                    action = "SUBMITTED",
+                    formType = "Storage",
+                    id = transaction.Id,
+                    po = transaction.PONumber,
+                    movementNumber = transaction.MovementNumber,
+                    submittedBy = callerName,
+                    timestamp = DateTime.UtcNow
+                });
+
+                await _hubContext.Clients.All.SendAsync("OnFormSubmittedForReview", new
+                {
+                    formType = "Storage",
+                    id = transaction.Id,
+                    po = transaction.PONumber,
+                    movementNumber = transaction.MovementNumber,
+                    submittedBy = callerName,
+                    timestamp = DateTime.UtcNow
+                });
+            }
+            catch (Exception hubEx)
+            {
+                _logger.LogWarning(hubEx, "Failed to broadcast SignalR notification for new storage form.");
+            }
 
             var resultDto = MapToDto(transaction);
             return StatusCode(StatusCodes.Status201Created,
-                ApiResponse<StorageTransactionDto>.Ok(resultDto, "تم حفظ حركة المخزن بنجاح"));
+                ApiResponse<StorageTransactionDto>.Ok(resultDto, "تم حفظ حركة المخزن بنجاح وبانتظار اعتماد قسم التحكم والمراقبة"));
         }
         catch (Exception ex)
         {
@@ -751,7 +803,11 @@ public class StorageController : ControllerBase
             ResponsibleEmployee = s.ReceivingEmployee,
             Notes = s.Notes,
             CreatedBy = s.CreatedBy,
-            CreatedAt = s.CreatedAt
+            CreatedAt = s.CreatedAt,
+            ApprovalStatus = string.IsNullOrWhiteSpace(s.ApprovalStatus) ? "APPROVED" : s.ApprovalStatus,
+            ReviewedBy = s.ReviewedBy,
+            ReviewedAt = s.ReviewedAt,
+            RejectionReason = s.RejectionReason
         };
     }
 }

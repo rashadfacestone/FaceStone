@@ -191,6 +191,19 @@ public class StorageTransaction
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     /// <summary>
+    /// حالة المراجعة والاعتماد لقسم التحكم والمراقبة: PENDING | APPROVED | REJECTED
+    /// </summary>
+    public string ApprovalStatus { get; set; } = "PENDING";
+
+    public string? ReviewedBy { get; set; }
+
+    public Guid? ReviewedByUserId { get; set; }
+
+    public DateTime? ReviewedAt { get; set; }
+
+    public string? RejectionReason { get; set; }
+
+    /// <summary>
     /// Relational navigation: Associated transportation movements
     /// </summary>
     public ICollection<StorageTransactionMovement> TransportationMovements { get; set; } = new List<StorageTransactionMovement>();

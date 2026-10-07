@@ -37,6 +37,7 @@ public class DepartmentController : ControllerBase
         var hasTransportation = AppRoles.HasTransportationAccess(role);
         var hasStorage = AppRoles.HasStorageAccess(role);
         var hasManagement = AppRoles.HasManagementAccess(role);
+        var hasControlMonitoring = AppRoles.HasControlMonitoringAccess(role);
 
         var departments = new List<DepartmentSummaryDto>();
 
@@ -96,7 +97,21 @@ public class DepartmentController : ControllerBase
             });
         }
 
-        _logger.LogInformation("Departments requested by user with role '{Role}'. Finance available: {HasFinance}, Transportation available: {HasTrans}, Storage available: {HasStorage}, Management available: {HasMgmt}", role, hasFinance, hasTransportation, hasStorage, hasManagement);
+        if (hasControlMonitoring)
+        {
+            departments.Add(new DepartmentSummaryDto
+            {
+                Id = "control-monitoring",
+                Name = "CONTROL_MONITORING",
+                DisplayName = "Control & Monitoring Department",
+                Description = "Review, validate, approve, or reject forms submitted from Transportation and Storage.",
+                Icon = "control",
+                IsAvailable = true,
+                Route = "/control-monitoring"
+            });
+        }
+
+        _logger.LogInformation("Departments requested by user with role '{Role}'. Finance: {HasFinance}, Transportation: {HasTrans}, Storage: {HasStorage}, Management: {HasMgmt}, ControlMonitoring: {HasControl}", role, hasFinance, hasTransportation, hasStorage, hasManagement, hasControlMonitoring);
 
         return Ok(ApiResponse<DepartmentListResponseDto>.Ok(new DepartmentListResponseDto
         {
@@ -105,6 +120,7 @@ public class DepartmentController : ControllerBase
             HasTransportationAccess = hasTransportation,
             HasStorageAccess = hasStorage,
             HasManagementAccess = hasManagement,
+            HasControlMonitoringAccess = hasControlMonitoring,
             Departments = departments
         }));
     }
@@ -175,6 +191,23 @@ public class DepartmentController : ControllerBase
         var role = User.FindFirst(ClaimTypes.Role)?.Value ?? "Unknown";
         _logger.LogInformation("Finance department access verified for role: {Role}", role);
         return Ok(ApiResponse.Ok("Access Granted: Authorized for Finance Department."));
+    }
+
+    /// <summary>
+    /// Backend authorization guard for Control & Monitoring department.
+    /// Returns 200 OK for CEO, IT, and CONTROL_MONITORING.
+    /// Returns 403 Forbidden for any other authenticated role.
+    /// </summary>
+    [HttpGet("control-monitoring")]
+    [Authorize(Policy = "ControlMonitoringAccess")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public IActionResult VerifyControlMonitoringAccess()
+    {
+        var role = User.FindFirst(ClaimTypes.Role)?.Value ?? "Unknown";
+        _logger.LogInformation("Control & Monitoring department access verified for role: {Role}", role);
+        return Ok(ApiResponse.Ok("Access Granted: Authorized for Control & Monitoring Department."));
     }
 
     /// <summary>
@@ -350,6 +383,43 @@ public class DepartmentController : ControllerBase
         }
 
         return Ok(ApiResponse.Ok("FaceStone Finance Department."));
+    }
+
+    /// <summary>
+    /// Direct route protection for /control-monitoring endpoint.
+    /// Supports both direct API callers (returns 200 / 403 / 401) and browser navigation.
+    /// </summary>
+    [HttpGet("/control-monitoring")]
+    [HttpGet("/control-monitoring/{*subpath}")]
+    public IActionResult HandleControlMonitoringDirect()
+    {
+        // 1. If this is a browser navigation request for HTML:
+        if (Request.Headers.Accept.Any(a => a != null && a.Contains("text/html")))
+        {
+            var indexPath = Path.Combine(_env.WebRootPath, "index.html");
+            if (System.IO.File.Exists(indexPath))
+            {
+                SetNoCacheHeaders();
+                return PhysicalFile(indexPath, "text/html");
+            }
+        }
+
+        // 2. If caller is not authenticated:
+        if (!User.Identity?.IsAuthenticated ?? true)
+        {
+            return Unauthorized(ApiResponse.Fail("Authentication required to access Control & Monitoring."));
+        }
+
+        // 3. Check role permission:
+        var role = User.FindFirst(ClaimTypes.Role)?.Value ?? string.Empty;
+        if (!AppRoles.HasControlMonitoringAccess(role))
+        {
+            _logger.LogWarning("Access Denied to /control-monitoring for user role: {Role}", role);
+            return StatusCode(StatusCodes.Status403Forbidden, 
+                ApiResponse.Fail("Access Denied: Control & Monitoring department is restricted to CEO, IT, and Control & Monitoring employees."));
+        }
+
+        return Ok(ApiResponse.Ok("FaceStone Control & Monitoring Department."));
     }
 
     private void SetNoCacheHeaders()

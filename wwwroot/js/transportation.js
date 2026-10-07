@@ -1031,30 +1031,44 @@
         }
       }
 
+      if (this.stepSuccess) {
+        let cmNotice = this.stepSuccess.querySelector('.cm-success-notice');
+        if (!cmNotice) {
+          cmNotice = document.createElement('div');
+          cmNotice.className = 'cm-success-notice';
+          cmNotice.style.cssText = 'background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; border-radius: 8px; padding: 12px 16px; margin: 16px 0; text-align: center; font-weight: 700;';
+          const sub = this.stepSuccess.querySelector('.trans-success-sub');
+          if (sub && sub.parentNode) {
+            sub.parentNode.insertBefore(cmNotice, sub.nextSibling);
+          }
+        }
+        cmNotice.innerHTML = '⏳ حالة النموذج: <strong>قيد مراجعة وتدقيق قسم التحكم والمراقبة</strong> — لن يتم اعتماد الحركة أو ترحيلها حتى يتم قبولها من موظف الرقابة.';
+      }
+
       this.stepSuccess.scrollIntoView({ behavior: 'smooth' });
     }
 
     async loadRecentTransactions() {
       if (!this.recentTableBody) return;
-      this.recentTableBody.innerHTML = '<tr><td colspan="16" class="trans-empty-row">جاري تحميل سجل الحركات...</td></tr>';
+      this.recentTableBody.innerHTML = '<tr><td colspan="17" class="trans-empty-row">جاري تحميل سجل الحركات...</td></tr>';
 
       try {
         const res = await window.ChatApi?.getRecentTransportationTransactions(20);
         if (res && res.success && res.data) {
           this.renderRecentTable(res.data);
         } else {
-          this.recentTableBody.innerHTML = '<tr><td colspan="16" class="trans-empty-row">لا توجد حركات مسجلة حالياً.</td></tr>';
+          this.recentTableBody.innerHTML = '<tr><td colspan="17" class="trans-empty-row">لا توجد حركات مسجلة حالياً.</td></tr>';
         }
       } catch (err) {
         console.error('Failed to load recent transportation records:', err);
-        this.recentTableBody.innerHTML = '<tr><td colspan="16" class="trans-empty-row error">تعذر تحميل السجل. يرجى إعادة المحاولة.</td></tr>';
+        this.recentTableBody.innerHTML = '<tr><td colspan="17" class="trans-empty-row error">تعذر تحميل السجل. يرجى إعادة المحاولة.</td></tr>';
       }
     }
 
     renderRecentTable(records) {
       if (!this.recentTableBody) return;
       if (!records || records.length === 0) {
-        this.recentTableBody.innerHTML = '<tr><td colspan="16" class="trans-empty-row">لا توجد حركات مسجلة حالياً.</td></tr>';
+        this.recentTableBody.innerHTML = '<tr><td colspan="17" class="trans-empty-row">لا توجد حركات مسجلة حالياً.</td></tr>';
         return;
       }
 
@@ -1074,6 +1088,23 @@
         const dateStr = this.formatDateTimeDisplay(tx.transactionDate);
         const submitDateStr = this.formatDateTimeDisplay(tx.dateOfSubmit);
 
+        let approvalBadge = '';
+        const st = (tx.approvalStatus || 'PENDING').toUpperCase();
+        if (st === 'APPROVED') {
+          approvalBadge = '<span class="cm-badge cm-badge-approved">✓ معتمد</span>';
+        } else if (st === 'REJECTED') {
+          const reasonText = tx.rejectionReason ? `<div style="font-size:0.75rem; color:#dc2626; margin-top:2px;">السبب: ${this.escapeHtml(tx.rejectionReason)}</div>` : '';
+          approvalBadge = `
+            <div>
+              <span class="cm-badge cm-badge-rejected">✕ مرفوض</span>
+              ${reasonText}
+              <button type="button" class="trans-resubmit-btn" data-id="${tx.id}" style="display:inline-block; margin-top:4px; padding:3px 8px; font-size:0.75rem; background:#2563eb; color:#fff; border:none; border-radius:4px; cursor:pointer;">إعادة تقديم</button>
+            </div>
+          `;
+        } else {
+          approvalBadge = '<span class="cm-badge cm-badge-pending">⏳ قيد مراجعة الرقابة</span>';
+        }
+
         return `
           <tr>
             <td class="font-numeric" style="font-weight: 800; color: #2563EB;">#${tx.transactionNumber}</td>
@@ -1092,11 +1123,39 @@
             <td>${this.escapeHtml(tx.shippingSupervisor || 'محمد ناجح')}</td>
             <td><span class="trans-status-badge safe">${this.escapeHtml(tx.receivingStatus || 'safe')}</span></td>
             <td class="font-numeric" style="color: #6B7280; font-size: 0.8rem;">${submitDateStr}</td>
+            <td>${approvalBadge}</td>
           </tr>
         `;
       }).join('');
 
       this.recentTableBody.innerHTML = rowsHtml;
+
+      this.recentTableBody.querySelectorAll('.trans-resubmit-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          const txId = e.currentTarget.getAttribute('data-id');
+          const comment = prompt('هل ترغب بإضافة توضيح للمراجعة عند إعادة التقديم؟ (اختياري)');
+          if (comment !== null) {
+            btn.disabled = true;
+            btn.textContent = 'جاري التقديم...';
+            try {
+              const res = await window.ChatApi?.resubmitControlMonitoringForm('Transportation', txId, comment);
+              if (res && res.success) {
+                alert('تمت إعادة تقديم النموذج بنجاح لقسم التحكم والمراقبة.');
+                this.loadRecentTransactions();
+              } else {
+                alert('تعذر إعادة التقديم: ' + (res?.message || 'خطأ غير معروف'));
+                btn.disabled = false;
+                btn.textContent = 'إعادة تقديم';
+              }
+            } catch (err) {
+              console.error(err);
+              alert('حدث خطأ أثناء الاتصال بالخادم.');
+              btn.disabled = false;
+              btn.textContent = 'إعادة تقديم';
+            }
+          }
+        });
+      });
     }
 
     resetFormKeepPo() {

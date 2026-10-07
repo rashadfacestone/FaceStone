@@ -186,6 +186,8 @@ public class ManagementTransportationItemDto
     public string? InvoiceAttachmentPath { get; set; }
     public string? WeighbridgeAttachmentPath { get; set; }
     public string? Notes { get; set; }
+    public string ApprovalStatus { get; set; } = "APPROVED";
+    public string? RejectionReason { get; set; }
 }
 
 public class ManagementTransportationOverviewDto
@@ -246,6 +248,8 @@ public class ManagementStorageItemDto
     public string? WeighbridgeFileName { get; set; }
     public string? WeighbridgeAttachmentPath { get; set; }
     public string? Notes { get; set; }
+    public string ApprovalStatus { get; set; } = "APPROVED";
+    public string? RejectionReason { get; set; }
 }
 
 public class ManagementStorageOverviewDto

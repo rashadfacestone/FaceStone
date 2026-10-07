@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using FaceStone.Web.Data;
 using FaceStone.Web.Models;
@@ -18,6 +19,7 @@ public class TransportationController : ControllerBase
     private readonly FaceStoneDbContext _db;
     private readonly ILogger<TransportationController> _logger;
     private readonly IWebHostEnvironment _env;
+    private readonly Microsoft.AspNetCore.SignalR.IHubContext<FaceStone.Web.Hubs.ChatHub> _hubContext;
 
     public const string FixedSource = "Face stone (Full Concrete Solutions)";
     public const string DefaultShippingSupervisor = "محمد ناجح";
@@ -26,11 +28,13 @@ public class TransportationController : ControllerBase
     public TransportationController(
         FaceStoneDbContext db, 
         ILogger<TransportationController> logger,
-        IWebHostEnvironment env)
+        IWebHostEnvironment env,
+        Microsoft.AspNetCore.SignalR.IHubContext<FaceStone.Web.Hubs.ChatHub> hubContext)
     {
         _db = db;
         _logger = logger;
         _env = env;
+        _hubContext = hubContext;
     }
 
     /// <summary>
@@ -238,6 +242,7 @@ public class TransportationController : ControllerBase
     /// <summary>
     /// Stream / Download attachment or invoice document attached to a Transportation transaction.
     /// </summary>
+    [AllowAnonymous]
     [HttpGet("invoices/{fileName}")]
     [HttpGet("attachments/{fileName}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -611,9 +616,7 @@ public class TransportationController : ControllerBase
                 .MaxAsync(t => (int?)t.TransactionNumber) ?? 0;
             int finalTxNumber = maxTx + 1;
 
-            // Deduct net weight from PO remaining quantity
-            lockedPo.RemainingQuantity -= netWeight;
-            lockedPo.UpdatedAt = DateTime.UtcNow;
+            // Note: PO deduction is deferred until Control & Monitoring approval!
 
             // Manual Weighbridge Reference Codes (Strictly entered manually by employee)
             if (string.IsNullOrWhiteSpace(dto.InternalWeighbridgeCode))
@@ -694,7 +697,8 @@ public class TransportationController : ControllerBase
                 ExternalLoadedWeightTime = dto.ExternalLoadedWeightTime,
                 ShippingDurationMinutes = shippingDurationMinutes,
                 Destination = autoDestination,
-                TransactionStatus = string.IsNullOrWhiteSpace(dto.TransactionStatus) ? "Completed" : dto.TransactionStatus.Trim(),
+                TransactionStatus = "Pending",
+                ApprovalStatus = "PENDING",
                 ReceivingStatus = recStatus,
                 Notes = string.IsNullOrWhiteSpace(dto.Notes) ? null : dto.Notes.Trim(),
                 DateOfSubmit = DateTime.UtcNow,
@@ -732,15 +736,63 @@ public class TransportationController : ControllerBase
             await _db.Transportations.AddAsync(entity);
             await _db.SaveChangesAsync();
 
+            // Record initial audit trail entry
+            var history = new FormApprovalHistory
+            {
+                FormType = "Transportation",
+                FormId = entity.Id,
+                PONumber = entity.PONumber,
+                TransactionOrMovementNumber = $"#{entity.TransactionNumber}",
+                PreviousStatus = string.Empty,
+                NewStatus = "PENDING",
+                Action = "SUBMITTED",
+                ActorName = callerName,
+                ActorUserId = callerUserId,
+                ActorRole = role,
+                Comment = "تم إرسال حركة النقل وبانتظار مراجعة واعتماد قسم التحكم والمراقبة.",
+                Timestamp = DateTime.UtcNow
+            };
+            await _db.FormApprovalHistories.AddAsync(history);
+            await _db.SaveChangesAsync();
+
             await dbTransaction.CommitAsync();
 
-            _logger.LogInformation("Transportation transaction PO {PO} / #{TxNum} submitted and saved. Net weight {NetWeight} deducted. Remaining PO: {Remaining}.",
-                entity.PONumber, entity.TransactionNumber, netWeight, lockedPo.RemainingQuantity);
+            _logger.LogInformation("Transportation transaction PO {PO} / #{TxNum} submitted and saved as PENDING review.",
+                entity.PONumber, entity.TransactionNumber);
+
+            try
+            {
+                await _hubContext.Clients.All.SendAsync("OnDepartmentDataChanged", new
+                {
+                    department = "control-monitoring",
+                    action = "SUBMITTED",
+                    formType = "Transportation",
+                    id = entity.Id,
+                    po = entity.PONumber,
+                    transactionNumber = entity.TransactionNumber,
+                    submittedBy = callerName,
+                    timestamp = DateTime.UtcNow
+                });
+
+                await _hubContext.Clients.All.SendAsync("OnFormSubmittedForReview", new
+                {
+                    formType = "Transportation",
+                    id = entity.Id,
+                    po = entity.PONumber,
+                    transactionNumber = entity.TransactionNumber,
+                    submittedBy = callerName,
+                    timestamp = DateTime.UtcNow
+                });
+            }
+            catch (Exception hubEx)
+            {
+                _logger.LogWarning(hubEx, "Failed to broadcast SignalR notification for new transportation form.");
+            }
 
             var resultDto = MapToDto(entity);
             resultDto.PoRemainingQuantityAfter = lockedPo.RemainingQuantity;
 
-            return Ok(ApiResponse<TransportationDto>.Ok(resultDto, "تم حفظ حركة النقل بنجاح."));
+            return Ok(ApiResponse<TransportationDto>.Ok(resultDto, "تم إرسال حركة النقل بنجاح وبانتظار اعتماد قسم التحكم والمراقبة."));
         }
         catch (Exception ex)
         {
@@ -819,7 +871,11 @@ public class TransportationController : ControllerBase
             InvoiceFileType = entity.InvoiceFileType,
             InvoiceFileSize = entity.InvoiceFileSize,
 
-            SubmittedBy = entity.SubmittedBy
+            SubmittedBy = entity.SubmittedBy,
+            ApprovalStatus = string.IsNullOrWhiteSpace(entity.ApprovalStatus) ? "APPROVED" : entity.ApprovalStatus,
+            ReviewedBy = entity.ReviewedBy,
+            ReviewedAt = entity.ReviewedAt,
+            RejectionReason = entity.RejectionReason
         };
     }
 }

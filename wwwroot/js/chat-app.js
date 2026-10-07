@@ -56,6 +56,8 @@ class ChatApp {
     this.btnEnterTransportation = document.getElementById('btn-enter-transportation');
     this.btnEnterStorage = document.getElementById('btn-enter-storage');
     this.btnEnterManagement = document.getElementById('btn-enter-management');
+    this.cardDeptControl = document.getElementById('card-dept-control');
+    this.btnEnterControl = document.getElementById('btn-enter-control');
     this.deptUserName = document.getElementById('dept-user-name');
     this.deptUserRole = document.getElementById('dept-user-role');
     this.deptUserAvatar = document.getElementById('dept-user-avatar');
@@ -64,6 +66,7 @@ class ChatApp {
     this.ensureStorageElementsInDom();
     this.ensureManagementElementsInDom();
     this.ensureFinanceElementsInDom();
+    this.ensureControlMonitoringElementsInDom();
 
     // Transportation Page Elements
     this.transportationPageRoot = document.getElementById('transportation-page-root');
@@ -79,6 +82,10 @@ class ChatApp {
     this.managementPageRoot = document.getElementById('management-page-root');
     this.managementBackBtn = document.getElementById('management-back-to-departments-btn');
     this.managementPlaceholderBackBtn = document.getElementById('management-placeholder-back-btn');
+
+    // Control & Monitoring Page Elements
+    this.controlMonitoringPageRoot = document.getElementById('control-monitoring-page-root');
+    this.controlMonitoringBackBtn = document.getElementById('control-monitoring-back-to-departments-btn');
 
     // Access Denied Elements
     this.accessDeniedRoot = document.getElementById('access-denied-root');
@@ -206,6 +213,14 @@ class ChatApp {
 
     this.btnEnterManagement?.addEventListener('click', () => {
       this.enterDepartment('management');
+    });
+
+    this.btnEnterControl?.addEventListener('click', () => {
+      this.enterDepartment('control-monitoring');
+    });
+
+    this.controlMonitoringBackBtn?.addEventListener('click', () => {
+      this.backToDepartments();
     });
 
     this.transBackBtn?.addEventListener('click', () => {
@@ -658,6 +673,20 @@ class ChatApp {
       }
     }
 
+    if (this.controlMonitoringPageRoot) {
+      this.controlMonitoringPageRoot.style.display = (viewName === 'control-monitoring') ? 'flex' : 'none';
+      if (viewName === 'control-monitoring') {
+        const u = chatState.currentUser || ChatApi.getCurrentUser();
+        if (window.ControlMonitoringApp) {
+          window.ControlMonitoringApp.init();
+          window.ControlMonitoringApp.updateUserBadge(u);
+          window.ControlMonitoringApp.loadStats();
+          window.ControlMonitoringApp.loadForms();
+        }
+        document.dispatchEvent(new CustomEvent('chat:view:changed', { detail: { view: 'control-monitoring', user: u } }));
+      }
+    }
+
     if (this.accessDeniedRoot) {
       this.accessDeniedRoot.style.display = (viewName === 'access-denied') ? 'flex' : 'none';
     }
@@ -686,10 +715,18 @@ class ChatApp {
     this.financeMgmtBackToDeptsBtn = document.getElementById('finance-mgmt-back-to-departments-btn');
   }
 
+  static ensureControlMonitoringElementsInDom() {
+    this.cardDeptControl = document.getElementById('card-dept-control');
+    this.btnEnterControl = document.getElementById('btn-enter-control');
+    this.controlMonitoringPageRoot = document.getElementById('control-monitoring-page-root');
+    this.controlMonitoringBackBtn = document.getElementById('control-monitoring-back-to-departments-btn');
+  }
+
   static updateDepartmentCardsVisibility(user, deptRes = null) {
     this.ensureStorageElementsInDom();
     this.ensureManagementElementsInDom();
     this.ensureFinanceElementsInDom();
+    this.ensureControlMonitoringElementsInDom();
     if (!user) return;
     const role = (user.role || '').trim().toUpperCase();
 
@@ -700,11 +737,13 @@ class ChatApp {
     const isTransManager = role === 'TRANSPORTATION_MANAGER' || role === 'TRANSPORTATION MANAGER' || role.includes('TRANSPORT');
     const isStorageManager = role === 'STORAGE_MANAGER' || role === 'STORAGE MANAGER' || role === 'STORAGEMANAGER' || role.includes('STORAGE');
     const isFactoryManager = role === 'FACTORY_MANAGER' || role === 'FACTORY MANAGER' || role.includes('FACTORY');
+    const isControlMonitoring = role === 'CONTROL_MONITORING' || role === 'CONTROL MONITORING' || role.includes('CONTROL');
 
     let hasFinance = (isCeo || isIt || isAccountant);
     let hasTrans = (isCeo || isIt || isTransManager);
     let hasStorage = (isCeo || isIt || isStorageManager);
     let hasManagement = (isCeo || isIt || isFactoryManager);
+    let hasControlMonitoring = (isCeo || isIt || isControlMonitoring);
 
     // If server response is available, use it to confirm/override
     if (deptRes && deptRes.success && deptRes.data) {
@@ -720,12 +759,16 @@ class ChatApp {
       if (typeof deptRes.data.hasManagementAccess === 'boolean') {
         hasManagement = deptRes.data.hasManagementAccess;
       }
+      if (typeof deptRes.data.hasControlMonitoringAccess === 'boolean') {
+        hasControlMonitoring = deptRes.data.hasControlMonitoringAccess;
+      }
       if (Array.isArray(deptRes.data.departments)) {
         const availableDepts = deptRes.data.departments.filter(d => d.isAvailable !== false).map(d => (d.id || '').toLowerCase());
         hasFinance = availableDepts.includes('finance');
         hasTrans = availableDepts.includes('transportation');
         hasStorage = availableDepts.includes('storage');
         hasManagement = availableDepts.includes('management');
+        hasControlMonitoring = availableDepts.includes('control-monitoring');
       }
     }
 
@@ -733,6 +776,7 @@ class ChatApp {
     const cardTrans = document.getElementById('card-dept-transportation') || this.cardDeptTransportation;
     const cardStorage = document.getElementById('card-dept-storage') || this.cardDeptStorage;
     const cardManagement = document.getElementById('card-dept-management') || this.cardDeptManagement;
+    const cardControl = document.getElementById('card-dept-control') || this.cardDeptControl;
 
     if (cardFinance) {
       cardFinance.style.display = hasFinance ? 'flex' : 'none';
@@ -745,6 +789,9 @@ class ChatApp {
     }
     if (cardManagement) {
       cardManagement.style.display = hasManagement ? 'flex' : 'none';
+    }
+    if (cardControl) {
+      cardControl.style.display = hasControlMonitoring ? 'flex' : 'none';
     }
   }
 
@@ -767,6 +814,9 @@ class ChatApp {
     } else if (path.startsWith('/management') || hash.startsWith('#/management')) {
       const targetSubRoute = path.startsWith('/management') ? window.location.pathname : hash.replace('#', '');
       this.enterDepartment('management', targetSubRoute);
+    } else if (path.startsWith('/control-monitoring') || hash.startsWith('#/control-monitoring')) {
+      const targetSubRoute = path.startsWith('/control-monitoring') ? window.location.pathname : hash.replace('#', '');
+      this.enterDepartment('control-monitoring', targetSubRoute);
     } else {
       this.showView('departments');
       const u = chatState.currentUser || ChatApi.getCurrentUser();
@@ -782,6 +832,9 @@ class ChatApp {
     switch (r) {
       case 'CEO': return 'الرئيس التنفيذي';
       case 'IT': return 'مسؤول تكنولوجيا المعلومات';
+      case 'CONTROL_MONITORING':
+      case 'CONTROL MONITORING':
+      case 'CONTROL_MONITORING EMPLOYEE': return 'مراقب ومراجع العمليات';
       case 'ACCOUNTANT': return 'محاسب مالي';
       case 'TRANSPORTATION_MANAGER':
       case 'TRANSPORTATION MANAGER': return 'مدير حركة النقل';
@@ -862,6 +915,8 @@ class ChatApp {
     } else if (path.startsWith('/management') || hash.startsWith('#/management')) {
       const targetSubRoute = path.startsWith('/management') ? window.location.pathname : hash.replace('#', '');
       await this.enterDepartment('management', targetSubRoute);
+    } else if (path.startsWith('/control-monitoring') || hash.startsWith('#/control-monitoring')) {
+      await this.enterDepartment('control-monitoring');
     } else {
       this.showView('departments');
       if (window.location.pathname !== '/departments') {
@@ -963,6 +1018,36 @@ class ChatApp {
           history.pushState({ view: 'access-denied' }, '', '/management');
         }
       }
+    } else if (dept === 'control-monitoring') {
+      const res = await ChatApi.verifyControlMonitoringAccess();
+      if (res.success && res.status !== 403) {
+        this.showView('control-monitoring');
+        const user = chatState.currentUser || ChatApi.getCurrentUser();
+        if (window.ControlMonitoringApp) {
+          window.ControlMonitoringApp.init();
+          window.ControlMonitoringApp.updateUserBadge(user);
+          if (subRoute && subRoute !== '/control-monitoring') {
+            window.ControlMonitoringApp.handleRoute(subRoute);
+          } else {
+            window.ControlMonitoringApp.showMainPage();
+            window.ControlMonitoringApp.loadStats();
+            window.ControlMonitoringApp.loadForms();
+          }
+        }
+        if (subRoute && subRoute !== '/control-monitoring') {
+          if (window.location.pathname !== subRoute) {
+            history.pushState({ view: 'control-monitoring', subRoute }, '', subRoute);
+          }
+        } else if (window.location.pathname !== '/control-monitoring') {
+          history.pushState({ view: 'control-monitoring' }, '', '/control-monitoring');
+        }
+      } else {
+        this.setAccessDeniedDept('ControlMonitoring', 'Control & Monitoring Employees, IT, and CEO');
+        this.showView('access-denied');
+        if (window.location.pathname !== '/control-monitoring') {
+          history.pushState({ view: 'access-denied' }, '', '/control-monitoring');
+        }
+      }
     }
   }
 
@@ -980,12 +1065,14 @@ class ChatApp {
     else if (deptName === 'Transportation') deptAr = 'إدارة النقل والموازين';
     else if (deptName === 'Storage') deptAr = 'إدارة المستودعات والمخازن';
     else if (deptName === 'Management') deptAr = 'الإدارة العامة ومراقبة الجودة';
+    else if (deptName === 'ControlMonitoring') deptAr = 'قسم التحكم والمراقبة';
 
     let rolesAr = allowedRoles;
     if (allowedRoles.includes('Accountants')) rolesAr = 'المحاسبون، تقنية المعلومات، والرئيس التنفيذي';
     else if (allowedRoles.includes('Transportation Manager')) rolesAr = 'الرئيس التنفيذي، تقنية المعلومات، ومدير النقل';
     else if (allowedRoles.includes('Storage Manager')) rolesAr = 'الرئيس التنفيذي، تقنية المعلومات، ومدير المستودعات';
     else if (allowedRoles.includes('Factory Manager')) rolesAr = 'الرئيس التنفيذي، تقنية المعلومات، ومدير المصنع';
+    else if (allowedRoles.includes('Control & Monitoring Employees')) rolesAr = 'الرئيس التنفيذي، تقنية المعلومات، وموظفو قسم التحكم والمراقبة';
 
     if (this.accessDeniedMsg) {
       this.accessDeniedMsg.innerHTML = `ليس لديك صلاحية للوصول إلى <strong>${deptAr}</strong>.`;

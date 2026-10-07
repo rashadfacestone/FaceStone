@@ -84,6 +84,7 @@ public class FinanceController : ControllerBase
             // 3. Pre-fetch Transportation aggregations per PO (server-side group by across all time)
             var transStatsByPo = await _context.Transportations
                 .AsNoTracking()
+                .Where(t => t.ApprovalStatus == "APPROVED" || string.IsNullOrEmpty(t.ApprovalStatus))
                 .GroupBy(t => t.PONumber)
                 .Select(g => new
                 {
@@ -97,7 +98,7 @@ public class FinanceController : ControllerBase
             // 4. Pre-fetch Storage PO-related waste (server-side query across all time)
             var storageWasteByPoList = await _context.StorageTransactions
                 .AsNoTracking()
-                .Where(s => s.IsExportRelatedToPO && s.PONumber != null && s.HasExternalWeighbridge && s.ExternalNetWeight.HasValue)
+                .Where(s => (s.ApprovalStatus == "APPROVED" || string.IsNullOrEmpty(s.ApprovalStatus)) && s.IsExportRelatedToPO && s.PONumber != null && s.HasExternalWeighbridge && s.ExternalNetWeight.HasValue)
                 .Select(s => new
                 {
                     PONumber = s.PONumber!,
@@ -321,6 +322,7 @@ public class FinanceController : ControllerBase
             // 7. RANGE / DAILY ACTIVITY CALCULATION (FOR SELECTED DATE RANGE)
             var rangeTransQuery = _context.Transportations
                 .AsNoTracking()
+                .Where(t => t.ApprovalStatus == "APPROVED" || string.IsNullOrEmpty(t.ApprovalStatus))
                 .Where(t => t.TransactionDate >= startRange && t.TransactionDate < endRange);
 
             if (!string.IsNullOrEmpty(selectedPoTrimmed))
@@ -354,6 +356,7 @@ public class FinanceController : ControllerBase
             // 7.2 Storage Imports (Independent, non-PO unless recorded otherwise)
             var rangeStorageImports = await _context.StorageTransactions
                 .AsNoTracking()
+                .Where(s => s.ApprovalStatus == "APPROVED" || string.IsNullOrEmpty(s.ApprovalStatus))
                 .Where(s => s.TransactionDate >= startRange && s.TransactionDate < endRange)
                 .Where(s => s.Action == "Import" || s.ServiceType == "إيداع")
                 .SumAsync(s => (decimal?)s.IncomingQuantity) ?? 0m;
@@ -362,6 +365,7 @@ public class FinanceController : ControllerBase
             // 7.3 Storage Exports
             var rangeStorageExportsQuery = _context.StorageTransactions
                 .AsNoTracking()
+                .Where(s => s.ApprovalStatus == "APPROVED" || string.IsNullOrEmpty(s.ApprovalStatus))
                 .Where(s => s.TransactionDate >= startRange && s.TransactionDate < endRange)
                 .Where(s => s.Action == "Export" || s.ServiceType == "صرف");
 
@@ -376,6 +380,7 @@ public class FinanceController : ControllerBase
             // 7.4 Storage Waste
             var rangeStorageWasteQuery = _context.StorageTransactions
                 .AsNoTracking()
+                .Where(s => s.ApprovalStatus == "APPROVED" || string.IsNullOrEmpty(s.ApprovalStatus))
                 .Where(s => s.TransactionDate >= startRange && s.TransactionDate < endRange)
                 .Where(s => s.HasExternalWeighbridge && s.ExternalNetWeight.HasValue);
 
@@ -480,6 +485,7 @@ public class FinanceController : ControllerBase
 
             var transStatsByPo = await _context.Transportations
                 .AsNoTracking()
+                .Where(t => t.ApprovalStatus == "APPROVED" || string.IsNullOrEmpty(t.ApprovalStatus))
                 .GroupBy(t => t.PONumber)
                 .Select(g => new
                 {
@@ -492,7 +498,7 @@ public class FinanceController : ControllerBase
 
             var storageWasteByPoList = await _context.StorageTransactions
                 .AsNoTracking()
-                .Where(s => s.IsExportRelatedToPO && s.PONumber != null && s.HasExternalWeighbridge && s.ExternalNetWeight.HasValue)
+                .Where(s => (s.ApprovalStatus == "APPROVED" || string.IsNullOrEmpty(s.ApprovalStatus)) && s.IsExportRelatedToPO && s.PONumber != null && s.HasExternalWeighbridge && s.ExternalNetWeight.HasValue)
                 .Select(s => new
                 {
                     PONumber = s.PONumber!,
@@ -620,14 +626,14 @@ public class FinanceController : ControllerBase
         // Fetch Transportation transactions
         var transRecords = await _context.Transportations
             .AsNoTracking()
-            .Where(t => t.PONumber == poNum)
+            .Where(t => t.PONumber == poNum && (t.ApprovalStatus == "APPROVED" || string.IsNullOrEmpty(t.ApprovalStatus)))
             .OrderByDescending(t => t.TransactionDate)
             .ToListAsync();
 
         // Fetch Storage transactions
         var storageRecords = await _context.StorageTransactions
             .AsNoTracking()
-            .Where(s => s.PONumber == poNum)
+            .Where(s => s.PONumber == poNum && (s.ApprovalStatus == "APPROVED" || string.IsNullOrEmpty(s.ApprovalStatus)))
             .OrderByDescending(s => s.TransactionDate)
             .ToListAsync();
 
@@ -973,7 +979,8 @@ public class FinanceController : ControllerBase
             decimal averageTonPrice = expectedQty > 0 ? Math.Round(expectedPrice / expectedQty, 2) : 0m;
 
             // 2. Cumulative Transportation for these PO(s)
-            var transQuery = _context.Transportations.AsNoTracking();
+            var transQuery = _context.Transportations.AsNoTracking()
+                .Where(t => t.ApprovalStatus == "APPROVED" || string.IsNullOrEmpty(t.ApprovalStatus));
             if (!string.IsNullOrEmpty(selectedPoTrimmed))
             {
                 transQuery = transQuery.Where(t => t.PONumber == selectedPoTrimmed);
@@ -987,7 +994,7 @@ public class FinanceController : ControllerBase
 
             // 3. Cumulative Storage Waste for these PO(s)
             var storageQuery = _context.StorageTransactions.AsNoTracking()
-                .Where(s => s.IsExportRelatedToPO && s.HasExternalWeighbridge && s.ExternalNetWeight.HasValue);
+                .Where(s => (s.ApprovalStatus == "APPROVED" || string.IsNullOrEmpty(s.ApprovalStatus)) && s.IsExportRelatedToPO && s.HasExternalWeighbridge && s.ExternalNetWeight.HasValue);
             if (!string.IsNullOrEmpty(selectedPoTrimmed))
             {
                 storageQuery = storageQuery.Where(s => s.PONumber == selectedPoTrimmed);
@@ -1731,7 +1738,9 @@ public class FinanceController : ControllerBase
             }
 
             // 4. Physical Transportation deliveries
-            var transQuery = _context.Transportations.AsNoTracking().AsQueryable();
+            var transQuery = _context.Transportations.AsNoTracking()
+                .Where(t => t.ApprovalStatus == "APPROVED" || string.IsNullOrEmpty(t.ApprovalStatus))
+                .AsQueryable();
             if (dFrom.HasValue) transQuery = transQuery.Where(t => t.TransactionDate >= dFrom.Value);
             if (dTo.HasValue) transQuery = transQuery.Where(t => t.TransactionDate < dTo.Value);
             var deliveries = await transQuery.OrderByDescending(t => t.TransactionDate).Take(100).ToListAsync();
@@ -1820,7 +1829,9 @@ public class FinanceController : ControllerBase
         try
         {
             var pos = await _context.PurchaseOrders.AsNoTracking().ToListAsync();
-            var trans = await _context.Transportations.AsNoTracking().ToListAsync();
+            var trans = await _context.Transportations.AsNoTracking()
+                .Where(t => t.ApprovalStatus == "APPROVED" || string.IsNullOrEmpty(t.ApprovalStatus))
+                .ToListAsync();
             var payments = await _context.FinancePayments.AsNoTracking().ToListAsync();
 
             var supplierGroups = pos.GroupBy(p => p.Supplier.Trim(), StringComparer.OrdinalIgnoreCase);

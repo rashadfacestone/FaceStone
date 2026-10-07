@@ -166,6 +166,10 @@ public class StorageTransactionDto
     public string? Notes { get; set; }
     public string? CreatedBy { get; set; }
     public DateTime CreatedAt { get; set; }
+    public string ApprovalStatus { get; set; } = "PENDING";
+    public string? ReviewedBy { get; set; }
+    public DateTime? ReviewedAt { get; set; }
+    public string? RejectionReason { get; set; }
 }
 
 public class StorageConfigDto

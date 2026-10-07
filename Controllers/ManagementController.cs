@@ -38,13 +38,13 @@ public class ManagementController : ControllerBase
         try
         {
             // 1. Transportation
-            var trans = await _context.Transportations.AsNoTracking().ToListAsync();
+            var trans = await _context.Transportations.AsNoTracking().Where(t => t.ApprovalStatus == "APPROVED" || string.IsNullOrEmpty(t.ApprovalStatus)).ToListAsync();
             var tripsCount = trans.Count;
             var transReceived = trans.Sum(t => t.NetWeight);
             var transWaste = trans.Sum(t => t.WasteQuantity);
 
             // 2. Storage
-            var storage = await _context.StorageTransactions.AsNoTracking().ToListAsync();
+            var storage = await _context.StorageTransactions.AsNoTracking().Where(s => s.ApprovalStatus == "APPROVED" || string.IsNullOrEmpty(s.ApprovalStatus)).ToListAsync();
             var storageDeposit = storage.Sum(s => s.IncomingQuantity);
             var storageIssue = storage.Sum(s => s.OutgoingQuantity);
             var currentBalance = storage.Count > 0 
@@ -441,15 +441,16 @@ public class ManagementController : ControllerBase
             }
 
             var records = await query.OrderByDescending(t => t.TransactionDate).ToListAsync();
+            var approvedRecords = records.Where(t => t.ApprovalStatus == "APPROVED" || string.IsNullOrEmpty(t.ApprovalStatus)).ToList();
 
-            var totalTrips = records.Count;
-            var totalQty = records.Sum(t => t.ExpectedWeight > 0 ? t.ExpectedWeight : t.NetWeight);
-            var netQty = records.Sum(t => t.NetWeight);
-            var totalWaste = records.Sum(t => t.WasteQuantity);
-            var distinctCars = records.Select(t => t.CarNumber.Trim()).Where(c => !string.IsNullOrEmpty(c)).Distinct(StringComparer.OrdinalIgnoreCase).Count();
-            var distinctDrivers = records.Select(t => t.DriverName.Trim()).Where(d => !string.IsNullOrEmpty(d)).Distinct(StringComparer.OrdinalIgnoreCase).Count();
+            var totalTrips = approvedRecords.Count;
+            var totalQty = approvedRecords.Sum(t => t.ExpectedWeight > 0 ? t.ExpectedWeight : t.NetWeight);
+            var netQty = approvedRecords.Sum(t => t.NetWeight);
+            var totalWaste = approvedRecords.Sum(t => t.WasteQuantity);
+            var distinctCars = approvedRecords.Select(t => t.CarNumber.Trim()).Where(c => !string.IsNullOrEmpty(c)).Distinct(StringComparer.OrdinalIgnoreCase).Count();
+            var distinctDrivers = approvedRecords.Select(t => t.DriverName.Trim()).Where(d => !string.IsNullOrEmpty(d)).Distinct(StringComparer.OrdinalIgnoreCase).Count();
 
-            var completedShipments = records.Count(t => 
+            var completedShipments = approvedRecords.Count(t => 
                 (t.ReceivingStatus ?? "").Contains("Approved", StringComparison.OrdinalIgnoreCase) ||
                 (t.ReceivingStatus ?? "").Contains("Accepted", StringComparison.OrdinalIgnoreCase) ||
                 (t.ReceivingStatus ?? "").Contains("مقبول", StringComparison.OrdinalIgnoreCase) ||
@@ -458,7 +459,7 @@ public class ManagementController : ControllerBase
             );
             var currentShipments = totalTrips - completedShipments;
 
-            var withDuration = records.Where(t => t.ShippingDurationMinutes.HasValue && t.ShippingDurationMinutes.Value > 0).ToList();
+            var withDuration = approvedRecords.Where(t => t.ShippingDurationMinutes.HasValue && t.ShippingDurationMinutes.Value > 0).ToList();
             double? avgDuration = withDuration.Count > 0 ? Math.Round(withDuration.Average(t => t.ShippingDurationMinutes!.Value), 1) : null;
 
             var latest = records.FirstOrDefault();
@@ -490,7 +491,9 @@ public class ManagementController : ControllerBase
                 WeighbridgeFileName = t.WeighbridgeFileName,
                 InvoiceAttachmentPath = t.InvoiceAttachmentPath,
                 WeighbridgeAttachmentPath = t.WeighbridgeAttachmentPath,
-                Notes = t.Notes
+                Notes = t.Notes,
+                ApprovalStatus = string.IsNullOrWhiteSpace(t.ApprovalStatus) ? "APPROVED" : t.ApprovalStatus,
+                RejectionReason = t.RejectionReason
             }).ToList();
 
             var result = new ManagementTransportationOverviewDto
@@ -643,20 +646,21 @@ public class ManagementController : ControllerBase
 
             var records = await query.OrderByDescending(s => s.TransactionDate).ToListAsync();
 
-            var totalDeposit = records.Sum(s => s.IncomingQuantity);
-            var totalIssue = records.Sum(s => s.OutgoingQuantity);
+            var approvedRecords = records.Where(s => s.ApprovalStatus == "APPROVED" || string.IsNullOrEmpty(s.ApprovalStatus)).ToList();
+            var totalDeposit = approvedRecords.Sum(s => s.IncomingQuantity);
+            var totalIssue = approvedRecords.Sum(s => s.OutgoingQuantity);
 
-            var latest = records.FirstOrDefault();
+            var latest = approvedRecords.FirstOrDefault();
             var currentBal = latest?.ClosingBalance ?? (totalDeposit - totalIssue);
 
-            var totalWaste = records
+            var totalWaste = approvedRecords
                 .Where(s => s.HasExternalWeighbridge && s.ExternalNetWeight.HasValue)
                 .Sum(s => Math.Abs(s.InternalNetWeight - s.ExternalNetWeight!.Value));
 
-            var poRelatedExports = records.Where(s => s.IsExportRelatedToPO).ToList();
-            var nonPoImports = records.Where(s => s.Action.Equals("Import", StringComparison.OrdinalIgnoreCase) && string.IsNullOrEmpty(s.PONumber)).ToList();
+            var poRelatedExports = approvedRecords.Where(s => s.IsExportRelatedToPO).ToList();
+            var nonPoImports = approvedRecords.Where(s => s.Action.Equals("Import", StringComparison.OrdinalIgnoreCase) && string.IsNullOrEmpty(s.PONumber)).ToList();
 
-            var materialGroups = records.GroupBy(s => s.Material.Trim(), StringComparer.OrdinalIgnoreCase)
+            var materialGroups = approvedRecords.GroupBy(s => s.Material.Trim(), StringComparer.OrdinalIgnoreCase)
                 .Select(g => new ManagementStorageMaterialBreakdownDto
                 {
                     Material = g.Key,
@@ -688,7 +692,9 @@ public class ManagementController : ControllerBase
                 HasAttachments = !string.IsNullOrEmpty(s.WeighbridgeAttachmentPath),
                 WeighbridgeFileName = s.WeighbridgeFileName,
                 WeighbridgeAttachmentPath = s.WeighbridgeAttachmentPath,
-                Notes = s.Notes
+                Notes = s.Notes,
+                ApprovalStatus = string.IsNullOrWhiteSpace(s.ApprovalStatus) ? "APPROVED" : s.ApprovalStatus,
+                RejectionReason = s.RejectionReason
             }).ToList();
 
             var result = new ManagementStorageOverviewDto
