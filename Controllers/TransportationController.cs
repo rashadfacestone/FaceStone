@@ -878,5 +878,196 @@ public class TransportationController : ControllerBase
             RejectionReason = entity.RejectionReason
         };
     }
+
+    /// <summary>
+    /// Resubmit / Update a rejected Transportation transaction.
+    /// Updates form fields, replaces any new attachments, resets status to PENDING,
+    /// and logs a RESUBMITTED audit trail entry while preserving full previous history.
+    /// </summary>
+    [HttpPost("{id:int}/resubmit")]
+    [HttpPut("{id:int}")]
+    [ProducesResponseType(typeof(ApiResponse<TransportationDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ResubmitTransportation(
+        int id,
+        [FromForm] CreateTransportationDto dto,
+        [FromForm] IFormFile? weighbridgeAttachment = null,
+        [FromForm] IFormFile? dailySupplyAttachment = null,
+        [FromForm] IFormFile? billOfLadingAttachment = null,
+        [FromForm] string? comment = null)
+    {
+        var role = User.FindFirst(ClaimTypes.Role)?.Value ?? string.Empty;
+        var callerName = User.Identity?.Name ?? User.FindFirst(ClaimTypes.Name)?.Value ?? "موظف النقل";
+        Guid? callerUserId = null;
+        if (Guid.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var parsedGuid))
+        {
+            callerUserId = parsedGuid;
+        }
+
+        var entity = await _db.Transportations.FirstOrDefaultAsync(t => t.Id == id);
+        if (entity == null)
+        {
+            return NotFound(ApiResponse.Fail($"لم يتم العثور على حركة النقل #{id}."));
+        }
+
+        if (dto == null)
+        {
+            return BadRequest(ApiResponse.Fail("بيانات الحركة غير صالحة."));
+        }
+
+        var material = (dto.MaterialType ?? string.Empty).Trim().ToLowerInvariant();
+        if (material != "powder" && material != "slurry")
+        {
+            return BadRequest(ApiResponse.Fail("نوع الخامة غير صحيح. الخيارات المتاحة فقط: powder أو slurry."));
+        }
+
+        // Validate and save attachments (using existing path as fallback if no new file uploaded)
+        var wbRes = await ValidateAndSaveAttachmentAsync(weighbridgeAttachment, entity.WeighbridgeAttachmentPath, "إيصال الميزان");
+        if (!wbRes.Success) return BadRequest(ApiResponse.Fail(wbRes.ErrorMessage!));
+
+        var dsRes = await ValidateAndSaveAttachmentAsync(dailySupplyAttachment, entity.DailySupplyAttachmentPath, "يومية التوريد");
+        if (!dsRes.Success) return BadRequest(ApiResponse.Fail(dsRes.ErrorMessage!));
+
+        var bolRes = await ValidateAndSaveAttachmentAsync(billOfLadingAttachment, entity.BillOfLadingAttachmentPath, "بوليصة الشحن");
+        if (!bolRes.Success) return BadRequest(ApiResponse.Fail(bolRes.ErrorMessage!));
+
+        // Calculations
+        var internalNetWeight = Math.Round(dto.InternalLoadedWeight - dto.InternalEmptyWeight, 3);
+        var externalNetWeight = Math.Round(dto.ExternalLoadedWeight - dto.ExternalEmptyWeight, 3);
+        var netWeight = Math.Min(internalNetWeight, externalNetWeight);
+        var wasteQuantity = Math.Max(0m, externalNetWeight - internalNetWeight);
+
+        // Update fields
+        entity.CarNumber = dto.CarNumber.Trim();
+        entity.DriverName = dto.DriverName.Trim();
+        entity.DriverPhone = string.IsNullOrWhiteSpace(dto.DriverPhone) ? null : dto.DriverPhone.Trim();
+        entity.MaterialType = material;
+        entity.WeightBeforeLoading = Math.Round(dto.InternalEmptyWeight, 3);
+        entity.WeightWhenExitingFactory = Math.Round(dto.InternalLoadedWeight, 3);
+        entity.ExternalLoadedWeight = Math.Round(dto.ExternalLoadedWeight, 3);
+        entity.ExternalEmptyWeight = Math.Round(dto.ExternalEmptyWeight, 3);
+        entity.InternalWeight = internalNetWeight;
+        entity.ExternalNetWeight = externalNetWeight;
+        entity.NetWeight = netWeight;
+        entity.WasteQuantity = wasteQuantity;
+
+        if (!string.IsNullOrWhiteSpace(dto.InternalWeighbridgeCode)) entity.InternalWeighbridgeCode = dto.InternalWeighbridgeCode.Trim();
+        if (!string.IsNullOrWhiteSpace(dto.ExternalWeighbridgeCode)) entity.ExternalWeighbridgeCode = dto.ExternalWeighbridgeCode.Trim();
+
+        if (dto.InternalEmptyWeightTime.HasValue) entity.InternalEmptyWeightTime = dto.InternalEmptyWeightTime;
+        if (dto.InternalLoadedWeightTime.HasValue) entity.InternalLoadedWeightTime = dto.InternalLoadedWeightTime;
+        if (dto.ExternalEmptyWeightTime.HasValue) entity.ExternalEmptyWeightTime = dto.ExternalEmptyWeightTime;
+        if (dto.ExternalLoadedWeightTime.HasValue) entity.ExternalLoadedWeightTime = dto.ExternalLoadedWeightTime;
+
+        if (dto.DepartureTime.HasValue) entity.DepartureTime = dto.DepartureTime;
+        if (dto.ArrivalTime.HasValue) entity.ArrivalTime = dto.ArrivalTime;
+
+        if (!string.IsNullOrWhiteSpace(dto.ShippingSupervisor)) entity.ShippingSupervisor = dto.ShippingSupervisor.Trim();
+        if (!string.IsNullOrWhiteSpace(dto.DepartmentSupervisor)) entity.DepartmentSupervisor = dto.DepartmentSupervisor.Trim();
+        if (!string.IsNullOrWhiteSpace(dto.RecipientName)) entity.RecipientName = dto.RecipientName.Trim();
+        if (!string.IsNullOrWhiteSpace(dto.RecipientTitle)) entity.RecipientTitle = dto.RecipientTitle.Trim();
+        if (!string.IsNullOrWhiteSpace(dto.ReceivingStatus)) entity.ReceivingStatus = dto.ReceivingStatus.Trim();
+        if (dto.ReceivedDate.HasValue) entity.ReceivedDate = dto.ReceivedDate;
+
+        entity.CustodyAmount = Math.Round(dto.CustodyAmount, 3);
+        entity.Ikramiya = Math.Round(dto.Ikramiya, 3);
+        if (dto.Notes != null) entity.Notes = dto.Notes.Trim();
+
+        // Update attachments if new ones saved
+        if (weighbridgeAttachment != null && wbRes.StoredFileName != null)
+        {
+            entity.WeighbridgeAttachmentPath = wbRes.StoredFileName;
+            entity.WeighbridgeFileName = wbRes.OriginalFileName;
+            entity.WeighbridgeFileType = wbRes.ContentType;
+            entity.WeighbridgeFileSize = wbRes.FileSize;
+        }
+        if (dailySupplyAttachment != null && dsRes.StoredFileName != null)
+        {
+            entity.DailySupplyAttachmentPath = dsRes.StoredFileName;
+            entity.DailySupplyFileName = dsRes.OriginalFileName;
+            entity.DailySupplyFileType = dsRes.ContentType;
+            entity.DailySupplyFileSize = dsRes.FileSize;
+        }
+        if (billOfLadingAttachment != null && bolRes.StoredFileName != null)
+        {
+            entity.BillOfLadingAttachmentPath = bolRes.StoredFileName;
+            entity.BillOfLadingFileName = bolRes.OriginalFileName;
+            entity.BillOfLadingFileType = bolRes.ContentType;
+            entity.BillOfLadingFileSize = bolRes.FileSize;
+            entity.InvoiceAttachmentPath = bolRes.StoredFileName;
+            entity.InvoiceFileName = bolRes.OriginalFileName;
+            entity.InvoiceFileType = bolRes.ContentType;
+            entity.InvoiceFileSize = bolRes.FileSize;
+        }
+
+        var prevStatus = entity.ApprovalStatus;
+        entity.ApprovalStatus = "PENDING";
+        entity.TransactionStatus = "Pending";
+        entity.RejectionReason = null;
+        entity.ReviewedBy = null;
+        entity.ReviewedAt = null;
+
+        // Record history entry
+        var history = new FormApprovalHistory
+        {
+            FormType = "Transportation",
+            FormId = entity.Id,
+            PONumber = entity.PONumber,
+            TransactionOrMovementNumber = $"#{entity.TransactionNumber}",
+            PreviousStatus = prevStatus,
+            NewStatus = "PENDING",
+            Action = "RESUBMITTED",
+            ActorName = callerName,
+            ActorUserId = callerUserId,
+            ActorRole = role,
+            Comment = string.IsNullOrWhiteSpace(comment) ? "تم تعديل بيانات النموذج والمرفقات وإعادة تقديمه للتحكم والمراقبة." : comment.Trim(),
+            Timestamp = DateTime.UtcNow
+        };
+        await _db.FormApprovalHistories.AddAsync(history);
+        await _db.SaveChangesAsync();
+
+        _logger.LogInformation("Transportation #{Tx} resubmitted by {User}. Status reset to PENDING.", entity.TransactionNumber, callerName);
+
+        try
+        {
+            await _hubContext.Clients.All.SendAsync("OnDepartmentDataChanged", new
+            {
+                department = "control-monitoring",
+                action = "RESUBMITTED",
+                formType = "Transportation",
+                id = entity.Id,
+                po = entity.PONumber,
+                transactionNumber = entity.TransactionNumber,
+                submittedBy = callerName,
+                timestamp = DateTime.UtcNow
+            });
+
+            await _hubContext.Clients.All.SendAsync("OnFormSubmittedForReview", new
+            {
+                formType = "Transportation",
+                id = entity.Id,
+                po = entity.PONumber,
+                transactionNumber = entity.TransactionNumber,
+                submittedBy = callerName,
+                status = "PENDING",
+                timestamp = DateTime.UtcNow
+            });
+
+            await _hubContext.Clients.All.SendAsync("OnFormApprovalStatusChanged", new
+            {
+                formType = "Transportation",
+                id = entity.Id,
+                status = "PENDING",
+                action = "RESUBMITTED"
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to broadcast SignalR notification for resubmitted Transportation #{Id}", entity.Id);
+        }
+
+        return Ok(ApiResponse<TransportationDto>.Ok(MapToDto(entity), "تم تعديل بيانات النموذج وإعادة إرساله لقسم التحكم والمراقبة بنجاح."));
+    }
 }
 

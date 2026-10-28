@@ -10,9 +10,24 @@ public class AttendanceRecord
     public int Id { get; set; }
 
     /// <summary>
-    /// المعرف الفريد للموظف في جدول Users
+    /// المعرف الفريد للموظف (اختياري لربط المستخدمين في جدول Users مستقبلاً)
     /// </summary>
-    public Guid UserId { get; set; }
+    public Guid? UserId { get; set; }
+
+    /// <summary>
+    /// اسم الموظف
+    /// </summary>
+    public string EmployeeName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// الدور الوظيفي في النظام
+    /// </summary>
+    public string EmployeeRole { get; set; } = string.Empty;
+
+    /// <summary>
+    /// علامة تمييز البيانات التجريبية
+    /// </summary>
+    public bool IsTestData { get; set; } = true;
 
     /// <summary>
     /// تاريخ اليوم
@@ -39,5 +54,41 @@ public class AttendanceRecord
     /// </summary>
     public string? Notes { get; set; }
 
+    /// <summary>
+    /// معرف إرسالية الحضور المرتبطة (Batch Submission)
+    /// </summary>
+    public int? AttendanceSubmissionId { get; set; }
+
+    /// <summary>
+    /// حالة الاعتماد: PENDING / APPROVED / REJECTED
+    /// </summary>
+    public string ApprovalStatus { get; set; } = "PENDING";
+
+    /// <summary>
+    /// سبب الرفض في حال رفض هذا السجل الفردي من قبل قسم المراقبة والتحكم
+    /// </summary>
+    public string? RejectionReason { get; set; }
+
+    /// <summary>
+    /// معرف مراجع السجل في قسم المراقبة والتحكم
+    /// </summary>
+    public Guid? ReviewedByUserId { get; set; }
+
+    /// <summary>
+    /// اسم مراجع السجل في قسم المراقبة والتحكم
+    /// </summary>
+    public string? ReviewedBy { get; set; }
+
+    /// <summary>
+    /// تاريخ ووقت اتخاذ القرار للمراجعة الفردية
+    /// </summary>
+    public DateTime? ReviewedAt { get; set; }
+
+    /// <summary>
+    /// تاريخ إنشاء السجل
+    /// </summary>
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
     public UserAccount? User { get; set; }
+    public AttendanceSubmission? AttendanceSubmission { get; set; }
 }

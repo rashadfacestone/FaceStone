@@ -570,6 +570,19 @@ class ChatApi {
     });
   }
 
+  static async approveAttendanceRecord(recordId) {
+    return await this.request(`/api/control-monitoring/attendance/records/${encodeURIComponent(recordId)}/approve`, {
+      method: 'POST'
+    });
+  }
+
+  static async rejectAttendanceRecord(recordId, reason) {
+    return await this.request(`/api/control-monitoring/attendance/records/${encodeURIComponent(recordId)}/reject`, {
+      method: 'POST',
+      body: JSON.stringify({ reason: reason || '', rejectionReason: reason || '' })
+    });
+  }
+
   static async resubmitControlMonitoringForm(formType, id, comment) {
     return await this.request(`/api/control-monitoring/forms/${encodeURIComponent(formType)}/${encodeURIComponent(id)}/resubmit`, {
       method: 'POST',
@@ -579,6 +592,185 @@ class ChatApi {
 
   static async getControlMonitoringHistory(formType, id) {
     return await this.request(`/api/control-monitoring/forms/${encodeURIComponent(formType)}/${encodeURIComponent(id)}/history`, {
+      method: 'GET'
+    });
+  }
+
+  static async getControlMonitoringFullHistory(params = {}) {
+    const qs = new URLSearchParams();
+    if (params.status && params.status !== 'all') qs.append('status', params.status);
+    if (params.department && params.department !== 'all') qs.append('department', params.department);
+    else if (params.formType && params.formType !== 'all') qs.append('formType', params.formType);
+    if (params.po) qs.append('po', params.po);
+    if (params.employee) qs.append('employee', params.employee);
+    if (params.reviewer) qs.append('reviewer', params.reviewer);
+    if (params.search) qs.append('search', params.search);
+    if (params.fromDate) qs.append('fromDate', params.fromDate);
+    if (params.toDate) qs.append('toDate', params.toDate);
+    if (params.page) qs.append('page', params.page);
+    if (params.pageSize) qs.append('pageSize', params.pageSize);
+    if (params.sortBy) qs.append('sortBy', params.sortBy);
+    if (params.sortOrder) qs.append('sortOrder', params.sortOrder);
+    const queryStr = qs.toString() ? `?${qs.toString()}` : '';
+    return await this.request(`/api/control-monitoring/history${queryStr}`, {
+      method: 'GET'
+    });
+  }
+
+  static async resubmitTransportation(id, formData) {
+    const token = this.getToken();
+    const headers = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/transportation/${id}/resubmit`, {
+        method: 'POST',
+        headers: headers,
+        body: formData
+      });
+      let json = {};
+      try {
+        json = await response.json();
+      } catch {
+        json = { success: response.ok, message: response.statusText };
+      }
+      return {
+        success: response.ok,
+        status: response.status,
+        ...json
+      };
+    } catch (err) {
+      return {
+        success: false,
+        message: err.message || 'فشل الاتصال بالخادم.'
+      };
+    }
+  }
+
+  static async resubmitStorage(id, formData) {
+    const token = this.getToken();
+    const headers = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/storage/${id}/resubmit`, {
+        method: 'POST',
+        headers: headers,
+        body: formData
+      });
+      let json = {};
+      try {
+        json = await response.json();
+      } catch {
+        json = { success: response.ok, message: response.statusText };
+      }
+      return {
+        success: response.ok,
+        status: response.status,
+        ...json
+      };
+    } catch (err) {
+      return {
+        success: false,
+        message: err.message || 'فشل الاتصال بالخادم.'
+      };
+    }
+  }
+
+  /* ------------------------------------------------------------------------
+     Attendance Department Endpoints (/api/attendance)
+     ------------------------------------------------------------------------ */
+  static async getAttendanceEmployees() {
+    return await this.request('/api/attendance/employees', {
+      method: 'GET'
+    });
+  }
+
+  static async getAttendanceSheet(dateStr) {
+    const url = dateStr ? `/api/attendance/date/${encodeURIComponent(dateStr)}` : '/api/attendance/sheet';
+    return await this.request(url, {
+      method: 'GET'
+    });
+  }
+
+  static async getAttendanceSubmission(id) {
+    return await this.request(`/api/attendance/submissions/${encodeURIComponent(id)}`, {
+      method: 'GET'
+    });
+  }
+
+  static async submitAttendance(formData) {
+    const token = this.getToken();
+    const headers = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/attendance/submit`, {
+        method: 'POST',
+        headers: headers,
+        body: formData
+      });
+      let json = {};
+      try {
+        json = await response.json();
+      } catch {
+        json = { success: response.ok, message: response.statusText };
+      }
+      return {
+        success: response.ok,
+        status: response.status,
+        ...json
+      };
+    } catch (err) {
+      return {
+        success: false,
+        message: err.message || 'فشل الاتصال بالخادم.'
+      };
+    }
+  }
+
+  static async resubmitAttendance(id, formData) {
+    const token = this.getToken();
+    const headers = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/attendance/submissions/${encodeURIComponent(id)}/resubmit`, {
+        method: 'POST',
+        headers: headers,
+        body: formData
+      });
+      let json = {};
+      try {
+        json = await response.json();
+      } catch {
+        json = { success: response.ok, message: response.statusText };
+      }
+      return {
+        success: response.ok,
+        status: response.status,
+        ...json
+      };
+    } catch (err) {
+      return {
+        success: false,
+        message: err.message || 'فشل الاتصال بالخادم.'
+      };
+    }
+  }
+
+  static async getTransportationById(id) {
+    return await this.request(`/api/transportation/${encodeURIComponent(id)}`, {
+      method: 'GET'
+    });
+  }
+
+  static async getStorageById(id) {
+    return await this.request(`/api/storage/${encodeURIComponent(id)}`, {
       method: 'GET'
     });
   }
@@ -1008,6 +1200,501 @@ class ChatApi {
     return await this.request('/api/management/sync', {
       method: 'POST'
     });
+  }
+
+  /* =========================================================================
+     Attendance Department Endpoints (/api/attendance)
+     ========================================================================= */
+
+  static async verifyAttendanceAccess() {
+    return await this.request('/api/department/attendance', {
+      method: 'GET'
+    });
+  }
+
+  static async getAttendanceEmployees() {
+    return await this.request('/api/attendance/employees', {
+      method: 'GET'
+    });
+  }
+
+  static async getAttendanceSheet(date) {
+    const qs = date ? `?date=${encodeURIComponent(date)}` : '';
+    return await this.request(`/api/attendance/sheet${qs}`, {
+      method: 'GET'
+    });
+  }
+
+  static async getAttendanceSubmission(id) {
+    return await this.request(`/api/attendance/submissions/${encodeURIComponent(id)}`, {
+      method: 'GET'
+    });
+  }
+
+  static async submitAttendance(formData) {
+    const token = this.getToken();
+    const headers = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/attendance/submit`, {
+        method: 'POST',
+        headers: headers,
+        body: formData
+      });
+      let json = {};
+      try {
+        json = await response.json();
+      } catch {
+        json = { success: response.ok, message: response.statusText };
+      }
+      return {
+        success: response.ok,
+        status: response.status,
+        ...json
+      };
+    } catch (err) {
+      return {
+        success: false,
+        message: err.message || 'فشل الاتصال بالخادم.'
+      };
+    }
+  }
+
+  static async resubmitAttendance(id, formData) {
+    const token = this.getToken();
+    const headers = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/attendance/submissions/${encodeURIComponent(id)}/resubmit`, {
+        method: 'POST',
+        headers: headers,
+        body: formData
+      });
+      let json = {};
+      try {
+        json = await response.json();
+      } catch {
+        json = { success: response.ok, message: response.statusText };
+      }
+      return {
+        success: response.ok,
+        status: response.status,
+        ...json
+      };
+    } catch (err) {
+      return {
+        success: false,
+        message: err.message || 'فشل الاتصال بالخادم.'
+      };
+    }
+  }
+
+  /* =========================================================================
+     Storage Department Endpoints (/api/storage) - Redesign
+     ========================================================================= */
+
+  static async getStorageLocations() {
+    return await this.request('/api/storage/locations', {
+      method: 'GET'
+    });
+  }
+
+  static async getStorageClients() {
+    return await this.request('/api/storage/clients', {
+      method: 'GET'
+    });
+  }
+
+  static async getStorageMaterialsStock(locationId = null, type = null) {
+    const qs = new URLSearchParams();
+    if (locationId) qs.append('locationId', locationId);
+    if (type) qs.append('type', type);
+    const queryStr = qs.toString() ? `?${qs.toString()}` : '';
+    return await this.request(`/api/storage/materials-stock${queryStr}`, {
+      method: 'GET'
+    });
+  }
+
+  static async getRawMaterials(type = null) {
+    const qs = type ? `?type=${encodeURIComponent(type)}` : '';
+    return await this.request(`/api/storage/materials${qs}`, {
+      method: 'GET'
+    });
+  }
+
+  static async getStorageNextNumbers() {
+    return await this.request('/api/storage/next-numbers', {
+      method: 'GET'
+    });
+  }
+
+  static async submitStorageImport(data) {
+    return await this.request('/api/storage/import', {
+      method: 'POST',
+      body: data instanceof FormData ? data : JSON.stringify(data)
+    });
+  }
+
+  static async submitStorageExport(data) {
+    return await this.request('/api/storage/export', {
+      method: 'POST',
+      body: data instanceof FormData ? data : JSON.stringify(data)
+    });
+  }
+
+  static async submitStorageTransfer(data) {
+    return await this.request('/api/storage/transfer', {
+      method: 'POST',
+      body: data instanceof FormData ? data : JSON.stringify(data)
+    });
+  }
+
+  static async getStorageOperations(params = {}) {
+    const qs = new URLSearchParams();
+    if (params.type && params.type !== 'ALL') qs.append('type', params.type);
+    if (params.status && params.status !== 'ALL') qs.append('status', params.status);
+    if (params.page) qs.append('page', params.page);
+    if (params.pageSize) qs.append('pageSize', params.pageSize);
+    const queryStr = qs.toString() ? `?${qs.toString()}` : '';
+    return await this.request(`/api/storage/operations${queryStr}`, {
+      method: 'GET'
+    });
+  }
+
+  static async getStorageOperationDetails(id) {
+    return await this.request(`/api/storage/operations/${encodeURIComponent(id)}`, {
+      method: 'GET'
+    });
+  }
+
+  static async getStorageProductionBatches() {
+    return await this.request('/api/storage/production-batches', {
+      method: 'GET'
+    });
+  }
+
+  static async recordStorageProductionOutput(batchId, data) {
+    return await this.request(`/api/storage/production-batches/${encodeURIComponent(batchId)}/record-output`, {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  }
+
+  /* ------------------------------------------------------------------------
+     Laboratory Department Endpoints (/api/laboratory)
+     ------------------------------------------------------------------------ */
+  static async getLaboratoryStats() {
+    return await this.request('/api/laboratory/stats', { method: 'GET' });
+  }
+
+  static async getLaboratoryReferences(params = {}) {
+    const qs = new URLSearchParams();
+    if (params.section && params.section !== 'ALL') qs.append('section', params.section);
+    if (params.decision && params.decision !== 'ALL') qs.append('decision', params.decision);
+    if (params.status && params.status !== 'ALL') qs.append('status', params.status);
+    if (params.search) qs.append('search', params.search);
+    const queryStr = qs.toString() ? `?${qs.toString()}` : '';
+    return await this.request(`/api/laboratory/references${queryStr}`, { method: 'GET' });
+  }
+
+  static async getLaboratoryReferencesForStorageImport() {
+    return await this.request('/api/laboratory/references/for-storage-import', { method: 'GET' });
+  }
+
+  static async getLaboratoryReferencesForProduction() {
+    return await this.request('/api/laboratory/references/for-production', { method: 'GET' });
+  }
+
+  static async getLaboratoryReferencesForInProcess(section) {
+    const qs = (section && section !== 'ALL') ? `?section=${encodeURIComponent(section)}` : '';
+    return await this.request(`/api/laboratory/references/for-in-process${qs}`, { method: 'GET' });
+  }
+
+  static async getLaboratoryReferencesForFinalCertificate(section) {
+    const qs = (section && section !== 'ALL') ? `?section=${encodeURIComponent(section)}` : '';
+    return await this.request(`/api/laboratory/references/for-final-certificate${qs}`, { method: 'GET' });
+  }
+
+  static async getLaboratoryTraceability(referenceNumber) {
+    return await this.request(`/api/laboratory/traceability/${encodeURIComponent(referenceNumber)}`, { method: 'GET' });
+  }
+
+  static async getLaboratoryNextSampleNumber() {
+    return await this.request('/api/laboratory/next-sample-number', { method: 'GET' });
+  }
+
+  static async getLaboratoryBatchReferences(params = {}) {
+    const qs = new URLSearchParams();
+    if (params.search) qs.append('search', params.search);
+    const queryStr = qs.toString() ? `?${qs.toString()}` : '';
+    return await this.request(`/api/laboratory/batch-references${queryStr}`, { method: 'GET' });
+  }
+
+  static async getLaboratoryRawMaterialReports(params = {}) {
+    const qs = new URLSearchParams();
+    if (params.section && params.section !== 'ALL') qs.append('section', params.section);
+    if (params.decision && params.decision !== 'ALL') qs.append('decision', params.decision);
+    if (params.status && params.status !== 'ALL') qs.append('status', params.status);
+    if (params.search) qs.append('search', params.search);
+    if (params.fromDate) qs.append('fromDate', params.fromDate);
+    if (params.toDate) qs.append('toDate', params.toDate);
+    const queryStr = qs.toString() ? `?${qs.toString()}` : '';
+    return await this.request(`/api/laboratory/raw-material-reports${queryStr}`, { method: 'GET' });
+  }
+
+  static async submitLaboratoryRawMaterialReport(formData) {
+    return await this.request('/api/laboratory/raw-material-reports', {
+      method: 'POST',
+      body: formData instanceof FormData ? formData : JSON.stringify(formData)
+    });
+  }
+
+  static async getLaboratoryFinalCertificates(params = {}) {
+    const qs = new URLSearchParams();
+    if (params.section && params.section !== 'ALL') qs.append('section', params.section);
+    if (params.decision && params.decision !== 'ALL') qs.append('decision', params.decision);
+    if (params.status && params.status !== 'ALL') qs.append('status', params.status);
+    if (params.search) qs.append('search', params.search);
+    const queryStr = qs.toString() ? `?${qs.toString()}` : '';
+    return await this.request(`/api/laboratory/final-certificates${queryStr}`, { method: 'GET' });
+  }
+
+  static async submitLaboratoryFinalCertificate(formData) {
+    return await this.request('/api/laboratory/final-certificates', {
+      method: 'POST',
+      body: formData instanceof FormData ? formData : JSON.stringify(formData)
+    });
+  }
+
+  static async getLaboratoryInProcessReports(params = {}) {
+    const qs = new URLSearchParams();
+    if (params.section && params.section !== 'ALL') qs.append('section', params.section);
+    if (params.referenceNumber) qs.append('referenceNumber', params.referenceNumber);
+    if (params.stage && params.stage !== 'ALL') qs.append('stage', params.stage);
+    if (params.decision && params.decision !== 'ALL') qs.append('decision', params.decision);
+    if (params.search) qs.append('search', params.search);
+    const queryStr = qs.toString() ? `?${qs.toString()}` : '';
+    return await this.request(`/api/laboratory/in-process-reports${queryStr}`, { method: 'GET' });
+  }
+
+  static async submitLaboratoryInProcessReport(formData) {
+    return await this.request('/api/laboratory/in-process-reports', {
+      method: 'POST',
+      body: formData instanceof FormData ? formData : JSON.stringify(formData)
+    });
+  }
+
+  static async verifyLaboratoryAccess() {
+    return await this.request('/api/department/laboratory', { method: 'GET' });
+  }
+
+  /* ------------------------------------------------------------------------
+     Production Department Endpoints (/api/production & storage integration)
+     ------------------------------------------------------------------------ */
+  static async verifyProductionAccess() {
+    return await this.request('/api/departments/production', { method: 'GET' });
+  }
+
+  static async getProductionStats() {
+    return await this.request('/api/production/stats', { method: 'GET' });
+  }
+
+  static async getProductionInventory(params = {}) {
+    const qs = new URLSearchParams();
+    if (params.locationId) qs.append('locationId', params.locationId);
+    if (params.materialType && params.materialType !== 'all') qs.append('materialType', params.materialType);
+    if (params.search) qs.append('search', params.search);
+    if (params.onlyAvailable) qs.append('onlyAvailable', 'true');
+    const queryStr = qs.toString() ? `?${qs.toString()}` : '';
+    return await this.request(`/api/production/inventory${queryStr}`, { method: 'GET' });
+  }
+
+  static async getEligibleRawMaterials(locationId = null) {
+    const qs = locationId ? `?locationId=${encodeURIComponent(locationId)}` : '';
+    return await this.request(`/api/production/eligible-raw-materials${qs}`, { method: 'GET' });
+  }
+
+  static async getProductionEligibleReferences() {
+    return await this.request('/api/production/eligible-references', { method: 'GET' });
+  }
+
+  static async getProductionOrders(params = {}) {
+    const qs = new URLSearchParams();
+    if (params.status && params.status !== 'ALL') qs.append('status', params.status);
+    if (params.referenceNumber) qs.append('referenceNumber', params.referenceNumber);
+    if (params.search) qs.append('search', params.search);
+    const queryStr = qs.toString() ? `?${qs.toString()}` : '';
+    return await this.request(`/api/production/orders${queryStr}`, { method: 'GET' });
+  }
+
+  static async getProductionOrder(id) {
+    return await this.request(`/api/production/orders/${encodeURIComponent(id)}`, { method: 'GET' });
+  }
+
+  static async createProductionOrder(orderData) {
+    return await this.request('/api/production/orders', {
+      method: 'POST',
+      body: JSON.stringify(orderData)
+    });
+  }
+
+  static async getProductionBatches(params = {}) {
+    const qs = new URLSearchParams();
+    if (params.status && params.status !== 'ALL') qs.append('status', params.status);
+    if (params.orderId) qs.append('orderId', params.orderId);
+    if (params.referenceNumber) qs.append('referenceNumber', params.referenceNumber);
+    const queryStr = qs.toString() ? `?${qs.toString()}` : '';
+    return await this.request(`/api/production/batches${queryStr}`, { method: 'GET' });
+  }
+
+  static async getProductionBatch(id) {
+    return await this.request(`/api/production/batches/${encodeURIComponent(id)}`, { method: 'GET' });
+  }
+
+  static async startProductionBatch(batchData) {
+    return await this.request('/api/production/batches', {
+      method: 'POST',
+      body: JSON.stringify(batchData)
+    });
+  }
+
+  static async advanceBatchStage(batchId, stageData) {
+    return await this.request(`/api/production/batches/${encodeURIComponent(batchId)}/advance-stage`, {
+      method: 'POST',
+      body: JSON.stringify(stageData)
+    });
+  }
+
+  static async releaseBatchHold(batchId, notesData) {
+    return await this.request(`/api/production/batches/${encodeURIComponent(batchId)}/release-hold`, {
+      method: 'POST',
+      body: JSON.stringify(notesData)
+    });
+  }
+
+  static async createProductionOutput(batchId, outputData) {
+    return await this.request(`/api/production/batches/${encodeURIComponent(batchId)}/outputs`, {
+      method: 'POST',
+      body: JSON.stringify(outputData)
+    });
+  }
+
+  static async getProductionOutputs(params = {}) {
+    const qs = new URLSearchParams();
+    if (params.classification && params.classification !== 'ALL') qs.append('classification', params.classification);
+    if (params.referenceNumber) qs.append('referenceNumber', params.referenceNumber);
+    if (params.batchId) qs.append('batchId', params.batchId);
+    const queryStr = qs.toString() ? `?${qs.toString()}` : '';
+    return await this.request(`/api/production/outputs${queryStr}`, { method: 'GET' });
+  }
+
+  static async getProductionReworkOrders(params = {}) {
+    const qs = new URLSearchParams();
+    if (params.referenceNumber) qs.append('referenceNumber', params.referenceNumber);
+    const queryStr = qs.toString() ? `?${qs.toString()}` : '';
+    return await this.request(`/api/production/rework-orders${queryStr}`, { method: 'GET' });
+  }
+
+  static async createProductionReworkOrder(reworkData) {
+    return await this.request('/api/production/rework-orders', {
+      method: 'POST',
+      body: JSON.stringify(reworkData)
+    });
+  }
+
+  static async getOutputsForStorageReceiving() {
+    return await this.request('/api/production/for-storage-receiving', { method: 'GET' });
+  }
+
+  static async receiveOutputInStorage(receiveData) {
+    return await this.request('/api/production/receive-output-in-storage', {
+      method: 'POST',
+      body: JSON.stringify(receiveData)
+    });
+  }
+
+  static async getProductionHistory(params = {}) {
+    const qs = new URLSearchParams();
+    if (params.referenceNumber) qs.append('referenceNumber', params.referenceNumber);
+    if (params.search) qs.append('search', params.search);
+    const queryStr = qs.toString() ? `?${qs.toString()}` : '';
+    return await this.request(`/api/production/history${queryStr}`, { method: 'GET' });
+  }
+
+  static async getProductionTraceability(referenceNumber) {
+    return await this.request(`/api/production/traceability/${encodeURIComponent(referenceNumber)}`, { method: 'GET' });
+  }
+
+  static async getPendingProductionRequests() {
+    return await this.request('/api/storage/production-requests', { method: 'GET' });
+  }
+
+  static async issueMaterialsForProduction(orderId, payload = {}) {
+    return await this.request(`/api/storage/production-requests/${encodeURIComponent(orderId)}/issue`, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  }
+
+  static async rejectProductionRequest(orderId, payload = {}) {
+    return await this.request(`/api/storage/production-requests/${encodeURIComponent(orderId)}/reject`, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  }
+
+  // =========================================================================
+  // DAILY PRODUCTION TRACKING SYSTEM APIS (تسجيل الإنتاج اليومي)
+  // =========================================================================
+
+  static async getCurrentShiftInfo() {
+    return await this.request('/api/production/current-shift-info', { method: 'GET' });
+  }
+
+  static async getProductionCatalog() {
+    return await this.request('/api/production/products', { method: 'GET' });
+  }
+
+  static async createDailyProductionSubmission(submissionData) {
+    return await this.request('/api/production/daily-submissions', {
+      method: 'POST',
+      body: JSON.stringify(submissionData)
+    });
+  }
+
+  static async getDailyProductionSubmissions(params = {}) {
+    const qs = new URLSearchParams();
+    if (params.date) qs.set('date', params.date);
+    if (params.startDate) qs.set('startDate', params.startDate);
+    if (params.endDate) qs.set('endDate', params.endDate);
+    if (params.shift) qs.set('shift', params.shift);
+    if (params.employee) qs.set('employee', params.employee);
+    if (params.product) qs.set('product', params.product);
+    const queryStr = qs.toString() ? `?${qs.toString()}` : '';
+    return await this.request(`/api/production/daily-submissions${queryStr}`, { method: 'GET' });
+  }
+
+  static async getDailyProductionSubmission(id) {
+    return await this.request(`/api/production/daily-submissions/${encodeURIComponent(id)}`, { method: 'GET' });
+  }
+
+  static async updateDailyProductionSubmission(id, submissionData) {
+    return await this.request(`/api/production/daily-submissions/${encodeURIComponent(id)}`, {
+      method: 'PUT',
+      body: JSON.stringify(submissionData)
+    });
+  }
+
+  static async getDailyProductionSummaryStats(params = {}) {
+    const qs = new URLSearchParams();
+    if (params.date) qs.set('date', params.date);
+    if (params.shift) qs.set('shift', params.shift);
+    const queryStr = qs.toString() ? `?${qs.toString()}` : '';
+    return await this.request(`/api/production/daily-submissions/summary-stats${queryStr}`, { method: 'GET' });
   }
 }
 

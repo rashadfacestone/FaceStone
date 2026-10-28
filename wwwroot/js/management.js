@@ -57,6 +57,8 @@
       this.cardFinance = document.getElementById('mgmt-card-finance');
       this.cardEmployees = document.getElementById('mgmt-card-employees');
       this.cardSuppliers = document.getElementById('mgmt-card-suppliers');
+      this.cardLaboratory = document.getElementById('mgmt-card-laboratory');
+      this.cardProduction = document.getElementById('mgmt-card-production');
 
       // Subviews
       this.viewTransportation = document.getElementById('mgmt-view-transportation');
@@ -65,6 +67,7 @@
       this.viewEmployees = document.getElementById('mgmt-view-employees');
       this.viewSuppliers = document.getElementById('mgmt-view-suppliers');
       this.viewSupplierDetails = document.getElementById('mgmt-view-supplier-details');
+      this.viewLaboratory = document.getElementById('mgmt-view-laboratory');
 
       // Subview Back Buttons
       this.btnTransBack = document.getElementById('mgmt-trans-back-btn');
@@ -73,6 +76,12 @@
       this.btnEmpBack = document.getElementById('mgmt-emp-back-btn');
       this.btnSupBack = document.getElementById('mgmt-sup-back-btn');
       this.btnSupDetailBack = document.getElementById('mgmt-supdetail-back-btn');
+      this.btnLabBack = document.getElementById('mgmt-lab-back-btn');
+
+      // Laboratory Traceability Elements
+      this.labTraceInput = document.getElementById('mgmt-lab-trace-input');
+      this.labTraceBtn = document.getElementById('mgmt-lab-trace-btn');
+      this.labTraceResult = document.getElementById('mgmt-lab-trace-result');
 
       // Transportation Filter Elements
       this.transDateFrom = document.getElementById('mgmt-trans-date-from');
@@ -160,6 +169,18 @@
       if (this.cardSuppliers) {
         this.cardSuppliers.addEventListener('click', () => this.navigateTo('/management/suppliers'));
       }
+      if (this.cardLaboratory) {
+        this.cardLaboratory.addEventListener('click', () => this.navigateTo('/management/laboratory'));
+      }
+      if (this.cardProduction) {
+        this.cardProduction.addEventListener('click', () => {
+          if (window.chatApp) {
+            window.chatApp.enterDepartment('production');
+          } else {
+            window.location.href = '/production';
+          }
+        });
+      }
 
       // Subview Back Buttons
       if (this.btnTransBack) this.btnTransBack.addEventListener('click', () => this.navigateTo('/management'));
@@ -168,6 +189,17 @@
       if (this.btnEmpBack) this.btnEmpBack.addEventListener('click', () => this.navigateTo('/management'));
       if (this.btnSupBack) this.btnSupBack.addEventListener('click', () => this.navigateTo('/management'));
       if (this.btnSupDetailBack) this.btnSupDetailBack.addEventListener('click', () => this.navigateTo('/management/suppliers'));
+      if (this.btnLabBack) this.btnLabBack.addEventListener('click', () => this.navigateTo('/management'));
+
+      // Laboratory Traceability Events
+      if (this.labTraceBtn) {
+        this.labTraceBtn.addEventListener('click', () => this.executeLaboratoryTrace());
+      }
+      if (this.labTraceInput) {
+        this.labTraceInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') this.executeLaboratoryTrace();
+        });
+      }
 
       // Global Search Input
       if (this.globalSearchInput) {
@@ -435,6 +467,8 @@
         this.showEmployeesView(filterQuery);
       } else if (route === '/management/suppliers') {
         this.showSuppliersView(filterQuery);
+      } else if (route === '/management/laboratory') {
+        this.showLaboratoryView(filterQuery);
       } else if (route.startsWith('/management/suppliers/')) {
         const supplierId = decodeURIComponent(route.replace('/management/suppliers/', ''));
         this.showSupplierDetailsView(supplierId);
@@ -471,6 +505,10 @@
       if (this.viewSupplierDetails) {
         this.viewSupplierDetails.classList.remove('active');
         this.viewSupplierDetails.style.display = 'none';
+      }
+      if (this.viewLaboratory) {
+        this.viewLaboratory.classList.remove('active');
+        this.viewLaboratory.style.display = 'none';
       }
     }
 
@@ -572,6 +610,20 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
+    showLaboratoryView(filterQuery = null) {
+      this.currentView = 'laboratory';
+      this.hideAllViews();
+      if (this.viewLaboratory) {
+        this.viewLaboratory.classList.add('active');
+        this.viewLaboratory.style.display = 'block';
+      }
+      if (filterQuery !== null && this.labTraceInput) {
+        this.labTraceInput.value = filterQuery;
+        this.executeLaboratoryTrace(filterQuery);
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
     /* ------------------------------------------------------------------------
        Data Loaders (Read-only, Live Aggregations)
        ------------------------------------------------------------------------ */
@@ -591,6 +643,9 @@
         await this.loadSuppliersData(silent);
       } else if (this.currentView === 'supplier-details' && this.currentSupplierId) {
         await this.loadSupplierDetail(this.currentSupplierId, silent);
+      } else if (this.currentView === 'laboratory') {
+        const refVal = this.labTraceInput ? this.labTraceInput.value.trim() : '';
+        if (refVal) await this.executeLaboratoryTrace(refVal);
       }
     }
 
@@ -627,6 +682,32 @@
           this.setElText('hub-sup-count', this.formatNumber(d.suppliers?.totalSuppliers, 0));
           this.setElText('hub-sup-pos', this.formatNumber(d.suppliers?.totalPos, 0));
           this.setElText('hub-sup-remqty', `${this.formatNumber(d.suppliers?.totalRemainingQuantity, 2)} طن`);
+
+          // Laboratory & Traceability Card Metrics
+          try {
+            const labRes = await window.ChatApi.getLaboratoryStats();
+            if (labRes && labRes.success && labRes.data) {
+              const ld = labRes.data;
+              this.setElText('hub-lab-lifecycles', this.formatNumber(ld.activeProductionLifecycles || 0, 0));
+              this.setElText('hub-lab-accepted', `${this.formatNumber(ld.totalAcceptedRawMaterial || 0, 1)} طن`);
+              this.setElText('hub-lab-finalprod', `${this.formatNumber(ld.totalConformingFinishedProduct || 0, 1)} طن`);
+            }
+          } catch (e) {
+            console.warn('Could not load laboratory stats in overview:', e);
+          }
+
+          // Production Operations Card Metrics
+          try {
+            const prdRes = await window.ChatApi.getProductionStats();
+            if (prdRes && prdRes.success && prdRes.data) {
+              const pd = prdRes.data;
+              this.setElText('hub-prd-batches', this.formatNumber(pd.activeBatches || 0, 0));
+              this.setElText('hub-prd-holds', this.formatNumber(pd.onHoldBatches || 0, 0));
+              this.setElText('hub-prd-output', `${this.formatNumber(pd.totalProducedOutput || 0, 1)} طن`);
+            }
+          } catch (e) {
+            console.warn('Could not load production stats in overview:', e);
+          }
         }
       } catch (err) {
         console.error('Error loading management overview:', err);
@@ -1884,6 +1965,302 @@
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
+    }
+
+    async executeLaboratoryTrace(refOverride = null) {
+      const container = this.labTraceResult;
+      const refInput = this.labTraceInput;
+      const refVal = refOverride || (refInput ? refInput.value.trim() : '');
+      const refNo = parseInt(refVal, 10);
+
+      if (isNaN(refNo) || refNo <= 0) {
+        if (container) {
+          container.innerHTML = `
+            <div style="padding: 1.5rem; text-align: center; background: #FEF2F2; border: 1px solid #FCA5A5; border-radius: 10px; color: #DC2626;">
+              الرجاء إدخال رقم مرجعي تتبعي صحيح (1 أو أكبر).
+            </div>
+          `;
+        }
+        return;
+      }
+
+      if (container) {
+        container.innerHTML = `
+          <div style="text-align: center; padding: 3rem; background: #fff; border-radius: 12px; border: 1px solid #E2E8F0; color: #0F2A5C;">
+            <div class="storage-btn-spinner" style="display:inline-block; width:30px; height:30px; border-width:3px; border-color:#059669; border-top-color:transparent; margin-bottom:12px;"></div>
+            <div style="font-weight:700;">جاري استرجاع سجل دورة الإنتاج الكاملة للرقم المرجعي #${refNo}...</div>
+            <div style="font-size:0.85rem; color:#64748B; margin-top:4px;">تتبع حركة الخامات، أذون الاستلام، تشغيلات الإنتاج، فحوصات الجودة، وشهادات المطابقة</div>
+          </div>
+        `;
+      }
+
+      try {
+        const res = await window.ChatApi.getLaboratoryTraceability(refNo);
+        if (!res || !res.success || !res.data) {
+          if (container) {
+            container.innerHTML = `
+              <div style="padding: 2rem; text-align: center; background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 12px; color: #B45309;">
+                <div style="font-size:1.1rem; font-weight:800; margin-bottom:6px;">⚠️ لم يتم العثور على دورة إنتاج بالرقم المرجعي #${refNo}</div>
+                <div style="font-size:0.9rem;">تأكد من إدخال رقم مرجعي صحيح تم إنشاؤه في قسم المعمل.</div>
+              </div>
+            `;
+          }
+          return;
+        }
+
+        this.renderTraceabilityResult(res.data);
+      } catch (err) {
+        console.error('Error fetching laboratory traceability:', err);
+        if (container) {
+          container.innerHTML = `
+            <div style="padding: 2rem; text-align: center; background: #FEF2F2; border: 1px solid #FCA5A5; border-radius: 12px; color: #DC2626;">
+              حدث خطأ أثناء تحميل بيانات التتبع: ${this.escapeHtml(err.message || 'خطأ غير متوقع')}
+            </div>
+          `;
+        }
+      }
+    }
+
+    renderTraceabilityResult(trace) {
+      const container = this.labTraceResult;
+      if (!container) return;
+
+      const refNo = trace.referenceNumber;
+      const raw = trace.rawMaterialReport;
+      const finalCert = trace.finalConformityCertificate;
+      const inProcess = trace.inProcessReports || [];
+      const storageOps = trace.connectedStorageOperations || [];
+      const batches = trace.connectedProductionBatches || [];
+      const approvals = trace.approvals || [];
+
+      const secName = raw?.laboratorySection === 'PHYSICAL' ? 'المعمل الفيزيائي' : (raw?.laboratorySection === 'CHEMICAL' ? 'المعمل الكيميائي' : 'قسم المعمل');
+      const isConforming = finalCert?.conformityDecision === 'CONFORMS';
+      const isRework = finalCert?.nonConformityAction === 'REWORK';
+
+      // Lifecycle status badge
+      let statusBadge = '<span style="background:#E2E8F0; color:#475569; padding:4px 12px; border-radius:20px; font-weight:700; font-size:0.85rem;">قيد الفحص الأولي</span>';
+      if (finalCert) {
+        if (isConforming) {
+          statusBadge = '<span style="background:#DCFCE7; color:#15803D; padding:4px 12px; border-radius:20px; font-weight:700; font-size:0.85rem;">✅ دورة إنتاج مطابقة للمواصفات ومكتملة</span>';
+        } else if (isRework) {
+          statusBadge = '<span style="background:#FEF3C7; color:#B45309; padding:4px 12px; border-radius:20px; font-weight:700; font-size:0.85rem;">🔄 غير مطابقة — محولة لإعادة التشغيل</span>';
+        } else {
+          statusBadge = '<span style="background:#FEE2E2; color:#DC2626; padding:4px 12px; border-radius:20px; font-weight:700; font-size:0.85rem;">⛔ غير مطابقة — معزولة / تصنيف منفصل</span>';
+        }
+      } else if (raw?.isStorageReceived) {
+        statusBadge = '<span style="background:#DBEAFE; color:#1E40AF; padding:4px 12px; border-radius:20px; font-weight:700; font-size:0.85rem;">🏭 تم استلام الخام — قيد دورة التصنيع</span>';
+      }
+
+      container.innerHTML = `
+        <!-- Main Lifecycle Header Card -->
+        <div style="background:#fff; border-radius:14px; border:1px solid #E2E8F0; padding:1.5rem; box-shadow:0 2px 6px rgba(0,0,0,0.04); margin-bottom:1.5rem;">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px;">
+            <div>
+              <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px;">
+                <span style="font-size:1.5rem; font-weight:900; color:#0F2A5C;">الرقم المرجعي التتبعي للإنتاج: #${refNo}</span>
+                ${statusBadge}
+              </div>
+              <div style="font-size:0.95rem; color:#475569;">
+                الخام الأساسي: <strong>${this.escapeHtml(raw?.rawMaterialDescription || 'غير محدد')}</strong> | القسم المنشئ: <strong>${secName}</strong> | تاريخ الفحص: <strong>${raw?.analysisDate ? this.formatDate(raw.analysisDate) : '-'}</strong>
+              </div>
+            </div>
+            <div style="text-align:left; font-size:0.85rem; color:#64748B;">
+              <div>الموظف المسؤول بالمعمل: <strong>${this.escapeHtml(raw?.responsibleEmployeeName || '-')}</strong></div>
+              <div>حالة اعتماد الرقابة: <strong>${raw?.approvalStatus === 'APPROVED' ? 'معتمد ✅' : 'قيد المراجعة ⏳'}</strong></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 7-Stage End-to-End Stepper Timeline -->
+        <div style="display:flex; flex-direction:column; gap:1.25rem;">
+
+          <!-- STAGE 1: Laboratory Raw Material Inspection -->
+          <div style="background:#fff; border-radius:12px; border:1px solid #E2E8F0; padding:1.25rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; border-bottom:1px solid #F1F5F9; padding-bottom:8px;">
+              <h4 style="margin:0; font-size:1.05rem; font-weight:800; color:#059669; display:flex; align-items:center; gap:8px;">
+                <span>🔬 المرحلة 1: فحص وتحليل المواد الخام (قسم المعمل)</span>
+              </h4>
+              <span style="font-size:0.8rem; background:#ECFDF5; color:#065F46; padding:3px 10px; border-radius:6px; font-weight:700;">
+                نقطة البداية وإنشاء الرقم المرجعي
+              </span>
+            </div>
+            ${raw ? `
+              <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px; font-size:0.9rem;">
+                <div>المورد: <strong>${this.escapeHtml(raw.supplierName || 'داخلي')}</strong></div>
+                <div>أمر الشراء: <strong>${this.escapeHtml(raw.purchaseOrderNumber || '-')}</strong></div>
+                <div>الكمية الواردة: <strong>${Number(raw.receivedQuantity || 0).toFixed(3)} طن</strong></div>
+                <div>الكمية المقبولة: <strong style="color:#059669;">${Number(raw.acceptedQuantity || 0).toFixed(3)} طن</strong></div>
+                <div>الكمية المرفوضة: <strong style="color:#DC2626;">${Number(raw.rejectedQuantity || 0).toFixed(3)} طن</strong></div>
+                <div>قرار الفحص: <strong>${this.escapeHtml(raw.inspectionDecision || '-')}</strong></div>
+              </div>
+              ${raw.notes ? `<div style="margin-top:10px; font-size:0.85rem; color:#475569; background:#F8FAFC; padding:8px 12px; border-radius:6px;">ملاحظات المعمل: ${this.escapeHtml(raw.notes)}</div>` : ''}
+            ` : `<div style="color:#94A3B8;">لا يوجد تقرير فحص مواد خام مسجل لهذا الرقم.</div>`}
+          </div>
+
+          <!-- STAGE 2: Storage Raw Material Receipt -->
+          <div style="background:#fff; border-radius:12px; border:1px solid #E2E8F0; padding:1.25rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; border-bottom:1px solid #F1F5F9; padding-bottom:8px;">
+              <h4 style="margin:0; font-size:1.05rem; font-weight:800; color:#2563EB; display:flex; align-items:center; gap:8px;">
+                <span>📦 المرحلة 2: إذن إضافة واستلام المواد الخام بالمستودع</span>
+              </h4>
+              <span style="font-size:0.8rem; background:${raw?.isStorageReceived ? '#EFF6FF' : '#FFFBEB'}; color:${raw?.isStorageReceived ? '#1D4ED8' : '#B45309'}; padding:3px 10px; border-radius:6px; font-weight:700;">
+                ${raw?.isStorageReceived ? '✅ تم الاستلام برصيد المخزن' : '⏳ بانتظار استلام المستودع'}
+              </span>
+            </div>
+            ${storageOps.filter(o => o.operationType === 'IMPORT').length > 0 ? `
+              <table style="width:100%; border-collapse:collapse; font-size:0.85rem; text-align:right;">
+                <thead>
+                  <tr style="background:#F8FAFC; color:#64748B;">
+                    <th style="padding:6px 10px; border-bottom:1px solid #E2E8F0;">رقم الإذن</th>
+                    <th style="padding:6px 10px; border-bottom:1px solid #E2E8F0;">التاريخ</th>
+                    <th style="padding:6px 10px; border-bottom:1px solid #E2E8F0;">الكمية المستلمة</th>
+                    <th style="padding:6px 10px; border-bottom:1px solid #E2E8F0;">حالة الاعتماد</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${storageOps.filter(o => o.operationType === 'IMPORT').map(o => `
+                    <tr>
+                      <td style="padding:6px 10px; border-bottom:1px solid #F1F5F9;"><strong>${this.escapeHtml(o.transactionFormattedNumber)}</strong></td>
+                      <td style="padding:6px 10px; border-bottom:1px solid #F1F5F9;">${this.formatDate(o.transactionDate)}</td>
+                      <td style="padding:6px 10px; border-bottom:1px solid #F1F5F9;">${Number(o.totalQuantity).toFixed(3)} طن</td>
+                      <td style="padding:6px 10px; border-bottom:1px solid #F1F5F9;">${o.approvalStatus === 'APPROVED' ? 'معتمد ✅' : 'قيد المراجعة ⏳'}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            ` : `<div style="color:#64748B; font-size:0.875rem;">لم يتم تسجيل إذن إضافة مستودع لهذا الرقم حتى الآن.</div>`}
+          </div>
+
+          <!-- STAGE 3: Production WIP & Material Issues -->
+          <div style="background:#fff; border-radius:12px; border:1px solid #E2E8F0; padding:1.25rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; border-bottom:1px solid #F1F5F9; padding-bottom:8px;">
+              <h4 style="margin:0; font-size:1.05rem; font-weight:800; color:#7C3AED; display:flex; align-items:center; gap:8px;">
+                <span>⚙️ المرحلة 3: تحويل المواد إلى خطوط الإنتاج والتشغيل (WIP)</span>
+              </h4>
+              <span style="font-size:0.8rem; background:#F5F3FF; color:#6D28D9; padding:3px 10px; border-radius:6px; font-weight:700;">
+                تشغيلات المصنع
+              </span>
+            </div>
+            ${batches.length > 0 ? `
+              <div style="display:flex; flex-direction:column; gap:8px;">
+                ${batches.map(b => `
+                  <div style="padding:8px 12px; background:#FAF5FF; border:1px solid #E9D5FF; border-radius:8px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; font-size:0.875rem;">
+                    <div>تشغيلة: <strong>${this.escapeHtml(b.trackingNumber)}</strong> | الخام المصروف: <strong>${Number(b.materialQuantityIssued).toFixed(3)} طن</strong></div>
+                    <div>الحالة: <strong>${this.escapeHtml(b.status || '-')}</strong> | تاريخ التحويل: <strong>${this.formatDate(b.transferDate)}</strong></div>
+                  </div>
+                `).join('')}
+              </div>
+            ` : `<div style="color:#64748B; font-size:0.875rem;">لا توجد تشغيلات إنتاج مسجلة حالياً مرتبطة بالرقم المرجعي.</div>`}
+          </div>
+
+          <!-- STAGE 4: In-Process Quality Tests -->
+          <div style="background:#fff; border-radius:12px; border:1px solid #E2E8F0; padding:1.25rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; border-bottom:1px solid #F1F5F9; padding-bottom:8px;">
+              <h4 style="margin:0; font-size:1.05rem; font-weight:800; color:#D97706; display:flex; align-items:center; gap:8px;">
+                <span>🧪 المرحلة 4: فحوصات الجودة أثناء التشغيل (${inProcess.length} فحص مسجل)</span>
+              </h4>
+              <span style="font-size:0.8rem; background:#FEF3C7; color:#B45309; padding:3px 10px; border-radius:6px; font-weight:700;">
+                سجل تاريخي تراكمي
+              </span>
+            </div>
+            ${inProcess.length > 0 ? `
+              <div style="display:flex; flex-direction:column; gap:8px;">
+                ${inProcess.map((p, idx) => `
+                  <div style="padding:10px 14px; background:#FFFBEB; border:1px solid #FDE68A; border-radius:8px; font-size:0.875rem;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                      <strong>فحص #${idx + 1} - مرحلة: ${this.escapeHtml(p.productionStage || 'التشغيل')}</strong>
+                      <span style="font-weight:700; color:${p.inspectionDecision === 'MEETS' ? '#059669' : '#DC2626'};">
+                        ${this.escapeHtml(p.inspectionDecision || '-')}
+                      </span>
+                    </div>
+                    <div style="margin-top:4px; font-size:0.8rem; color:#64748B;">
+                      التشغيلة: ${this.escapeHtml(p.productionBatchNumber || '-')} | الفاحص: ${this.escapeHtml(p.responsibleEmployeeName || '-')} | التاريخ: ${this.formatDate(p.testDate)}
+                    </div>
+                    ${p.notes ? `<div style="margin-top:4px; font-size:0.8rem; color:#475569;">ملاحظات: ${this.escapeHtml(p.notes)}</div>` : ''}
+                  </div>
+                `).join('')}
+              </div>
+            ` : `<div style="color:#64748B; font-size:0.875rem;">لا توجد فحوصات أثناء التشغيل مسجلة حتى الآن.</div>`}
+          </div>
+
+          <!-- STAGE 5: Final Product Conformity Certificate -->
+          <div style="background:#fff; border-radius:12px; border:1px solid #E2E8F0; padding:1.25rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; border-bottom:1px solid #F1F5F9; padding-bottom:8px;">
+              <h4 style="margin:0; font-size:1.05rem; font-weight:800; color:#0F2A5C; display:flex; align-items:center; gap:8px;">
+                <span>🏆 المرحلة 5: شهادة مطابقة المنتج النهائي وحساب الهالك</span>
+              </h4>
+              <span style="font-size:0.8rem; background:${finalCert ? '#DCFCE7' : '#F1F5F9'}; color:${finalCert ? '#15803D' : '#64748B'}; padding:3px 10px; border-radius:6px; font-weight:700;">
+                ${finalCert ? 'تم إصدار الشهادة' : 'بانتظار اكتمال الإنتاج والفحص'}
+              </span>
+            </div>
+            ${finalCert ? `
+              <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px; font-size:0.9rem;">
+                <div>المنتج النهائي: <strong>${this.escapeHtml(finalCert.finalProductName || '-')}</strong></div>
+                <div>الكمية الفعلية المنتجة: <strong style="color:#059669;">${Number(finalCert.actualFinalProductQuantity || 0).toFixed(3)} ${this.escapeHtml(finalCert.quantityUnit || 'طن')}</strong></div>
+                <div>خام الإدخال الفعلي: <strong>${Number(finalCert.actualRawMaterialInputQuantity || 0).toFixed(3)} طن</strong></div>
+                <div>الفرق المحسوب: <strong>${Number(finalCert.calculatedDifferenceQuantity || 0).toFixed(3)} طن</strong></div>
+                <div>الهالك الفعلي المقاس: <strong style="color:#D97706;">${finalCert.actualMeasuredWasteQuantity !== null ? `${Number(finalCert.actualMeasuredWasteQuantity).toFixed(3)} طن` : '—'}</strong></div>
+                <div>تصنيف الهالك: <strong>${this.escapeHtml(finalCert.wasteClassification || 'هالك عادي')}</strong></div>
+                <div>قرار المطابقة: <strong style="color:${isConforming ? '#059669' : '#DC2626'};">${this.escapeHtml(finalCert.conformityDecision || '-')}</strong></div>
+                <div>الإجراء للمنتج غير المطابق: <strong>${this.escapeHtml(finalCert.nonConformityAction || '—')}</strong></div>
+              </div>
+            ` : `<div style="color:#64748B; font-size:0.875rem;">لم يتم تقديم شهادة مطابقة المنتج النهائي بعد.</div>`}
+          </div>
+
+          <!-- STAGE 6: Finished Goods Storage -->
+          <div style="background:#fff; border-radius:12px; border:1px solid #E2E8F0; padding:1.25rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; border-bottom:1px solid #F1F5F9; padding-bottom:8px;">
+              <h4 style="margin:0; font-size:1.05rem; font-weight:800; color:#0D9488; display:flex; align-items:center; gap:8px;">
+                <span>🏢 المرحلة 6: قيد وتخزين المنتج التام بالمستودع</span>
+              </h4>
+              <span style="font-size:0.8rem; background:${finalCert?.isStoragePosted ? '#CCFBF1' : '#F1F5F9'}; color:${finalCert?.isStoragePosted ? '#0F766E' : '#64748B'}; padding:3px 10px; border-radius:6px; font-weight:700;">
+                ${finalCert?.isStoragePosted ? '✅ تم القيد برصيد المستودع' : '⏳ بانتظار قيد أمين المستودع'}
+              </span>
+            </div>
+            <div style="font-size:0.9rem; color:#475569;">
+              ${finalCert?.isStoragePosted
+                ? `تم إيداع كمية (${Number(finalCert.actualFinalProductQuantity).toFixed(3)} طن) من المنتج النهائي '${this.escapeHtml(finalCert.finalProductName)}' في مخزن المنتجات التامة بنجاح ومطابقتها للمواصفات.`
+                : (finalCert && isConforming
+                    ? `شهادة المطابقة معتمدة والكمية جاهزة لإذن الاستلام في مستودع المنتجات التامة بالرقم المرجعي #${refNo}.`
+                    : `في انتظار صدور واعتماد شهادة مطابقة المنتج النهائي.`)}
+            </div>
+          </div>
+
+          <!-- STAGE 7: Control & Monitoring Approvals Audit Trail -->
+          <div style="background:#fff; border-radius:12px; border:1px solid #E2E8F0; padding:1.25rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; border-bottom:1px solid #F1F5F9; padding-bottom:8px;">
+              <h4 style="margin:0; font-size:1.05rem; font-weight:800; color:#334155; display:flex; align-items:center; gap:8px;">
+                <span>🛡️ سجل المراجعة واعتمادات قسم التحكم والمراقبة (${approvals.length})</span>
+              </h4>
+            </div>
+            ${approvals.length > 0 ? `
+              <table style="width:100%; border-collapse:collapse; font-size:0.85rem; text-align:right;">
+                <thead>
+                  <tr style="background:#F8FAFC; color:#64748B;">
+                    <th style="padding:6px 10px; border-bottom:1px solid #E2E8F0;">نوع النموذج</th>
+                    <th style="padding:6px 10px; border-bottom:1px solid #E2E8F0;">القرار</th>
+                    <th style="padding:6px 10px; border-bottom:1px solid #E2E8F0;">المراجع</th>
+                    <th style="padding:6px 10px; border-bottom:1px solid #E2E8F0;">التاريخ</th>
+                    <th style="padding:6px 10px; border-bottom:1px solid #E2E8F0;">ملاحظات</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${approvals.map(a => `
+                    <tr>
+                      <td style="padding:6px 10px; border-bottom:1px solid #F1F5F9;"><strong>${this.escapeHtml(a.formType)}</strong></td>
+                      <td style="padding:6px 10px; border-bottom:1px solid #F1F5F9;"><span style="color:${a.decision === 'APPROVED' ? '#059669' : '#DC2626'}; font-weight:700;">${a.decision === 'APPROVED' ? 'معتمد' : 'مرفوض'}</span></td>
+                      <td style="padding:6px 10px; border-bottom:1px solid #F1F5F9;">${this.escapeHtml(a.reviewedByEmployeeName || '-')}</td>
+                      <td style="padding:6px 10px; border-bottom:1px solid #F1F5F9;">${this.formatDate(a.reviewedAt)}</td>
+                      <td style="padding:6px 10px; border-bottom:1px solid #F1F5F9;">${this.escapeHtml(a.reviewerNotes || '-')}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            ` : `<div style="color:#64748B; font-size:0.875rem;">لا توجد قرارات اعتماد سابقة مسجلة لهذا الرقم المرجعي.</div>`}
+          </div>
+
+        </div>
+      `;
     }
 
     updateUserBadge(user) {

@@ -107,8 +107,10 @@ builder.Services.AddAuthentication(options =>
                  path.StartsWithSegments("/api/chat/attachments", StringComparison.OrdinalIgnoreCase) ||
                  path.StartsWithSegments("/api/control-monitoring/attachments", StringComparison.OrdinalIgnoreCase) ||
                  path.StartsWithSegments("/api/attachments", StringComparison.OrdinalIgnoreCase) ||
+                 path.StartsWithSegments("/api/attendance/attachments", StringComparison.OrdinalIgnoreCase) ||
                  path.StartsWithSegments("/api/transportation/attachments", StringComparison.OrdinalIgnoreCase) ||
-                 path.StartsWithSegments("/api/storage/attachments", StringComparison.OrdinalIgnoreCase)))
+                 path.StartsWithSegments("/api/storage/attachments", StringComparison.OrdinalIgnoreCase) ||
+                 path.StartsWithSegments("/api/laboratory/attachments", StringComparison.OrdinalIgnoreCase)))
             {
                 context.Token = accessToken;
             }
@@ -153,6 +155,48 @@ builder.Services.AddAuthorization(options =>
             var role = ctx.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
             return FaceStone.Web.Models.AppRoles.HasControlMonitoringAccess(role);
         }));
+
+    options.AddPolicy("AttendanceAccess", policy =>
+        policy.RequireAssertion(ctx =>
+        {
+            var role = ctx.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+            return FaceStone.Web.Models.AppRoles.HasAttendanceAccess(role);
+        }));
+
+    options.AddPolicy("LaboratoryAccess", policy =>
+        policy.RequireAssertion(ctx =>
+        {
+            var role = ctx.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+            return FaceStone.Web.Models.AppRoles.HasLaboratoryAccess(role);
+        }));
+
+    options.AddPolicy("PhysicalLabAccess", policy =>
+        policy.RequireAssertion(ctx =>
+        {
+            var role = ctx.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+            return FaceStone.Web.Models.AppRoles.HasPhysicalLabAccess(role);
+        }));
+
+    options.AddPolicy("ChemicalLabAccess", policy =>
+        policy.RequireAssertion(ctx =>
+        {
+            var role = ctx.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+            return FaceStone.Web.Models.AppRoles.HasChemicalLabAccess(role);
+        }));
+
+    options.AddPolicy("ProductionAccess", policy =>
+        policy.RequireAssertion(ctx =>
+        {
+            var role = ctx.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+            return FaceStone.Web.Models.AppRoles.HasProductionAccess(role);
+        }));
+
+    options.AddPolicy("ProductionManagerAccess", policy =>
+        policy.RequireAssertion(ctx =>
+        {
+            var role = ctx.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+            return FaceStone.Web.Models.AppRoles.IsProductionManager(role);
+        }));
 });
 
 // 5. Add SignalR for Real-Time WebSockets
@@ -195,6 +239,7 @@ builder.Services.AddCors(options =>
 
 // 7. Dependency Injection Services
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddSingleton<IProductionShiftService, ProductionShiftService>();
 
 var app = builder.Build();
 

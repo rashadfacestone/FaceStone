@@ -29,6 +29,28 @@
         fromDate: '',
         toDate: ''
       };
+
+      // History state
+      this.historyFilters = {
+        status: 'all',
+        formType: 'all',
+        po: '',
+        employee: '',
+        reviewer: '',
+        search: '',
+        fromDate: '',
+        toDate: ''
+      };
+      this.historyPagination = {
+        page: 1,
+        pageSize: 20,
+        totalCount: 0,
+        totalPages: 1,
+        sortBy: 'reviewedAt',
+        sortOrder: 'desc'
+      };
+      this.openedFromHistory = false;
+      this.historyDebounceTimer = null;
     }
 
     init() {
@@ -45,17 +67,22 @@
       // Views
       this.mainView = document.getElementById('control-monitoring-main-view');
       this.detailsView = document.getElementById('control-monitoring-request-details-view');
+      this.historyView = document.getElementById('control-monitoring-history-view');
 
       // Top Header Elements
       this.userNameEl = document.getElementById('cm-user-name');
       this.userRoleEl = document.getElementById('cm-user-role');
       this.userAvatarEl = document.getElementById('cm-user-avatar');
       this.backToDeptsBtn = document.getElementById('control-monitoring-back-to-departments-btn');
+      this.btnViewHistory = document.getElementById('cm-btn-view-history');
+      this.btnViewHistoryBanner = document.getElementById('cm-btn-view-history-banner');
+      this.btnViewHistoryTable = document.getElementById('cm-btn-view-history-table');
 
       // Main Dashboard: Stat Card Values
       this.statPendingEl = document.getElementById('cm-stat-pending-val');
       this.statTransEl = document.getElementById('cm-stat-trans-val');
       this.statStorageEl = document.getElementById('cm-stat-storage-val');
+      this.statAttendanceEl = document.getElementById('cm-stat-attendance-val');
       this.statApprovedEl = document.getElementById('cm-stat-approved-val');
       this.statRejectedEl = document.getElementById('cm-stat-rejected-val');
 
@@ -82,6 +109,33 @@
       this.btnSliderNext = document.getElementById('cm-table-slider-next');
       this.btnSidePrev = document.getElementById('cm-slider-side-prev');
       this.btnSideNext = document.getElementById('cm-slider-side-next');
+
+      // History Page Elements
+      this.historyBackBtn = document.getElementById('cm-history-back-btn');
+      this.historyTableBody = document.getElementById('cm-history-table-body');
+      this.historyCountBadge = document.getElementById('cm-hist-count-badge');
+      this.historyLoading = document.getElementById('cm-hist-table-loading');
+      this.historyEmpty = document.getElementById('cm-hist-table-empty');
+      this.histStatusTabs = document.querySelectorAll('.cm-hist-status-tab');
+      this.histDeptSelect = document.getElementById('cm-hist-filter-dept');
+      this.histSearchInput = document.getElementById('cm-hist-filter-search');
+      this.histPoInput = document.getElementById('cm-hist-filter-po');
+      this.histEmployeeInput = document.getElementById('cm-hist-filter-employee');
+      this.histReviewerInput = document.getElementById('cm-hist-filter-reviewer');
+      this.histFromDate = document.getElementById('cm-hist-filter-from-date');
+      this.histToDate = document.getElementById('cm-hist-filter-to-date');
+      this.histSortSelect = document.getElementById('cm-hist-filter-sort');
+      this.histApplyBtn = document.getElementById('cm-hist-btn-apply');
+      this.histResetBtn = document.getElementById('cm-hist-btn-reset');
+      this.histRefreshBtn = document.getElementById('cm-hist-btn-refresh');
+
+      // History Pagination Elements
+      this.histPageSizeSelect = document.getElementById('cm-hist-page-size');
+      this.histPrevPageBtn = document.getElementById('cm-hist-prev-page');
+      this.histNextPageBtn = document.getElementById('cm-hist-next-page');
+      this.histPageNumbersWrap = document.getElementById('cm-hist-page-numbers');
+      this.histPaginationInfo = document.getElementById('cm-hist-pagination-info');
+      this.histPaginationBar = document.getElementById('cm-hist-pagination-bar');
 
       // Details Page: Navigation & Breadcrumbs
       this.detailsBackBtn = document.getElementById('cm-details-back-btn');
@@ -143,15 +197,99 @@
         });
       }
 
-      // 2. Return from Request Details to Main Requests Dashboard
+      // History Page Open & Back buttons
+      if (this.btnViewHistory) {
+        this.btnViewHistory.addEventListener('click', () => this.showHistoryPage(true));
+      }
+      if (this.btnViewHistoryBanner) {
+        this.btnViewHistoryBanner.addEventListener('click', () => this.showHistoryPage(true));
+      }
+      if (this.btnViewHistoryTable) {
+        this.btnViewHistoryTable.addEventListener('click', () => this.showHistoryPage(true));
+      }
+      if (this.historyBackBtn) {
+        this.historyBackBtn.addEventListener('click', () => this.showMainPage(true));
+      }
+
+      // 2. Return from Request Details to Main Requests Dashboard or History Page
       if (this.detailsBackBtn) {
         this.detailsBackBtn.addEventListener('click', () => {
-          this.showMainPage();
-          if (window.location.pathname !== '/control-monitoring') {
-            history.pushState({ view: 'control-monitoring' }, '', '/control-monitoring');
+          if (this.openedFromHistory) {
+            this.showHistoryPage(true);
+          } else {
+            this.showMainPage(true);
           }
         });
       }
+
+      // History Filters
+      if (this.histStatusTabs) {
+        this.histStatusTabs.forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            this.histStatusTabs.forEach(b => b.classList.remove('active'));
+            e.currentTarget.classList.add('active');
+            this.historyFilters.status = e.currentTarget.getAttribute('data-status') || 'all';
+            this.loadHistory(1);
+          });
+        });
+      }
+      if (this.histDeptSelect) {
+        this.histDeptSelect.addEventListener('change', (e) => {
+          this.historyFilters.formType = e.target.value;
+          this.loadHistory(1);
+        });
+      }
+      if (this.histSortSelect) {
+        this.histSortSelect.addEventListener('change', (e) => {
+          const val = e.target.value || 'reviewedAt_desc';
+          const parts = val.split('_');
+          this.historyPagination.sortBy = parts[0] || 'reviewedAt';
+          this.historyPagination.sortOrder = parts[1] || 'desc';
+          this.loadHistory(1);
+        });
+      }
+      if (this.histPageSizeSelect) {
+        this.histPageSizeSelect.addEventListener('change', (e) => {
+          this.historyPagination.pageSize = parseInt(e.target.value, 10) || 20;
+          this.loadHistory(1);
+        });
+      }
+      if (this.histPrevPageBtn) {
+        this.histPrevPageBtn.addEventListener('click', () => {
+          if (this.historyPagination.page > 1) {
+            this.loadHistory(this.historyPagination.page - 1);
+          }
+        });
+      }
+      if (this.histNextPageBtn) {
+        this.histNextPageBtn.addEventListener('click', () => {
+          if (this.historyPagination.page < this.historyPagination.totalPages) {
+            this.loadHistory(this.historyPagination.page + 1);
+          }
+        });
+      }
+
+      const handleHistorySearchChange = () => {
+        clearTimeout(this.historyDebounceTimer);
+        this.historyDebounceTimer = setTimeout(() => {
+          this.historyFilters.search = (this.histSearchInput?.value || '').trim();
+          this.historyFilters.po = (this.histPoInput?.value || '').trim();
+          this.historyFilters.employee = (this.histEmployeeInput?.value || '').trim();
+          this.historyFilters.reviewer = (this.histReviewerInput?.value || '').trim();
+          this.historyFilters.fromDate = this.histFromDate?.value || '';
+          this.historyFilters.toDate = this.histToDate?.value || '';
+          this.loadHistory(1);
+        }, 350);
+      };
+      if (this.histSearchInput) this.histSearchInput.addEventListener('input', handleHistorySearchChange);
+      if (this.histPoInput) this.histPoInput.addEventListener('input', handleHistorySearchChange);
+      if (this.histEmployeeInput) this.histEmployeeInput.addEventListener('input', handleHistorySearchChange);
+      if (this.histReviewerInput) this.histReviewerInput.addEventListener('input', handleHistorySearchChange);
+      if (this.histFromDate) this.histFromDate.addEventListener('change', handleHistorySearchChange);
+      if (this.histToDate) this.histToDate.addEventListener('change', handleHistorySearchChange);
+      if (this.histApplyBtn) this.histApplyBtn.addEventListener('click', () => handleHistorySearchChange());
+      if (this.histResetBtn) this.histResetBtn.addEventListener('click', () => this.resetHistoryFilters());
+      if (this.histRefreshBtn) this.histRefreshBtn.addEventListener('click', () => this.loadHistory(this.historyPagination.page));
 
       // 3. Quick Status Filter Tabs
       if (this.tabBtns) {
@@ -292,6 +430,11 @@
           this.loadForms();
         }
 
+        // If on history view: refresh history table
+        if (this.historyView && this.historyView.style.display !== 'none') {
+          this.loadHistory(this.historyPagination.page);
+        }
+
         // If currently viewing details for the affected request: refresh details live
         if (this.detailsView && this.detailsView.style.display !== 'none') {
           const detail = e.detail;
@@ -320,21 +463,48 @@
     /* ------------------------------------------------------------------------
        ROUTING & VIEW SWITCHING
        ------------------------------------------------------------------------ */
-    showMainPage() {
+    showMainPage(pushHistory = true) {
       if (this.detailsView) this.detailsView.style.display = 'none';
+      if (this.historyView) this.historyView.style.display = 'none';
       if (this.mainView) this.mainView.style.display = 'block';
+      this.openedFromHistory = false;
       this.activeItem = null;
       this.activeFormType = null;
       this.activeFormId = null;
+      if (pushHistory && window.location.pathname !== '/control-monitoring') {
+        history.pushState({ view: 'control-monitoring' }, '', '/control-monitoring');
+      }
       window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    showHistoryPage(pushHistory = true) {
+      if (this.mainView) this.mainView.style.display = 'none';
+      if (this.detailsView) this.detailsView.style.display = 'none';
+      if (this.historyView) this.historyView.style.display = 'block';
+      this.openedFromHistory = true;
+      this.activeItem = null;
+      this.activeFormType = null;
+      this.activeFormId = null;
+      if (pushHistory && window.location.pathname !== '/control-monitoring/history') {
+        history.pushState({ view: 'control-monitoring-history' }, '', '/control-monitoring/history');
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      this.loadHistory(1);
     }
 
     handleRoute(subRoute) {
       const cleanRoute = (subRoute || window.location.pathname || '').trim().toLowerCase();
+
+      // Match history route: /control-monitoring/history
+      if (cleanRoute === '/control-monitoring/history' || cleanRoute.startsWith('/control-monitoring/history')) {
+        this.showHistoryPage(false);
+        return;
+      }
+
       // Match patterns:
       // /control-monitoring/request/{type}/{id}
       // /control-monitoring/request/{id}
-      const matchTypeAndId = cleanRoute.match(/\/control-monitoring\/request\/(transportation|storage)\/(\d+)/i);
+      const matchTypeAndId = cleanRoute.match(/\/control-monitoring\/request\/(transportation|storage|attendance)\/(\d+)/i);
       if (matchTypeAndId) {
         const formType = matchTypeAndId[1];
         const formId = parseInt(matchTypeAndId[2], 10);
@@ -350,9 +520,255 @@
       }
 
       // Default to main view
-      this.showMainPage();
+      this.showMainPage(false);
       this.loadStats();
       this.loadForms();
+    }
+
+    /* ------------------------------------------------------------------------
+       APPROVAL & REJECTION HISTORY (WHOLE SYSTEM AUDIT ARCHIVE)
+       Aggregates all approved & rejected requests with server-side pagination
+       ------------------------------------------------------------------------ */
+    async loadHistory(page = 1) {
+      this.historyPagination.page = page;
+      if (this.historyLoading) this.historyLoading.style.display = 'block';
+      if (this.historyEmpty) this.historyEmpty.style.display = 'none';
+      if (this.historyTableBody) this.historyTableBody.innerHTML = '';
+
+      const params = {
+        status: this.historyFilters.status,
+        department: this.historyFilters.formType,
+        search: this.historyFilters.search,
+        po: this.historyFilters.po,
+        employee: this.historyFilters.employee,
+        reviewer: this.historyFilters.reviewer,
+        fromDate: this.historyFilters.fromDate,
+        toDate: this.historyFilters.toDate,
+        page: page,
+        pageSize: this.historyPagination.pageSize,
+        sortBy: this.historyPagination.sortBy,
+        sortOrder: this.historyPagination.sortOrder
+      };
+
+      try {
+        const res = await window.ChatApi.getControlMonitoringFullHistory(params);
+        if (this.historyLoading) this.historyLoading.style.display = 'none';
+
+        let items = [];
+        let totalCount = 0;
+        let totalPages = 1;
+
+        if (res && res.success && res.data) {
+          if (Array.isArray(res.data)) {
+            items = res.data;
+            totalCount = items.length;
+            totalPages = Math.max(1, Math.ceil(totalCount / this.historyPagination.pageSize));
+          } else {
+            items = res.data.items || [];
+            totalCount = res.data.totalCount || 0;
+            totalPages = res.data.totalPages || 1;
+          }
+        }
+
+        this.historyPagination.totalCount = totalCount;
+        this.historyPagination.totalPages = totalPages;
+        if (this.historyCountBadge) this.historyCountBadge.textContent = totalCount;
+
+        if (items.length > 0) {
+          this.renderHistoryTable(items);
+        } else {
+          if (this.historyEmpty) this.historyEmpty.style.display = 'block';
+        }
+
+        this.updateHistoryPaginationControls(totalCount, page, totalPages);
+      } catch (err) {
+        console.error('Error loading Control & Monitoring history:', err);
+        if (this.historyLoading) this.historyLoading.style.display = 'none';
+        if (this.historyEmpty) {
+          this.historyEmpty.style.display = 'block';
+          const p = this.historyEmpty.querySelector('p');
+          if (p) p.textContent = 'تعذر تحميل سجل الموافقات والرفض حالياً. يرجى إعادة المحاولة.';
+        }
+      }
+    }
+
+    renderHistoryTable(items) {
+      if (!this.historyTableBody) return;
+      this.historyTableBody.innerHTML = '';
+
+      items.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.className = 'finance-table-row';
+
+        const isTrans = (item.formType || '').toLowerCase() === 'transportation';
+        const isAttendance = (item.formType || '').toLowerCase() === 'attendance';
+        const requestId = item.formId || item.id || '-';
+        let typeBadge = '';
+        if (isTrans) {
+          typeBadge = `<span class="cm-badge cm-badge-trans">🚛 نقل</span>`;
+        } else if (isAttendance) {
+          typeBadge = `<span class="cm-badge" style="background:#FEF3C7; color:#92400E; border:1px solid #FDE68A;">📋 حضور</span>`;
+        } else {
+          typeBadge = `<span class="cm-badge cm-badge-storage">📦 مستودع</span>`;
+        }
+
+        const poText = isAttendance
+          ? (item.attendanceDate ? item.attendanceDate.split('T')[0] : (item.poNumber || '-'))
+          : (item.poNumber && item.poNumber.trim() ? this.escapeHtml(item.poNumber) : '<span style="color:#94A3B8;">-</span>');
+        const txText = item.transactionNumber || (isAttendance ? `ATT-${requestId}` : `#${requestId}`);
+        const submitterText = this.escapeHtml(item.submittedBy || '-');
+        const reviewerText = this.escapeHtml(item.reviewedBy || '-');
+
+        const submitDateStr = item.submissionDate
+          ? new Date(item.submissionDate).toLocaleDateString('ar-EG', {
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            })
+          : '-';
+
+        const reviewDateStr = item.reviewedAt
+          ? new Date(item.reviewedAt).toLocaleDateString('ar-EG', {
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            })
+          : '-';
+
+        const status = (item.status || '').toUpperCase();
+        let statusBadge = '';
+        if (status === 'APPROVED') {
+          statusBadge = '<span class="cm-badge cm-badge-approved">✓ معتمد</span>';
+        } else if (status === 'REJECTED') {
+          statusBadge = '<span class="cm-badge cm-badge-rejected">✕ مرفوض</span>';
+        } else if (status === 'PARTIALLY_REVIEWED') {
+          statusBadge = '<span class="cm-badge" style="background:#FFFBEB; color:#B45309; border:1px solid #FCD34D;">⏳ مراجعة جزئية</span>';
+        } else if (status === 'MIXED') {
+          statusBadge = '<span class="cm-badge" style="background:#FEF2F2; color:#B91C1C; border:1px solid #FECACA;">⚠️ نتائج متباينة</span>';
+        } else {
+          statusBadge = `<span class="cm-badge cm-badge-pending">⏳ قيد المراجعة</span>`;
+        }
+
+        const reasonHtml = status === 'REJECTED' && item.rejectionReason && item.rejectionReason.trim()
+          ? `<div style="color:#DC2626; font-size:0.8rem; font-weight:600; line-height:1.4; max-width:260px; word-break:break-word;">
+               ${this.escapeHtml(item.rejectionReason)}
+             </div>`
+          : `<span style="color:#94A3B8; font-size:0.8rem;">—</span>`;
+
+        const attCount = item.attachmentCount || (item.attachments ? item.attachments.length : 0);
+        const attBadge = attCount > 0
+          ? `<span class="finance-badge-pill" style="font-size:0.775rem; padding:3px 8px; color:#0F172A; font-weight:700;">📎 ${attCount} مرفقات</span>`
+          : `<span style="color:#94A3B8; font-size:0.75rem;">بدون مرفقات</span>`;
+
+        tr.innerHTML = `
+          <td>${typeBadge}</td>
+          <td style="font-weight:800; font-size:0.825rem; color:#0284C7; font-feature-settings:'tnum';">#${requestId}</td>
+          <td style="font-weight:700; color:#0F172A;" dir="ltr">${poText}</td>
+          <td style="font-weight:700; color:#0284C7; font-feature-settings:'tnum';">${txText}</td>
+          <td><div style="font-weight:600; color:#334155;">${submitterText}</div></td>
+          <td><div style="font-weight:600; color:#0F172A;">${reviewerText}</div></td>
+          <td>${statusBadge}</td>
+          <td style="font-size:0.8rem; color:#64748B;">${submitDateStr}</td>
+          <td style="font-size:0.8rem; color:#64748B;">${reviewDateStr}</td>
+          <td>${reasonHtml}</td>
+          <td>${attBadge}</td>
+          <td style="text-align: center;">
+            <button type="button" class="cm-btn-view-details cm-btn-open-hist-details" data-type="${item.formType}" data-id="${requestId}">
+              <span>عرض التفاصيل →</span>
+            </button>
+          </td>
+        `;
+
+        const btn = tr.querySelector('.cm-btn-open-hist-details');
+        if (btn) {
+          btn.addEventListener('click', () => {
+            this.openedFromHistory = true;
+            this.showRequestDetails(item.formType, requestId, true);
+          });
+        }
+
+        this.historyTableBody.appendChild(tr);
+      });
+    }
+
+    updateHistoryPaginationControls(totalCount, page, totalPages) {
+      if (this.histPaginationInfo) {
+        if (totalCount === 0) {
+          this.histPaginationInfo.textContent = 'لا توجد سجلات لعرضها';
+        } else {
+          const fromIdx = (page - 1) * this.historyPagination.pageSize + 1;
+          const toIdx = Math.min(page * this.historyPagination.pageSize, totalCount);
+          this.histPaginationInfo.textContent = `عرض ${fromIdx} إلى ${toIdx} من إجمالي ${totalCount} سجل (صفحة ${page} من ${totalPages})`;
+        }
+      }
+
+      if (this.histPrevPageBtn) {
+        this.histPrevPageBtn.disabled = page <= 1;
+      }
+      if (this.histNextPageBtn) {
+        this.histNextPageBtn.disabled = page >= totalPages;
+      }
+
+      if (this.histPageNumbersWrap) {
+        this.histPageNumbersWrap.innerHTML = '';
+        const maxButtons = 5;
+        let startPage = Math.max(1, page - 2);
+        let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+        if (endPage - startPage < maxButtons - 1) {
+          startPage = Math.max(1, endPage - maxButtons + 1);
+        }
+
+        for (let p = startPage; p <= endPage; p++) {
+          const pageBtn = document.createElement('button');
+          pageBtn.type = 'button';
+          pageBtn.className = `finance-page-btn ${p === page ? 'active' : ''}`;
+          pageBtn.textContent = p;
+          pageBtn.style.minWidth = '34px';
+          if (p === page) {
+            pageBtn.style.background = '#0F172A';
+            pageBtn.style.color = '#FFFFFF';
+            pageBtn.style.borderColor = '#0F172A';
+          }
+          pageBtn.addEventListener('click', () => this.loadHistory(p));
+          this.histPageNumbersWrap.appendChild(pageBtn);
+        }
+      }
+    }
+
+    resetHistoryFilters() {
+      this.historyFilters = {
+        status: 'all',
+        formType: 'all',
+        po: '',
+        employee: '',
+        reviewer: '',
+        search: '',
+        fromDate: '',
+        toDate: ''
+      };
+      this.historyPagination.page = 1;
+      this.historyPagination.sortBy = 'reviewedAt';
+      this.historyPagination.sortOrder = 'desc';
+
+      if (this.histStatusTabs) {
+        this.histStatusTabs.forEach(btn => {
+          btn.classList.toggle('active', (btn.getAttribute('data-status') || '').toLowerCase() === 'all');
+        });
+      }
+      if (this.histDeptSelect) this.histDeptSelect.value = 'all';
+      if (this.histSearchInput) this.histSearchInput.value = '';
+      if (this.histPoInput) this.histPoInput.value = '';
+      if (this.histEmployeeInput) this.histEmployeeInput.value = '';
+      if (this.histReviewerInput) this.histReviewerInput.value = '';
+      if (this.histFromDate) this.histFromDate.value = '';
+      if (this.histToDate) this.histToDate.value = '';
+      if (this.histSortSelect) this.histSortSelect.value = 'reviewedAt_desc';
+
+      this.loadHistory(1);
     }
 
     /* ------------------------------------------------------------------------
@@ -393,6 +809,7 @@
           if (this.statPendingEl) this.statPendingEl.textContent = d.pendingReviewsCount ?? 0;
           if (this.statTransEl) this.statTransEl.textContent = d.transportationPendingCount ?? 0;
           if (this.statStorageEl) this.statStorageEl.textContent = d.storagePendingCount ?? 0;
+          if (this.statAttendanceEl) this.statAttendanceEl.textContent = d.attendancePendingCount ?? 0;
           if (this.statApprovedEl) this.statApprovedEl.textContent = d.approvedTodayCount ?? 0;
           if (this.statRejectedEl) this.statRejectedEl.textContent = d.rejectedTodayCount ?? 0;
         }
@@ -442,24 +859,35 @@
 
         // 1. Request Type & ID
         const isTrans = (item.formType || '').toLowerCase() === 'transportation';
+        const isAttendance = (item.formType || '').toLowerCase() === 'attendance';
         const requestId = item.formId || item.id || '-';
-        const typeBadge = isTrans
-          ? `<div style="display:flex; align-items:center; gap:6px;">
+        let typeBadge = '';
+        if (isTrans) {
+          typeBadge = `<div style="display:flex; align-items:center; gap:6px;">
                <span class="cm-badge cm-badge-trans">🚛 نقل</span>
                <span style="font-weight:800; font-size:0.8rem; color:#2563EB; font-feature-settings:'tnum';">#${requestId}</span>
-             </div>`
-          : `<div style="display:flex; align-items:center; gap:6px;">
+             </div>`;
+        } else if (isAttendance) {
+          typeBadge = `<div style="display:flex; align-items:center; gap:6px;">
+               <span class="cm-badge" style="background:#FEF3C7; color:#92400E; border:1px solid #FDE68A;">📋 حضور</span>
+               <span style="font-weight:800; font-size:0.8rem; color:#D97706; font-feature-settings:'tnum';">#${requestId}</span>
+             </div>`;
+        } else {
+          typeBadge = `<div style="display:flex; align-items:center; gap:6px;">
                <span class="cm-badge cm-badge-storage">📦 مستودع</span>
                <span style="font-weight:800; font-size:0.8rem; color:#7C3AED; font-feature-settings:'tnum';">#${requestId}</span>
              </div>`;
+        }
 
-        // 2. PO Number
-        const poText = item.poNumber && item.poNumber.trim() ? this.escapeHtml(item.poNumber) : '<span style="color:#94A3B8;">-</span>';
+        // 2. PO Number / Attendance Date
+        const poText = isAttendance
+          ? (item.attendanceDate ? item.attendanceDate.split('T')[0] : (item.poNumber || '-'))
+          : (item.poNumber && item.poNumber.trim() ? this.escapeHtml(item.poNumber) : '<span style="color:#94A3B8;">-</span>');
 
         // 3. Transaction Number
-        const txText = item.transactionNumber || `#${requestId}`;
+        const txText = item.transactionNumber || (isAttendance ? `ATT-${requestId}` : `#${requestId}`);
 
-        // 4. Identifying Information (Material / Vehicle Plate / Supplier / Store)
+        // 4. Identifying Information (Material / Vehicle Plate / Supplier / Store / Attendance Records)
         let identifyingInfo = '';
         if (isTrans) {
           const mat = item.materialType || '-';
@@ -468,6 +896,14 @@
           identifyingInfo = `
             <div style="font-size:0.85rem; font-weight:700; color:#1E293B;">${this.escapeHtml(mat)}</div>
             <div style="font-size:0.75rem; color:#64748B;">${plate}${comp}</div>
+          `;
+        } else if (isAttendance) {
+          const tot = item.totalEmployeesCount || (item.attendanceRecords ? item.attendanceRecords.length : 0);
+          const pres = item.presentCount ?? 0;
+          const abs = item.absentCount ?? 0;
+          identifyingInfo = `
+            <div style="font-size:0.85rem; font-weight:700; color:#1E293B;">كشف حضور: ${tot} موظف</div>
+            <div style="font-size:0.75rem; color:#64748B;">حاضر: ${pres} | غائب: ${abs}</div>
           `;
         } else {
           const mat = item.material || '-';
@@ -500,6 +936,10 @@
           statusBadge = `<span class="cm-badge cm-badge-approved">✓ معتمد</span>`;
         } else if (status === 'REJECTED') {
           statusBadge = `<span class="cm-badge cm-badge-rejected" title="${this.escapeHtml(item.rejectionReason || 'تم الرفض')}">✕ مرفوض</span>`;
+        } else if (status === 'PARTIALLY_REVIEWED') {
+          statusBadge = `<span class="cm-badge" style="background:#FFFBEB; color:#B45309; border:1px solid #FCD34D;">⏳ مراجعة جزئية</span>`;
+        } else if (status === 'MIXED') {
+          statusBadge = `<span class="cm-badge" style="background:#FEF2F2; color:#B91C1C; border:1px solid #FECACA;">⚠️ نتائج متباينة</span>`;
         }
 
         // 8. Number of Attachments
@@ -548,9 +988,10 @@
       this.activeFormId = id;
       this.activeItem = null;
 
-      // Switch view: Hide main dashboard, show dedicated details page
+      // Switch view: Hide main dashboard and history view, show dedicated details page
       if (this.mainView) this.mainView.style.display = 'none';
-      this.detailsView.style.display = 'block';
+      if (this.historyView) this.historyView.style.display = 'none';
+      if (this.detailsView) this.detailsView.style.display = 'block';
       window.scrollTo({ top: 0, behavior: 'smooth' });
 
       // Update URL route
@@ -612,9 +1053,11 @@
     }
 
     renderRequestDetails(item) {
-      const isTrans = (item.formType || '').toLowerCase() === 'transportation';
-      const typeAr = isTrans ? 'النقل واللوجستيات' : 'المستودعات والمخازن';
-      const txNum = item.transactionNumber || `#${item.formId || item.id}`;
+      const fType = (item.formType || '').toLowerCase();
+      const isTrans = fType === 'transportation';
+      const isAttendance = fType === 'attendance';
+      const typeAr = isTrans ? 'النقل واللوجستيات' : (isAttendance ? 'الحضور والانصراف' : 'المستودعات والمخازن');
+      const txNum = item.transactionNumber || (isAttendance ? `ATT-${item.formId || item.id}` : `#${item.formId || item.id}`);
       const status = (item.status || 'PENDING').toUpperCase();
 
       // 1. Breadcrumbs
@@ -626,7 +1069,13 @@
       if (this.heroTitle) this.heroTitle.textContent = `طلب تدقيق واعتماد: ${typeAr} (${txNum})`;
       if (this.heroTypeText) this.heroTypeText.textContent = typeAr;
       if (this.heroIdText) this.heroIdText.textContent = item.formId || item.id || '-';
-      if (this.heroPoText) this.heroPoText.textContent = item.poNumber && item.poNumber.trim() ? item.poNumber : 'غير مرتبط بأمر شراء';
+      if (this.heroPoText) {
+        if (isAttendance) {
+          this.heroPoText.textContent = item.attendanceDate ? `تاريخ الكشف: ${item.attendanceDate.split('T')[0]}` : 'كشف حضور';
+        } else {
+          this.heroPoText.textContent = item.poNumber && item.poNumber.trim() ? item.poNumber : 'غير مرتبط بأمر شراء';
+        }
+      }
       if (this.heroSubmitterText) this.heroSubmitterText.textContent = item.submittedBy || '-';
       if (this.heroDeptText) this.heroDeptText.textContent = typeAr;
 
@@ -653,6 +1102,16 @@
         } else if (status === 'REJECTED') {
           this.heroStatusBadge.classList.add('cm-badge-rejected');
           this.heroStatusBadge.innerHTML = '✕ مرفوض (REJECTED)';
+        } else if (status === 'PARTIALLY_REVIEWED') {
+          this.heroStatusBadge.style.background = '#FFFBEB';
+          this.heroStatusBadge.style.color = '#B45309';
+          this.heroStatusBadge.style.border = '1px solid #FCD34D';
+          this.heroStatusBadge.innerHTML = '⏳ مراجعة جزئية (PARTIALLY REVIEWED)';
+        } else if (status === 'MIXED') {
+          this.heroStatusBadge.style.background = '#FEF2F2';
+          this.heroStatusBadge.style.color = '#B91C1C';
+          this.heroStatusBadge.style.border = '1px solid #FECACA';
+          this.heroStatusBadge.innerHTML = '⚠️ نتائج مراجعة متباينة (MIXED RESULTS)';
         } else {
           this.heroStatusBadge.classList.add('cm-badge-pending');
           this.heroStatusBadge.innerHTML = '⏳ قيد المراجعة (PENDING)';
@@ -692,6 +1151,31 @@
               * بانتظار قيام الموظف المختص بإجراء التعديلات المطلوبة وإعادة تقديم النموذج.
             </div>
           `;
+        } else if (status === 'PARTIALLY_REVIEWED') {
+          this.detailsStatusBanner.style.display = 'block';
+          this.detailsStatusBanner.className = 'cm-decision-approved-box';
+          this.detailsStatusBanner.style.background = '#FFFBEB';
+          this.detailsStatusBanner.style.borderColor = '#FCD34D';
+          this.detailsStatusBanner.style.color = '#92400E';
+          this.detailsStatusBanner.innerHTML = `
+            <div style="display:flex; align-items:center; gap:8px; font-weight:800; font-size:1rem; margin-bottom:4px;">
+              <span>⏳ الكشف قيد المراجعة الجزئية (Partially Reviewed)</span>
+            </div>
+            <div>
+              تم تدقيق ومراجعة بعض السجلات الفردية للموظفين، وتوجد سجلات أخرى ما زالت بانتظار قرار المراجع. يمكنك مراجعة واعتماد أو رفض كل سجل بشكل مستقل في الجدول أدناه دون التأثير على السجلات الأخرى.
+            </div>
+          `;
+        } else if (status === 'MIXED') {
+          this.detailsStatusBanner.style.display = 'block';
+          this.detailsStatusBanner.className = 'cm-decision-rejected-box';
+          this.detailsStatusBanner.innerHTML = `
+            <div style="display:flex; align-items:center; gap:8px; font-weight:800; font-size:1rem; margin-bottom:4px;">
+              <span>⚠️ كشف حضور مدقق بنتائج متباينة (Mixed Results)</span>
+            </div>
+            <div>
+              تم تدقيق جميع سجلات الكشف: السجلات المقبولة محفوظة ومعتمدة رسمياً، بينما السجلات المرفوضة موثقة بأسباب الرفض بانتظار تصحيحها وإعادة تقديمها من قبل قسم الحضور.
+            </div>
+          `;
         } else {
           this.detailsStatusBanner.style.display = 'none';
         }
@@ -716,7 +1200,240 @@
     renderFullFormData(item, isTrans) {
       if (!this.formDataBody) return;
 
-      if (isTrans) {
+      const fType = (item.formType || '').toLowerCase();
+      if (fType === 'attendance') {
+        const records = item.attendanceRecords || [];
+        const presentCount = item.presentCount ?? records.filter(r => (r.status || '').toLowerCase() === 'present').length;
+        const absentCount = item.absentCount ?? records.filter(r => (r.status || '').toLowerCase() === 'absent').length;
+        const totalCount = item.totalEmployeesCount ?? records.length;
+        const approvedCount = records.filter(r => (r.approvalStatus || '').toUpperCase() === 'APPROVED').length;
+        const rejectedCount = records.filter(r => (r.approvalStatus || '').toUpperCase() === 'REJECTED').length;
+        const pendingCount = records.filter(r => (r.approvalStatus || 'PENDING').toUpperCase() === 'PENDING').length;
+        const attDateStr = item.attendanceDate ? new Date(item.attendanceDate).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' }) : '-';
+
+        let rowsHtml = '';
+        if (records.length === 0) {
+          rowsHtml = `<tr><td colspan="8" style="text-align:center; padding:2rem; color:#64748B;">لا توجد سجلات حضور مسجلة</td></tr>`;
+        } else {
+          records.forEach((rec, idx) => {
+            const isPresent = (rec.status || '').toLowerCase() === 'present';
+            const isAbsent = (rec.status || '').toLowerCase() === 'absent';
+            const recAppStatus = (rec.approvalStatus || 'PENDING').toUpperCase();
+
+            const statusBadge = isPresent
+              ? `<span class="cm-badge cm-badge-approved" style="background:#ECFDF5; color:#065F46; border:1px solid #A7F3D0;">✓ حاضر (Present)</span>`
+              : (isAbsent
+                ? `<span class="cm-badge cm-badge-rejected" style="background:#FEF2F2; color:#991B1B; border:1px solid #FECACA;">✕ غائب (Absent)</span>`
+                : `<span class="cm-badge cm-badge-pending">⏳ غير محدد</span>`);
+
+            const roleArabic = window.ChatApp ? window.ChatApp.formatRoleArabic(rec.role) : (rec.role || 'موظف');
+
+            // Formatted Attendance Date & Time
+            let dtDisplay = '-';
+            const rawDt = rec.attendanceDateTime || rec.checkInTime || rec.checkOutTime;
+            if (rawDt) {
+              const d = new Date(rawDt);
+              if (!isNaN(d.getTime())) {
+                const dStr = d.toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' });
+                const tStr = d.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+                dtDisplay = `<div style="font-weight:700; color:#0F172A; font-size:0.825rem;">${dStr}</div><div style="font-size:0.75rem; color:#0284C7; font-weight:800; direction:ltr; text-align:right;">${tStr}</div>`;
+              }
+            } else if (isAbsent) {
+              dtDisplay = '<span style="color:#94A3B8; font-size:0.75rem;">غير مطلوب (غائب)</span>';
+            }
+
+            // Individual Review Status Badge
+            let reviewBadgeHtml = '';
+            let reviewMeta = '';
+            if (recAppStatus === 'APPROVED') {
+              reviewBadgeHtml = `<span class="cm-badge cm-badge-approved">✓ معتمد</span>`;
+              if (rec.reviewedBy) {
+                const rTime = rec.reviewedAt ? new Date(rec.reviewedAt).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) : '';
+                reviewMeta = `<div style="font-size:0.7rem; color:#047857; margin-top:2px;">بواسطة: ${this.escapeHtml(rec.reviewedBy)}${rTime ? ` (${rTime})` : ''}</div>`;
+              }
+            } else if (recAppStatus === 'REJECTED') {
+              reviewBadgeHtml = `<span class="cm-badge cm-badge-rejected" title="${this.escapeHtml(rec.rejectionReason || '')}">✕ مرفوض</span>`;
+              const rTime = rec.reviewedAt ? new Date(rec.reviewedAt).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) : '';
+              reviewMeta = `
+                <div style="font-size:0.72rem; color:#DC2626; font-weight:700; margin-top:2px; line-height:1.2;">
+                  السبب: "${this.escapeHtml(rec.rejectionReason || 'يلزم التعديل')}"
+                </div>
+                ${rec.reviewedBy ? `<div style="font-size:0.68rem; color:#991B1B; margin-top:1px;">بواسطة: ${this.escapeHtml(rec.reviewedBy)}${rTime ? ` (${rTime})` : ''}</div>` : ''}
+              `;
+            } else {
+              reviewBadgeHtml = `<span class="cm-badge cm-badge-pending">⏳ قيد المراجعة</span>`;
+            }
+
+            // Individual Action Buttons
+            let actionsHtml = '';
+            if (recAppStatus === 'PENDING') {
+              actionsHtml = `
+                <div style="display:flex; align-items:center; justify-content:center; gap:6px;">
+                  <button type="button" class="btn-rec-approve finance-btn-action" data-record-id="${rec.id}"
+                    style="padding:5px 11px; background:#10B981; color:#FFFFFF; border:none; border-radius:6px; font-weight:800; font-size:0.75rem; cursor:pointer; display:inline-flex; align-items:center; gap:4px; box-shadow:0 1px 2px rgba(0,0,0,0.05);"
+                    title="اعتماد سجل الموظف الفردي">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span>اعتماد</span>
+                  </button>
+                  <button type="button" class="btn-rec-reject finance-btn-action" data-record-id="${rec.id}"
+                    style="padding:5px 11px; background:#EF4444; color:#FFFFFF; border:none; border-radius:6px; font-weight:800; font-size:0.75rem; cursor:pointer; display:inline-flex; align-items:center; gap:4px; box-shadow:0 1px 2px rgba(0,0,0,0.05);"
+                    title="رفض سجل الموظف وتحديد السبب">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    <span>رفض</span>
+                  </button>
+                </div>
+              `;
+            } else if (recAppStatus === 'APPROVED') {
+              actionsHtml = `
+                <div style="display:flex; align-items:center; justify-content:center; gap:6px;">
+                  <span style="font-size:0.75rem; color:#059669; font-weight:800;">✓ محفوظ</span>
+                  <button type="button" class="btn-rec-reject" data-record-id="${rec.id}"
+                    style="padding:3px 8px; background:#FEF2F2; color:#DC2626; border:1px solid #FECACA; border-radius:6px; font-size:0.7rem; font-weight:700; cursor:pointer;"
+                    title="إعادة التقييم ورفض هذا السجل">
+                    تعديل إلى رفض
+                  </button>
+                </div>
+              `;
+            } else if (recAppStatus === 'REJECTED') {
+              actionsHtml = `
+                <div style="display:flex; align-items:center; justify-content:center; gap:6px;">
+                  <span style="font-size:0.75rem; color:#DC2626; font-weight:800;">✕ مرفوض</span>
+                  <button type="button" class="btn-rec-approve" data-record-id="${rec.id}"
+                    style="padding:3px 8px; background:#ECFDF5; color:#059669; border:1px solid #A7F3D0; border-radius:6px; font-size:0.7rem; font-weight:700; cursor:pointer;"
+                    title="إعادة التقييم واعتماد هذا السجل">
+                    تعديل إلى اعتماد
+                  </button>
+                </div>
+              `;
+            }
+
+            // Row background tint
+            let rowBg = '';
+            if (recAppStatus === 'REJECTED') rowBg = 'background:#FFF1F2;';
+            else if (recAppStatus === 'APPROVED') rowBg = 'background:#F0FDF4;';
+            else if (isPresent) rowBg = 'background:#FAF5FF;';
+            else if (isAbsent) rowBg = 'background:#FFFBEB;';
+
+            rowsHtml += `
+              <tr class="finance-table-row" style="${rowBg}">
+                <td style="font-weight:700; color:#0F172A;">${this.escapeHtml(rec.fullName || 'موظف')}</td>
+                <td style="font-size:0.8rem; color:#64748B;" dir="ltr">${rec.userId ? rec.userId.substring(0, 8) : `#${idx + 1}`}</td>
+                <td><span class="finance-badge-pill" style="font-size:0.75rem;">${this.escapeHtml(roleArabic)}</span></td>
+                <td style="text-align:center;">${statusBadge}</td>
+                <td>${dtDisplay}</td>
+                <td style="text-align:center;">${reviewBadgeHtml}${reviewMeta}</td>
+                <td style="font-size:0.8rem; color:#64748B;">${this.escapeHtml(rec.notes || '-')}</td>
+                <td style="text-align:center;">${actionsHtml}</td>
+              </tr>
+            `;
+          });
+        }
+
+        this.formDataBody.innerHTML = `
+          <div class="cm-form-groups-container">
+            <!-- Group 1: Attendance Sheet Summary -->
+            <div class="cm-form-group">
+              <div class="cm-form-group-header">
+                <span class="cm-form-group-icon">📋</span>
+                <span>ملخص كشف الحضور والانصراف (Attendance Summary)</span>
+              </div>
+              <div class="cm-fields-grid">
+                <div class="cm-field-item">
+                  <span class="cm-field-label">تاريخ الحضور الرسمي</span>
+                  <span class="cm-field-value highlight">${attDateStr}</span>
+                </div>
+                <div class="cm-field-item">
+                  <span class="cm-field-label">إجمالي عدد الموظفين</span>
+                  <span class="cm-field-value highlight" style="font-size:1.1rem;">${totalCount} موظف</span>
+                </div>
+                <div class="cm-field-item">
+                  <span class="cm-field-label">الموظفين الحاضرين</span>
+                  <span class="cm-field-value success" style="font-size:1.1rem;">${presentCount} موظف</span>
+                </div>
+                <div class="cm-field-item">
+                  <span class="cm-field-label">الموظفين الغائبين</span>
+                  <span class="cm-field-value danger" style="font-size:1.1rem;">${absentCount} موظف</span>
+                </div>
+                <div class="cm-field-item">
+                  <span class="cm-field-label">سجلات معتمدة (Approved)</span>
+                  <span class="cm-field-value success" style="font-weight:800; font-size:1.1rem;">${approvedCount} سجل</span>
+                </div>
+                <div class="cm-field-item">
+                  <span class="cm-field-label">سجلات مرفوضة (Rejected)</span>
+                  <span class="cm-field-value danger" style="font-weight:800; font-size:1.1rem;">${rejectedCount} سجل</span>
+                </div>
+                <div class="cm-field-item">
+                  <span class="cm-field-label">سجلات قيد التدقيق (Pending)</span>
+                  <span class="cm-field-value highlight" style="font-weight:800; font-size:1.1rem;">${pendingCount} سجل</span>
+                </div>
+                <div class="cm-field-item">
+                  <span class="cm-field-label">مقدم الكشف</span>
+                  <span class="cm-field-value">${this.escapeHtml(item.submittedBy || '-')}</span>
+                </div>
+                <div class="cm-field-item">
+                  <span class="cm-field-label">تاريخ ووقت التقديم</span>
+                  <span class="cm-field-value">${this.formatDateTime(item.submissionDate)}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Group 2: Complete Employee Attendance Records Table -->
+            <div class="cm-form-group" style="margin-top:1rem;">
+              <div class="cm-form-group-header" style="justify-content:space-between;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span class="cm-form-group-icon">👥</span>
+                  <span>سجلات حضور وغياب الموظفين الفردية وقرارات التدقيق (Individual Attendance Records & Review Decisions)</span>
+                </div>
+                <span class="finance-badge-pill" style="font-size:0.75rem; color:#0F172A;">${records.length} سجل</span>
+              </div>
+              <div class="finance-table-wrapper" style="overflow-x:auto; margin-top:0.75rem;">
+                <table class="finance-table" style="width:100%;">
+                  <thead>
+                    <tr>
+                      <th style="min-width:180px; text-align:right;">اسم الموظف (Employee Name)</th>
+                      <th style="min-width:90px; text-align:right;">المعرف (ID)</th>
+                      <th style="min-width:130px; text-align:right;">الدور في النظام (System Role)</th>
+                      <th style="min-width:140px; text-align:center;">حالة الحضور (Status)</th>
+                      <th style="min-width:170px; text-align:right;">تاريخ ووقت الحضور (Date & Time)</th>
+                      <th style="min-width:160px; text-align:center;">حالة الاعتماد (Review Status)</th>
+                      <th style="min-width:140px; text-align:right;">ملاحظات (Notes)</th>
+                      <th style="min-width:170px; text-align:center;">إجراء التدقيق (Action)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${rowsHtml}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        `;
+
+        // Attach event listeners for individual Approve and Reject buttons
+        const approveBtns = this.formDataBody.querySelectorAll('.btn-rec-approve');
+        approveBtns.forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const rId = parseInt(btn.getAttribute('data-record-id'), 10);
+            const targetRec = records.find(r => r.id === rId);
+            if (targetRec) {
+              this.handleApproveRecord(targetRec, btn);
+            }
+          });
+        });
+
+        const rejectBtns = this.formDataBody.querySelectorAll('.btn-rec-reject');
+        rejectBtns.forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const rId = parseInt(btn.getAttribute('data-record-id'), 10);
+            const targetRec = records.find(r => r.id === rId);
+            if (targetRec) {
+              this.openRecordRejectModal(targetRec);
+            }
+          });
+        });
+      } else if (isTrans) {
         // Transportation Form Data
         this.formDataBody.innerHTML = `
           <div class="cm-form-groups-container">
@@ -1201,7 +1918,7 @@
       if (this.acceptBox) this.acceptBox.style.display = 'none';
       if (this.rejectBox) this.rejectBox.style.display = 'none';
 
-      if (status === 'PENDING') {
+      if (status === 'PENDING' || status === 'PARTIALLY_REVIEWED') {
         this.pendingActionsWrap.style.display = 'block';
         this.finalDecisionInfo.style.display = 'none';
         if (this.btnAccept) this.btnAccept.disabled = false;
@@ -1242,8 +1959,229 @@
             <div style="font-size: 0.8rem; color: #7F1D1D; margin-top: 6px;">
               تم إرسال الإشعار للموظف المختص للتصحيح وإعادة الإرسال.
             </div>
+            <div style="margin-top: 12px;">
+              <button type="button" class="cm-btn-edit-rejected-direct" style="display:inline-flex; align-items:center; gap:6px; padding:8px 16px; font-size:0.875rem; font-weight:700; background:#2563eb; color:#ffffff; border:none; border-radius:8px; cursor:pointer;" title="فتح النموذج الأصلي وتعديل البيانات وإعادة التقديم">
+                ✏️ تعديل الطلب وإعادة إرساله (Edit Request)
+              </button>
+            </div>
           `;
+
+          const editBtn = this.finalDecisionInfo.querySelector('.cm-btn-edit-rejected-direct');
+          if (editBtn) {
+            editBtn.addEventListener('click', async () => {
+              const fType = (item.formType || '').toLowerCase();
+              if (fType === 'transportation') {
+                if (window.ChatApp) {
+                  await window.ChatApp.enterDepartment('transportation');
+                  setTimeout(() => {
+                    if (window.TransportationApp) {
+                      window.TransportationApp.loadForEdit(item.formId);
+                    }
+                  }, 150);
+                }
+              } else if (fType === 'storage') {
+                if (window.ChatApp) {
+                  await window.ChatApp.enterDepartment('storage');
+                  setTimeout(() => {
+                    if (window.StorageApp) {
+                      window.StorageApp.loadForEdit(item.formId);
+                    }
+                  }, 150);
+                }
+              } else if (fType === 'attendance') {
+                if (window.ChatApp) {
+                  await window.ChatApp.enterDepartment('attendance');
+                  setTimeout(() => {
+                    if (window.AttendanceApp) {
+                      window.AttendanceApp.loadForEdit(item.formId || item.id);
+                    }
+                  }, 150);
+                }
+              }
+            });
+          }
+        } else if (status === 'MIXED') {
+          this.finalDecisionInfo.className = 'cm-decision-rejected-box';
+          this.finalDecisionInfo.innerHTML = `
+            <div style="font-weight: 800; font-size: 1rem; margin-bottom: 6px;">
+              ⚠️ تم تدقيق الكشف بنتائج متباينة (MIXED RESULTS)
+            </div>
+            <div>
+              تم اعتماد السجلات الصحيحة بنجاح، ورفض السجلات غير المطابقة مع توثيق سبب الرفض لكل موظف.
+            </div>
+            <div style="font-size: 0.8rem; color: #7F1D1D; margin-top: 6px;">
+              السجلات المعتمدة محفوظة ومحمية، ويمكن لموظف الحضور فتح النموذج لتعديل السجلات المرفوضة فقط وإعادة تقديمها للمراجعة.
+            </div>
+            <div style="margin-top: 12px;">
+              <button type="button" class="cm-btn-edit-rejected-direct" style="display:inline-flex; align-items:center; gap:6px; padding:8px 16px; font-size:0.875rem; font-weight:700; background:#2563eb; color:#ffffff; border:none; border-radius:8px; cursor:pointer;" title="فتح النموذج الأصلي وتعديل السجلات المرفوضة وإعادة التقديم">
+                ✏️ تعديل السجلات المرفوضة وإعادة إرسالها (Edit Rejected Records)
+              </button>
+            </div>
+          `;
+
+          const editBtn = this.finalDecisionInfo.querySelector('.cm-btn-edit-rejected-direct');
+          if (editBtn) {
+            editBtn.addEventListener('click', async () => {
+              if (window.ChatApp) {
+                await window.ChatApp.enterDepartment('attendance');
+                setTimeout(() => {
+                  if (window.AttendanceApp) {
+                    window.AttendanceApp.loadForEdit(item.formId || item.id);
+                  }
+                }, 150);
+              }
+            });
+          }
         }
+      }
+    }
+
+    async handleApproveRecord(record, btnEl) {
+      if (!record || !record.id) return;
+      if (!confirm(`هل أنت متأكد من اعتماد سجل الموظف (${record.fullName || 'الموظف'})؟`)) {
+        return;
+      }
+
+      const origHtml = btnEl ? btnEl.innerHTML : '';
+      try {
+        if (btnEl) {
+          btnEl.disabled = true;
+          btnEl.innerHTML = '<span style="font-size:0.75rem;">جاري الاعتماد...</span>';
+        }
+
+        const res = await window.ChatApi.approveAttendanceRecord(record.id);
+        if (res && res.success) {
+          if (res.data) {
+            this.activeItem = res.data;
+            this.renderRequestDetails(res.data);
+          } else {
+            await this.loadRequestDetails('attendance', this.activeFormId, false);
+          }
+          this.loadStats();
+          this.loadForms();
+        } else {
+          alert('تعذر اعتماد السجل: ' + (res?.message || 'حدث خطأ في الخادم.'));
+          if (btnEl) {
+            btnEl.disabled = false;
+            btnEl.innerHTML = origHtml;
+          }
+        }
+      } catch (err) {
+        console.error('Error approving attendance record:', err);
+        alert('حدث خطأ أثناء اعتماد السجل.');
+        if (btnEl) {
+          btnEl.disabled = false;
+          btnEl.innerHTML = origHtml;
+        }
+      }
+    }
+
+    openRecordRejectModal(record) {
+      if (!record || !record.id) return;
+
+      let modal = document.getElementById('cm-record-reject-modal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'cm-record-reject-modal';
+        modal.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(15,23,42,0.6); backdrop-filter:blur(4px); z-index:99999; display:flex; align-items:center; justify-content:center; padding:1rem;';
+        document.body.appendChild(modal);
+      }
+
+      modal.innerHTML = `
+        <div style="background:#FFFFFF; border-radius:12px; width:100%; max-width:480px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.2); overflow:hidden; border:1px solid #E2E8F0;" dir="rtl">
+          <div style="padding:16px 20px; background:#FEF2F2; border-bottom:1px solid #FECACA; display:flex; align-items:center; justify-content:space-between;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:1.3rem;">⚠️</span>
+              <h3 style="margin:0; font-size:1.05rem; font-weight:800; color:#991B1B;">رفض سجل الموظف الفردي</h3>
+            </div>
+            <button type="button" id="cm-rec-rej-close-btn" style="background:none; border:none; font-size:1.2rem; cursor:pointer; color:#991B1B;">✕</button>
+          </div>
+          <div style="padding:20px;">
+            <div style="font-size:0.9rem; color:#334155; margin-bottom:12px;">
+              أنت على وشك رفض سجل الحضور للموظف: <strong style="color:#0F172A;">${this.escapeHtml(record.fullName || 'موظف')}</strong>
+              <div style="font-size:0.8rem; color:#64748B; margin-top:4px;">
+                * رفض هذا السجل لن يؤثر على باقي السجلات المعتمدة أو قيد الانتظار في هذا الكشف.
+              </div>
+            </div>
+            <label style="display:block; font-size:0.85rem; font-weight:700; color:#0F172A; margin-bottom:6px;">
+              سبب الرفض (إلزامي ومطلوب للتصحيح) *
+            </label>
+            <textarea id="cm-rec-rej-reason-input" class="finance-filter-input" rows="3" placeholder="اكتب سبب رفض هذا السجل بالتحديد (مثل: عدم مطابقة توقيت البصمة مع المرفق)..." style="width:100%; box-sizing:border-box; border:1px solid #CBD5E1; border-radius:8px; padding:10px; font-size:0.875rem; font-family:inherit; resize:vertical;"></textarea>
+            <div id="cm-rec-rej-error" style="color:#DC2626; font-size:0.8rem; margin-top:6px; display:none; font-weight:700;"></div>
+          </div>
+          <div style="padding:14px 20px; background:#F8FAFC; border-top:1px solid #E2E8F0; display:flex; justify-content:flex-end; gap:10px;">
+            <button type="button" id="cm-rec-rej-cancel-btn" style="padding:8px 16px; border:1px solid #CBD5E1; background:#FFFFFF; color:#334155; border-radius:6px; font-weight:700; cursor:pointer; font-size:0.875rem;">إلغاء</button>
+            <button type="button" id="cm-rec-rej-submit-btn" style="padding:8px 18px; border:none; background:#DC2626; color:#FFFFFF; border-radius:6px; font-weight:700; cursor:pointer; font-size:0.875rem; display:flex; align-items:center; gap:6px;">
+              <span>تأكيد رفض السجل</span>
+            </button>
+          </div>
+        </div>
+      `;
+
+      modal.style.display = 'flex';
+      const textarea = modal.querySelector('#cm-rec-rej-reason-input');
+      const errDiv = modal.querySelector('#cm-rec-rej-error');
+      const btnSubmit = modal.querySelector('#cm-rec-rej-submit-btn');
+      const btnCancel = modal.querySelector('#cm-rec-rej-cancel-btn');
+      const btnClose = modal.querySelector('#cm-rec-rej-close-btn');
+
+      if (textarea) textarea.focus();
+
+      const closeModal = () => {
+        modal.style.display = 'none';
+      };
+
+      if (btnCancel) btnCancel.addEventListener('click', closeModal);
+      if (btnClose) btnClose.addEventListener('click', closeModal);
+
+      if (btnSubmit) {
+        btnSubmit.addEventListener('click', async () => {
+          const reason = textarea ? textarea.value.trim() : '';
+          if (!reason) {
+            if (errDiv) {
+              errDiv.textContent = 'سبب الرفض إلزامي لتوضيح أسباب عدم القبول لموظف الحضور.';
+              errDiv.style.display = 'block';
+            }
+            if (textarea) {
+              textarea.style.borderColor = '#DC2626';
+              textarea.focus();
+            }
+            return;
+          }
+
+          try {
+            btnSubmit.disabled = true;
+            btnSubmit.innerHTML = '<span>جاري الرفض...</span>';
+
+            const res = await window.ChatApi.rejectAttendanceRecord(record.id, reason);
+            if (res && res.success) {
+              closeModal();
+              if (res.data) {
+                this.activeItem = res.data;
+                this.renderRequestDetails(res.data);
+              } else {
+                await this.loadRequestDetails('attendance', this.activeFormId, false);
+              }
+              this.loadStats();
+              this.loadForms();
+            } else {
+              if (errDiv) {
+                errDiv.textContent = 'تعذر رفض السجل: ' + (res?.message || 'حدث خطأ في الخادم.');
+                errDiv.style.display = 'block';
+              }
+              btnSubmit.disabled = false;
+              btnSubmit.innerHTML = '<span>تأكيد رفض السجل</span>';
+            }
+          } catch (err) {
+            console.error('Error rejecting attendance record:', err);
+            if (errDiv) {
+              errDiv.textContent = 'حدث خطأ أثناء الاتصال بالخادم لتسجيل الرفض.';
+              errDiv.style.display = 'block';
+            }
+            btnSubmit.disabled = false;
+            btnSubmit.innerHTML = '<span>تأكيد رفض السجل</span>';
+          }
+        });
       }
     }
 

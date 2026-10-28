@@ -14,7 +14,7 @@ public static class DbInitializer
 
         try
         {
-            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(120));
             var dbName = db.Database.GetDbConnection().Database;
             logger.LogInformation("[DB] Connection test started for database: {DbName}", dbName);
             if (await db.Database.CanConnectAsync(cts.Token))
@@ -389,6 +389,9 @@ BEGIN
     IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('StorageTransactions') AND name = 'CreatedBy')
         ALTER TABLE StorageTransactions ADD CreatedBy NVARCHAR(150) NULL;
 
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('StorageTransactions') AND name = 'CreatedByUserId')
+        ALTER TABLE StorageTransactions ADD CreatedByUserId UNIQUEIDENTIFIER NULL;
+
     IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('StorageTransactions') AND name = 'ApprovalStatus')
         ALTER TABLE StorageTransactions ADD ApprovalStatus NVARCHAR(50) NOT NULL CONSTRAINT DF_StorageTx_ApprovalStatus DEFAULT 'APPROVED';
 
@@ -403,6 +406,36 @@ BEGIN
 
     IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('StorageTransactions') AND name = 'RejectionReason')
         ALTER TABLE StorageTransactions ADD RejectionReason NVARCHAR(1000) NULL;
+END
+
+IF EXISTS (SELECT * FROM sys.tables WHERE name = 'StorageOperations')
+BEGIN
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('StorageOperations') AND name = 'WeighbridgeAttachmentPath')
+        ALTER TABLE StorageOperations ADD WeighbridgeAttachmentPath NVARCHAR(500) NULL;
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('StorageOperations') AND name = 'WeighbridgeFileName')
+        ALTER TABLE StorageOperations ADD WeighbridgeFileName NVARCHAR(260) NULL;
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('StorageOperations') AND name = 'WeighbridgeFileType')
+        ALTER TABLE StorageOperations ADD WeighbridgeFileType NVARCHAR(50) NULL;
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('StorageOperations') AND name = 'WeighbridgeFileSize')
+        ALTER TABLE StorageOperations ADD WeighbridgeFileSize BIGINT NOT NULL CONSTRAINT DF_StorageOp_WbFileSize DEFAULT 0;
+
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('StorageOperations') AND name = 'QocAttachmentPath')
+        ALTER TABLE StorageOperations ADD QocAttachmentPath NVARCHAR(500) NULL;
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('StorageOperations') AND name = 'QocFileName')
+        ALTER TABLE StorageOperations ADD QocFileName NVARCHAR(260) NULL;
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('StorageOperations') AND name = 'QocFileType')
+        ALTER TABLE StorageOperations ADD QocFileType NVARCHAR(50) NULL;
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('StorageOperations') AND name = 'QocFileSize')
+        ALTER TABLE StorageOperations ADD QocFileSize BIGINT NOT NULL CONSTRAINT DF_StorageOp_QocFileSize DEFAULT 0;
+
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('StorageOperations') AND name = 'DocumentAttachmentPath')
+        ALTER TABLE StorageOperations ADD DocumentAttachmentPath NVARCHAR(500) NULL;
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('StorageOperations') AND name = 'DocumentFileName')
+        ALTER TABLE StorageOperations ADD DocumentFileName NVARCHAR(260) NULL;
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('StorageOperations') AND name = 'DocumentFileType')
+        ALTER TABLE StorageOperations ADD DocumentFileType NVARCHAR(50) NULL;
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('StorageOperations') AND name = 'DocumentFileSize')
+        ALTER TABLE StorageOperations ADD DocumentFileSize BIGINT NOT NULL CONSTRAINT DF_StorageOp_DocFileSize DEFAULT 0;
 END
 
 IF EXISTS (SELECT * FROM sys.tables WHERE name = 'FormApprovalHistories')
@@ -442,6 +475,46 @@ BEGIN
     );
     CREATE INDEX IX_StorageTxMovements_StorageTxId ON StorageTransactionMovements(StorageTransactionId);
     CREATE INDEX IX_StorageTxMovements_TxNumber ON StorageTransactionMovements(TransportationMovementNumber);
+END
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'RawMaterials')
+BEGIN
+    CREATE TABLE RawMaterials (
+        Id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        Name NVARCHAR(200) NOT NULL,
+        InitialQuantity DECIMAL(18,3) NOT NULL CONSTRAINT DF_RawMat_InitQty DEFAULT 0,
+        CreatedAt DATETIME2 NOT NULL CONSTRAINT DF_RawMat_CreatedAt DEFAULT GETUTCDATE(),
+        CreatedBy NVARCHAR(150) NULL,
+        CreatedByUserId UNIQUEIDENTIFIER NULL
+    );
+    CREATE UNIQUE INDEX IX_RawMaterials_Name ON RawMaterials(Name);
+END
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'StorageItemTransactions')
+BEGIN
+    CREATE TABLE StorageItemTransactions (
+        Id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        RawMaterialId INT NOT NULL CONSTRAINT FK_StorageItemTx_RawMat REFERENCES RawMaterials(Id) ON DELETE CASCADE,
+        TransactionDate DATETIME2 NOT NULL,
+        TransactionType NVARCHAR(50) NOT NULL CONSTRAINT DF_StorageItemTx_Type DEFAULT 'Incoming',
+        Description NVARCHAR(100) NOT NULL,
+        Quantity DECIMAL(18,3) NOT NULL,
+        UnitPrice DECIMAL(18,2) NOT NULL CONSTRAINT DF_StorageItemTx_UnitPrice DEFAULT 0,
+        TotalValue DECIMAL(18,2) NOT NULL CONSTRAINT DF_StorageItemTx_TotalValue DEFAULT 0,
+        DestinationType NVARCHAR(50) NULL,
+        Destination NVARCHAR(200) NULL,
+        SourceTransportationId INT NULL CONSTRAINT FK_StorageItemTx_Transportation REFERENCES Transportation(Id) ON DELETE SET NULL,
+        SourceTransportationNumber INT NULL,
+        RunningQuantityBalance DECIMAL(18,3) NOT NULL CONSTRAINT DF_StorageItemTx_RunQty DEFAULT 0,
+        RunningValueBalance DECIMAL(18,2) NOT NULL CONSTRAINT DF_StorageItemTx_RunVal DEFAULT 0,
+        Notes NVARCHAR(500) NULL,
+        CreatedAt DATETIME2 NOT NULL CONSTRAINT DF_StorageItemTx_CreatedAt DEFAULT GETUTCDATE(),
+        CreatedBy NVARCHAR(150) NULL,
+        CreatedByUserId UNIQUEIDENTIFIER NULL
+    );
+    CREATE INDEX IX_StorageItemTransactions_RawMaterialId ON StorageItemTransactions(RawMaterialId);
+    CREATE INDEX IX_StorageItemTransactions_TransactionDate ON StorageItemTransactions(TransactionDate);
+    CREATE UNIQUE INDEX IX_StorageItemTransactions_SourceTransportationId ON StorageItemTransactions(SourceTransportationId) WHERE SourceTransportationId IS NOT NULL;
 END
 
 IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'PurchaseOrders')
@@ -667,6 +740,366 @@ IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_ChatMessages_Unread_Us
 IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_ChatMessages_LiveSessionId' AND object_id = OBJECT_ID('ChatMessages'))
     CREATE INDEX IX_ChatMessages_LiveSessionId ON ChatMessages(LiveSessionId);
 ", cts.Token);
+
+                    // Step 4: Attendance department tables and columns
+                    await db.Database.ExecuteSqlRawAsync(@"
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'AttendanceSubmissions')
+BEGIN
+    CREATE TABLE AttendanceSubmissions (
+        Id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        AttendanceDate DATETIME2 NOT NULL,
+        SubmittedByUserId UNIQUEIDENTIFIER NULL,
+        SubmittedBy NVARCHAR(150) NOT NULL,
+        SubmittedAt DATETIME2 NOT NULL CONSTRAINT DF_AttSub_SubmittedAt DEFAULT GETUTCDATE(),
+        ApprovalStatus NVARCHAR(50) NOT NULL CONSTRAINT DF_AttSub_ApprovalStatus DEFAULT 'PENDING',
+        ReviewedByUserId UNIQUEIDENTIFIER NULL,
+        ReviewedBy NVARCHAR(150) NULL,
+        ReviewedAt DATETIME2 NULL,
+        RejectionReason NVARCHAR(1000) NULL,
+        Notes NVARCHAR(1000) NULL,
+        TotalEmployeesCount INT NOT NULL CONSTRAINT DF_AttSub_Total DEFAULT 0,
+        PresentCount INT NOT NULL CONSTRAINT DF_AttSub_Present DEFAULT 0,
+        AbsentCount INT NOT NULL CONSTRAINT DF_AttSub_Absent DEFAULT 0
+    );
+    CREATE INDEX IX_AttSub_Date ON AttendanceSubmissions(AttendanceDate);
+    CREATE INDEX IX_AttSub_ApprovalStatus ON AttendanceSubmissions(ApprovalStatus);
+    CREATE INDEX IX_AttSub_SubmittedAt ON AttendanceSubmissions(SubmittedAt DESC);
+END
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'AttendanceAttachments')
+BEGIN
+    CREATE TABLE AttendanceAttachments (
+        Id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        AttendanceSubmissionId INT NOT NULL CONSTRAINT FK_AttAtt_Sub REFERENCES AttendanceSubmissions(Id) ON DELETE CASCADE,
+        FileName NVARCHAR(255) NOT NULL,
+        OriginalFileName NVARCHAR(255) NOT NULL,
+        FilePath NVARCHAR(500) NOT NULL,
+        FileType NVARCHAR(100) NOT NULL,
+        FileSize BIGINT NOT NULL CONSTRAINT DF_AttAtt_FileSize DEFAULT 0,
+        UploadedAt DATETIME2 NOT NULL CONSTRAINT DF_AttAtt_UploadedAt DEFAULT GETUTCDATE()
+    );
+    CREATE INDEX IX_AttAtt_SubId ON AttendanceAttachments(AttendanceSubmissionId);
+END
+
+IF EXISTS (SELECT * FROM sys.tables WHERE name = 'AttendanceRecords')
+BEGIN
+    -- Drop foreign key constraint on Users if present to allow isolated fake records
+    IF EXISTS (SELECT * FROM sys.foreign_keys WHERE name = 'FK_Attendance_Users')
+        ALTER TABLE AttendanceRecords DROP CONSTRAINT FK_Attendance_Users;
+    IF EXISTS (SELECT * FROM sys.foreign_keys WHERE name = 'FK_AttRec_User')
+        ALTER TABLE AttendanceRecords DROP CONSTRAINT FK_AttRec_User;
+    IF EXISTS (SELECT * FROM sys.foreign_keys WHERE name = 'FK_AttendanceRecords_Users_UserId')
+        ALTER TABLE AttendanceRecords DROP CONSTRAINT FK_AttendanceRecords_Users_UserId;
+
+    -- Make UserId nullable
+    IF EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('AttendanceRecords') AND name = 'UserId')
+        ALTER TABLE AttendanceRecords ALTER COLUMN UserId UNIQUEIDENTIFIER NULL;
+
+    -- Drop unique index on (UserId, Date) if exists so fake employees / nulls do not conflict
+    IF EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID('AttendanceRecords') AND name = 'IX_AttendanceRecords_UserDate')
+        DROP INDEX IX_AttendanceRecords_UserDate ON AttendanceRecords;
+    IF EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID('AttendanceRecords') AND name = 'IX_AttRec_UserId_Date')
+        DROP INDEX IX_AttRec_UserId_Date ON AttendanceRecords;
+
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('AttendanceRecords') AND name = 'EmployeeName')
+        ALTER TABLE AttendanceRecords ADD EmployeeName NVARCHAR(150) NULL;
+
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('AttendanceRecords') AND name = 'EmployeeRole')
+        ALTER TABLE AttendanceRecords ADD EmployeeRole NVARCHAR(100) NULL;
+
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('AttendanceRecords') AND name = 'IsTestData')
+        ALTER TABLE AttendanceRecords ADD IsTestData BIT NOT NULL CONSTRAINT DF_AttRec_IsTest DEFAULT 1;
+
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('AttendanceRecords') AND name = 'AttendanceSubmissionId')
+    BEGIN
+        ALTER TABLE AttendanceRecords ADD AttendanceSubmissionId INT NULL CONSTRAINT FK_AttRec_Sub REFERENCES AttendanceSubmissions(Id) ON DELETE CASCADE;
+        CREATE INDEX IX_AttRec_SubId ON AttendanceRecords(AttendanceSubmissionId);
+    END
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('AttendanceRecords') AND name = 'ApprovalStatus')
+    BEGIN
+        ALTER TABLE AttendanceRecords ADD ApprovalStatus NVARCHAR(50) NOT NULL CONSTRAINT DF_AttRec_ApprovalStatus DEFAULT 'PENDING';
+    END
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('AttendanceRecords') AND name = 'RejectionReason')
+    BEGIN
+        ALTER TABLE AttendanceRecords ADD RejectionReason NVARCHAR(1000) NULL;
+    END
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('AttendanceRecords') AND name = 'ReviewedBy')
+    BEGIN
+        ALTER TABLE AttendanceRecords ADD ReviewedBy NVARCHAR(150) NULL;
+    END
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('AttendanceRecords') AND name = 'ReviewedByUserId')
+    BEGIN
+        ALTER TABLE AttendanceRecords ADD ReviewedByUserId UNIQUEIDENTIFIER NULL;
+    END
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('AttendanceRecords') AND name = 'ReviewedAt')
+    BEGIN
+        ALTER TABLE AttendanceRecords ADD ReviewedAt DATETIME2 NULL;
+    END
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('AttendanceRecords') AND name = 'CreatedAt')
+    BEGIN
+        ALTER TABLE AttendanceRecords ADD CreatedAt DATETIME2 NOT NULL CONSTRAINT DF_AttRec_CreatedAt DEFAULT GETUTCDATE();
+    END
+END
+ELSE
+BEGIN
+    CREATE TABLE AttendanceRecords (
+        Id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        UserId UNIQUEIDENTIFIER NULL,
+        EmployeeName NVARCHAR(150) NULL,
+        EmployeeRole NVARCHAR(100) NULL,
+        IsTestData BIT NOT NULL CONSTRAINT DF_AttRec_IsTest2 DEFAULT 1,
+        Date DATETIME2 NOT NULL,
+        Status NVARCHAR(50) NOT NULL CONSTRAINT DF_AttRec_Status DEFAULT 'Present',
+        CheckInTime DATETIME2 NULL,
+        CheckOutTime DATETIME2 NULL,
+        Notes NVARCHAR(500) NULL,
+        AttendanceSubmissionId INT NULL CONSTRAINT FK_AttRec_Sub2 REFERENCES AttendanceSubmissions(Id) ON DELETE CASCADE,
+        ApprovalStatus NVARCHAR(50) NOT NULL CONSTRAINT DF_AttRec_ApprovalStatus DEFAULT 'PENDING',
+        RejectionReason NVARCHAR(1000) NULL,
+        ReviewedBy NVARCHAR(150) NULL,
+        ReviewedByUserId UNIQUEIDENTIFIER NULL,
+        ReviewedAt DATETIME2 NULL,
+        CreatedAt DATETIME2 NOT NULL CONSTRAINT DF_AttRec_CreatedAt2 DEFAULT GETUTCDATE()
+    );
+    CREATE INDEX IX_AttRec_UserId ON AttendanceRecords(UserId);
+    CREATE INDEX IX_AttRec_Date ON AttendanceRecords(Date);
+    CREATE INDEX IX_AttRec_SubId ON AttendanceRecords(AttendanceSubmissionId);
+END
+
+-- Laboratory Department Resilient Schema
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'LaboratoryProductionSequences')
+BEGIN
+    CREATE TABLE LaboratoryProductionSequences (
+        SequenceName NVARCHAR(50) NOT NULL PRIMARY KEY,
+        NextValue INT NOT NULL CONSTRAINT DF_LabSeq_NextValue DEFAULT 1
+    );
+END
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'LaboratoryUserSampleSequences')
+BEGIN
+    CREATE TABLE LaboratoryUserSampleSequences (
+        UserId UNIQUEIDENTIFIER NOT NULL PRIMARY KEY,
+        NextSampleNumber INT NOT NULL CONSTRAINT DF_LabUserSeq_Next DEFAULT 1,
+        UpdatedAt DATETIME2 NOT NULL CONSTRAINT DF_LabUserSeq_Updated DEFAULT GETUTCDATE()
+    );
+END
+
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('StorageOperations') AND name = 'ProductionReferenceNumber')
+BEGIN
+    ALTER TABLE StorageOperations ADD ProductionReferenceNumber INT NULL;
+    CREATE INDEX IX_StorageOperations_ProductionReferenceNumber ON StorageOperations(ProductionReferenceNumber);
+END
+
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('ProductionWorkInProcess') AND name = 'ProductionReferenceNumber')
+BEGIN
+    ALTER TABLE ProductionWorkInProcess ADD ProductionReferenceNumber INT NULL;
+    CREATE INDEX IX_ProductionWorkInProcess_ProductionReferenceNumber ON ProductionWorkInProcess(ProductionReferenceNumber);
+END
+
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Transportation') AND name = 'ProductionReferenceNumber')
+BEGIN
+    ALTER TABLE Transportation ADD ProductionReferenceNumber INT NULL;
+    CREATE INDEX IX_Transportation_ProductionReferenceNumber ON Transportation(ProductionReferenceNumber);
+END
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'LaboratoryRawMaterialReports')
+BEGIN
+    CREATE TABLE LaboratoryRawMaterialReports (
+        Id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        ProductionReferenceNumber INT NOT NULL,
+        SampleNumber INT NOT NULL CONSTRAINT DF_LabRaw_SampleNumber DEFAULT 0,
+        SampleName NVARCHAR(250) NOT NULL CONSTRAINT DF_LabRaw_SampleName DEFAULT 'سيليكا باودر (Micro Silica Powder)',
+        SampleDescription NVARCHAR(500) NULL,
+        BatchNumber NVARCHAR(100) NULL,
+        SampleReceivedDate DATETIME2 NULL,
+        ReportIssueDate DATETIME2 NULL,
+        LabManagerName NVARCHAR(150) NULL,
+        LabManagerSignature NVARCHAR(150) NULL,
+        LabManagerDate DATETIME2 NULL,
+        ComplyStatus NVARCHAR(50) NOT NULL CONSTRAINT DF_LabRaw_ComplyStatus DEFAULT 'COMPLY',
+        LaboratorySection NVARCHAR(20) NOT NULL,
+        AnalysisDateTime DATETIME2 NOT NULL,
+        RawMaterialDescription NVARCHAR(250) NOT NULL,
+        RawMaterialId INT NULL CONSTRAINT FK_LabRaw_RawMat REFERENCES RawMaterials(Id) ON DELETE SET NULL,
+        SupplierName NVARCHAR(200) NULL,
+        SourceTransportationId INT NULL CONSTRAINT FK_LabRaw_Trans REFERENCES Transportation(Id) ON DELETE SET NULL,
+        TransportationTransactionNumber INT NULL,
+        PurchaseOrderId INT NULL CONSTRAINT FK_LabRaw_PO REFERENCES PurchaseOrders(Id) ON DELETE SET NULL,
+        PONumber NVARCHAR(100) NULL,
+        ReceivedQuantity DECIMAL(18,3) NOT NULL,
+        AcceptedQuantity DECIMAL(18,3) NOT NULL,
+        RejectedQuantity DECIMAL(18,3) NOT NULL,
+        AnalysisResultsJson NVARCHAR(MAX) NULL,
+        InspectionDecision NVARCHAR(50) NOT NULL,
+        Notes NVARCHAR(MAX) NULL,
+        AttachmentPath NVARCHAR(MAX) NULL,
+        AttachmentFileName NVARCHAR(MAX) NULL,
+        AttachmentFileType NVARCHAR(MAX) NULL,
+        AttachmentFileSize BIGINT NOT NULL CONSTRAINT DF_LabRaw_AttSize DEFAULT 0,
+        ResponsibleEmployee NVARCHAR(150) NOT NULL,
+        ResponsibleUserId UNIQUEIDENTIFIER NULL,
+        ApprovalStatus NVARCHAR(50) NOT NULL CONSTRAINT DF_LabRaw_ApprovalStatus DEFAULT 'PENDING',
+        ReviewedBy NVARCHAR(150) NULL,
+        ReviewedByUserId UNIQUEIDENTIFIER NULL,
+        ReviewedAt DATETIME2 NULL,
+        RejectionReason NVARCHAR(500) NULL,
+        IsStorageReceived BIT NOT NULL CONSTRAINT DF_LabRaw_IsStorageReceived DEFAULT 0,
+        StorageReceivedAt DATETIME2 NULL,
+        StorageOperationId INT NULL,
+        CreatedAt DATETIME2 NOT NULL CONSTRAINT DF_LabRaw_CreatedAt DEFAULT GETUTCDATE(),
+        CreatedBy NVARCHAR(150) NOT NULL
+    );
+    CREATE INDEX IX_LaboratoryRawMaterialReports_ProductionReferenceNumber ON LaboratoryRawMaterialReports(ProductionReferenceNumber);
+    CREATE UNIQUE INDEX IX_LaboratoryRawMaterialReports_ResponsibleUserId_SampleNumber ON LaboratoryRawMaterialReports(ResponsibleUserId, SampleNumber) WHERE ResponsibleUserId IS NOT NULL AND SampleNumber > 0;
+    CREATE INDEX IX_LaboratoryRawMaterialReports_SampleNumber ON LaboratoryRawMaterialReports(SampleNumber);
+    CREATE INDEX IX_LaboratoryRawMaterialReports_BatchNumber ON LaboratoryRawMaterialReports(BatchNumber);
+    CREATE INDEX IX_LaboratoryRawMaterialReports_ComplyStatus ON LaboratoryRawMaterialReports(ComplyStatus);
+    CREATE INDEX IX_LaboratoryRawMaterialReports_LaboratorySection ON LaboratoryRawMaterialReports(LaboratorySection);
+    CREATE INDEX IX_LaboratoryRawMaterialReports_ApprovalStatus ON LaboratoryRawMaterialReports(ApprovalStatus);
+END
+ELSE
+BEGIN
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('LaboratoryRawMaterialReports') AND name = 'SampleNumber')
+        ALTER TABLE LaboratoryRawMaterialReports ADD SampleNumber INT NOT NULL CONSTRAINT DF_LabRaw_SampleNumber DEFAULT 0;
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('LaboratoryRawMaterialReports') AND name = 'SampleName')
+        ALTER TABLE LaboratoryRawMaterialReports ADD SampleName NVARCHAR(250) NOT NULL CONSTRAINT DF_LabRaw_SampleName DEFAULT 'سيليكا باودر (Micro Silica Powder)';
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('LaboratoryRawMaterialReports') AND name = 'SampleDescription')
+        ALTER TABLE LaboratoryRawMaterialReports ADD SampleDescription NVARCHAR(500) NULL;
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('LaboratoryRawMaterialReports') AND name = 'BatchNumber')
+        ALTER TABLE LaboratoryRawMaterialReports ADD BatchNumber NVARCHAR(100) NULL;
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('LaboratoryRawMaterialReports') AND name = 'SampleReceivedDate')
+        ALTER TABLE LaboratoryRawMaterialReports ADD SampleReceivedDate DATETIME2 NULL;
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('LaboratoryRawMaterialReports') AND name = 'ReportIssueDate')
+        ALTER TABLE LaboratoryRawMaterialReports ADD ReportIssueDate DATETIME2 NULL;
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('LaboratoryRawMaterialReports') AND name = 'LabManagerName')
+        ALTER TABLE LaboratoryRawMaterialReports ADD LabManagerName NVARCHAR(150) NULL;
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('LaboratoryRawMaterialReports') AND name = 'LabManagerSignature')
+        ALTER TABLE LaboratoryRawMaterialReports ADD LabManagerSignature NVARCHAR(150) NULL;
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('LaboratoryRawMaterialReports') AND name = 'LabManagerDate')
+        ALTER TABLE LaboratoryRawMaterialReports ADD LabManagerDate DATETIME2 NULL;
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('LaboratoryRawMaterialReports') AND name = 'ComplyStatus')
+        ALTER TABLE LaboratoryRawMaterialReports ADD ComplyStatus NVARCHAR(50) NOT NULL CONSTRAINT DF_LabRaw_ComplyStatus DEFAULT 'COMPLY';
+
+    IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_LaboratoryRawMaterialReports_ResponsibleUserId_SampleNumber')
+    BEGIN
+        CREATE UNIQUE INDEX IX_LaboratoryRawMaterialReports_ResponsibleUserId_SampleNumber 
+        ON LaboratoryRawMaterialReports(ResponsibleUserId, SampleNumber) 
+        WHERE ResponsibleUserId IS NOT NULL AND SampleNumber > 0;
+    END
+END
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'LaboratoryInProcessReports')
+BEGIN
+    CREATE TABLE LaboratoryInProcessReports (
+        Id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        ProductionReferenceNumber INT NOT NULL,
+        RawMaterialReportId INT NULL CONSTRAINT FK_LabInProc_RawReport REFERENCES LaboratoryRawMaterialReports(Id) ON DELETE SET NULL,
+        ProductionBatchNumber NVARCHAR(100) NOT NULL,
+        ProductionWorkInProcessId INT NULL CONSTRAINT FK_LabInProc_WIP REFERENCES ProductionWorkInProcess(Id) ON DELETE SET NULL,
+        LaboratorySection NVARCHAR(20) NOT NULL,
+        ProductName NVARCHAR(200) NOT NULL,
+        TestDateTime DATETIME2 NOT NULL,
+        ProductionStage NVARCHAR(100) NOT NULL,
+        AnalysisResultsJson NVARCHAR(MAX) NULL,
+        SpecificationCriteria NVARCHAR(MAX) NULL,
+        InspectionDecision NVARCHAR(50) NOT NULL,
+        Notes NVARCHAR(MAX) NULL,
+        AttachmentPath NVARCHAR(MAX) NULL,
+        AttachmentFileName NVARCHAR(MAX) NULL,
+        AttachmentFileType NVARCHAR(MAX) NULL,
+        AttachmentFileSize BIGINT NOT NULL CONSTRAINT DF_LabInProc_AttSize DEFAULT 0,
+        ResponsibleEmployee NVARCHAR(150) NOT NULL,
+        ResponsibleUserId UNIQUEIDENTIFIER NULL,
+        CreatedAt DATETIME2 NOT NULL CONSTRAINT DF_LabInProc_CreatedAt DEFAULT GETUTCDATE(),
+        CreatedBy NVARCHAR(150) NOT NULL
+    );
+    CREATE INDEX IX_LaboratoryInProcessReports_ProductionReferenceNumber ON LaboratoryInProcessReports(ProductionReferenceNumber);
+    CREATE INDEX IX_LaboratoryInProcessReports_LaboratorySection ON LaboratoryInProcessReports(LaboratorySection);
+END
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'LaboratoryFinalConformityCertificates')
+BEGIN
+    CREATE TABLE LaboratoryFinalConformityCertificates (
+        Id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        CertificateNumber NVARCHAR(50) NOT NULL,
+        ProductionReferenceNumber INT NOT NULL,
+        RawMaterialReportId INT NULL CONSTRAINT FK_LabCert_RawReport REFERENCES LaboratoryRawMaterialReports(Id) ON DELETE SET NULL,
+        LaboratorySection NVARCHAR(20) NOT NULL,
+        FinalProductName NVARCHAR(200) NOT NULL,
+        ActualFinalProductQuantity DECIMAL(18,3) NOT NULL,
+        QuantityUnit NVARCHAR(50) NOT NULL CONSTRAINT DF_LabCert_QtyUnit DEFAULT N'طن',
+        ProductionBatchNumber NVARCHAR(100) NOT NULL,
+        ProductionWorkInProcessId INT NULL CONSTRAINT FK_LabCert_WIP REFERENCES ProductionWorkInProcess(Id) ON DELETE SET NULL,
+        ProductionCompletionDateTime DATETIME2 NOT NULL,
+        ActualRawMaterialInputQuantity DECIMAL(18,3) NOT NULL,
+        CalculatedDifference DECIMAL(18,3) NOT NULL,
+        ActualMeasuredWaste DECIMAL(18,3) NULL,
+        WasteClassification NVARCHAR(50) NOT NULL CONSTRAINT DF_LabCert_WasteClass DEFAULT 'ORDINARY_WASTE',
+        ConformityDecision NVARCHAR(50) NOT NULL,
+        NonConformityAction NVARCHAR(50) NULL,
+        ClassifiedProductType NVARCHAR(100) NULL,
+        ReworkInstructions NVARCHAR(MAX) NULL,
+        SpecificationResultsJson NVARCHAR(MAX) NULL,
+        Observations NVARCHAR(MAX) NULL,
+        AttachmentPath NVARCHAR(MAX) NULL,
+        AttachmentFileName NVARCHAR(MAX) NULL,
+        AttachmentFileType NVARCHAR(MAX) NULL,
+        AttachmentFileSize BIGINT NOT NULL CONSTRAINT DF_LabCert_AttSize DEFAULT 0,
+        ResponsibleEmployee NVARCHAR(150) NOT NULL,
+        ResponsibleUserId UNIQUEIDENTIFIER NULL,
+        ApprovalStatus NVARCHAR(50) NOT NULL CONSTRAINT DF_LabCert_ApprovalStatus DEFAULT 'PENDING',
+        ReviewedBy NVARCHAR(150) NULL,
+        ReviewedByUserId UNIQUEIDENTIFIER NULL,
+        ReviewedAt DATETIME2 NULL,
+        RejectionReason NVARCHAR(500) NULL,
+        IsStoragePosted BIT NOT NULL CONSTRAINT DF_LabCert_IsStoragePosted DEFAULT 0,
+        StoragePostedAt DATETIME2 NULL,
+        CreatedAt DATETIME2 NOT NULL CONSTRAINT DF_LabCert_CreatedAt DEFAULT GETUTCDATE(),
+        CreatedBy NVARCHAR(150) NOT NULL
+    );
+    CREATE UNIQUE INDEX IX_LaboratoryFinalConformityCertificates_CertificateNumber ON LaboratoryFinalConformityCertificates(CertificateNumber);
+    CREATE INDEX IX_LaboratoryFinalConformityCertificates_ProductionReferenceNumber ON LaboratoryFinalConformityCertificates(ProductionReferenceNumber);
+    CREATE INDEX IX_LaboratoryFinalConformityCertificates_LaboratorySection ON LaboratoryFinalConformityCertificates(LaboratorySection);
+END
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = '__EFMigrationsHistory')
+BEGIN
+    CREATE TABLE [__EFMigrationsHistory] (
+        [MigrationId] nvarchar(150) NOT NULL,
+        [ProductVersion] nvarchar(32) NOT NULL,
+        CONSTRAINT [PK___EFMigrationsHistory] PRIMARY KEY ([MigrationId])
+    );
+END
+
+IF NOT EXISTS (SELECT 1 FROM [__EFMigrationsHistory] WHERE [MigrationId] = '20260927125002_AddTransportationTable')
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion]) VALUES ('20260927125002_AddTransportationTable', '8.0.8');
+IF NOT EXISTS (SELECT 1 FROM [__EFMigrationsHistory] WHERE [MigrationId] = '20260927133035_AddManagementTable')
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion]) VALUES ('20260927133035_AddManagementTable', '8.0.8');
+IF NOT EXISTS (SELECT 1 FROM [__EFMigrationsHistory] WHERE [MigrationId] = '20261001105431_AddFinanceTransactionsAndPoEnhancements')
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion]) VALUES ('20261001105431_AddFinanceTransactionsAndPoEnhancements', '8.0.8');
+IF NOT EXISTS (SELECT 1 FROM [__EFMigrationsHistory] WHERE [MigrationId] = '20261003082328_UpdateTransportationDepartment')
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion]) VALUES ('20261003082328_UpdateTransportationDepartment', '8.0.8');
+IF NOT EXISTS (SELECT 1 FROM [__EFMigrationsHistory] WHERE [MigrationId] = '20261003103405_AddSectionAttachmentsAndPerPoTransactionNumberIndex')
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion]) VALUES ('20261003103405_AddSectionAttachmentsAndPerPoTransactionNumberIndex', '8.0.8');
+IF NOT EXISTS (SELECT 1 FROM [__EFMigrationsHistory] WHERE [MigrationId] = '20261003113538_AddCustodyAmountToTransportation')
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion]) VALUES ('20261003113538_AddCustodyAmountToTransportation', '8.0.8');
+IF NOT EXISTS (SELECT 1 FROM [__EFMigrationsHistory] WHERE [MigrationId] = '20261004125029_RedesignStorageDepartment')
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion]) VALUES ('20261004125029_RedesignStorageDepartment', '8.0.8');
+IF NOT EXISTS (SELECT 1 FROM [__EFMigrationsHistory] WHERE [MigrationId] = '20261005075013_AddTonPriceToPurchaseOrders')
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion]) VALUES ('20261005075013_AddTonPriceToPurchaseOrders', '8.0.8');
+IF NOT EXISTS (SELECT 1 FROM [__EFMigrationsHistory] WHERE [MigrationId] = '20261012065711_AddStorageItemCardAndRawMaterials')
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion]) VALUES ('20261012065711_AddStorageItemCardAndRawMaterials', '8.0.8');
+IF NOT EXISTS (SELECT 1 FROM [__EFMigrationsHistory] WHERE [MigrationId] = '20261013115024_AddStorageRedesignThreeCards')
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion]) VALUES ('20261013115024_AddStorageRedesignThreeCards', '8.0.8');
+IF NOT EXISTS (SELECT 1 FROM [__EFMigrationsHistory] WHERE [MigrationId] = '20261019122421_AddStorageEnhancementsWeighingAndWaste')
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion]) VALUES ('20261019122421_AddStorageEnhancementsWeighingAndWaste', '8.0.8');
+IF NOT EXISTS (SELECT 1 FROM [__EFMigrationsHistory] WHERE [MigrationId] = '20261024105637_AddLaboratoryDepartment')
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion]) VALUES ('20261024105637_AddLaboratoryDepartment', '8.0.8');
+IF NOT EXISTS (SELECT 1 FROM [__EFMigrationsHistory] WHERE [MigrationId] = '20261025065700_AddProductionDepartment')
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion]) VALUES ('20261025065700_AddProductionDepartment', '8.0.8');
+IF NOT EXISTS (SELECT 1 FROM [__EFMigrationsHistory] WHERE [MigrationId] = '20261026084230_UpdateLaboratoryDepartmentForm')
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion]) VALUES ('20261026084230_UpdateLaboratoryDepartmentForm', '8.0.8');
+", cts.Token);
                 }
             }
             catch (Exception ex)
@@ -887,7 +1320,616 @@ IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_ChatMessages_LiveSessi
                 controlMonitoringUser.Role = AppRoles.ControlMonitoring;
             }
 
+            // Ensure Attendance Employee user exists
+            var attendanceEmployeeUser = await db.Users.FirstOrDefaultAsync(u => 
+                u.Role == AppRoles.AttendanceEmployee || 
+                u.Role == AppRoles.AttendanceEmployeeDisplay ||
+                u.Username == "attendance_emp" || 
+                u.Email == "attendance@facestone.com", cts.Token);
+            if (attendanceEmployeeUser == null)
+            {
+                await db.Users.AddAsync(new UserAccount
+                {
+                    Id = Guid.NewGuid(),
+                    FullName = "Tamer Hosny (مسؤول الحضور والانصراف)",
+                    Username = "attendance_emp",
+                    Email = "attendance@facestone.com",
+                    PhoneNumber = "+20 10 9988 7766",
+                    CountryCode = "+20",
+                    Role = AppRoles.AttendanceEmployee,
+                    PasswordHash = HashPassword("Password123!"),
+                    CreatedAt = DateTime.UtcNow
+                }, cts.Token);
+            }
+            else
+            {
+                attendanceEmployeeUser.PasswordHash = HashPassword("Password123!");
+                attendanceEmployeeUser.Role = AppRoles.AttendanceEmployee;
+            }
+
             await db.SaveChangesAsync(cts.Token);
+
+            // Ensure Physical Laboratory Employee exists
+            var physLabUser = await db.Users.FirstOrDefaultAsync(u => 
+                u.Role == AppRoles.PhysicalLabEmployee || 
+                u.Role == AppRoles.PhysicalLabEmployeeDisplay ||
+                u.Username == "phys_lab" || 
+                u.Email == "phys.lab@facestone.com", cts.Token);
+            if (physLabUser == null)
+            {
+                await db.Users.AddAsync(new UserAccount
+                {
+                    Id = Guid.NewGuid(),
+                    FullName = "Eng. Tarek Mahmoud (مسؤول المعمل الفيزيائي)",
+                    Username = "phys_lab",
+                    Email = "phys.lab@facestone.com",
+                    PhoneNumber = "+20 10 2233 4455",
+                    CountryCode = "+20",
+                    Role = AppRoles.PhysicalLabEmployee,
+                    PasswordHash = HashPassword("Password123!"),
+                    CreatedAt = DateTime.UtcNow
+                }, cts.Token);
+            }
+            else
+            {
+                physLabUser.PasswordHash = HashPassword("Password123!");
+                physLabUser.Role = AppRoles.PhysicalLabEmployee;
+            }
+
+            // Ensure Chemical Laboratory Employee exists
+            var chemLabUser = await db.Users.FirstOrDefaultAsync(u => 
+                u.Role == AppRoles.ChemicalLabEmployee || 
+                u.Role == AppRoles.ChemicalLabEmployeeDisplay ||
+                u.Username == "chem_lab" || 
+                u.Email == "chem.lab@facestone.com", cts.Token);
+            if (chemLabUser == null)
+            {
+                await db.Users.AddAsync(new UserAccount
+                {
+                    Id = Guid.NewGuid(),
+                    FullName = "Chemist Mona Adel (مسؤولة المعمل الكيميائي)",
+                    Username = "chem_lab",
+                    Email = "chem.lab@facestone.com",
+                    PhoneNumber = "+20 10 3344 5577",
+                    CountryCode = "+20",
+                    Role = AppRoles.ChemicalLabEmployee,
+                    PasswordHash = HashPassword("Password123!"),
+                    CreatedAt = DateTime.UtcNow
+                }, cts.Token);
+            }
+            else
+            {
+                chemLabUser.PasswordHash = HashPassword("Password123!");
+                chemLabUser.Role = AppRoles.ChemicalLabEmployee;
+            }
+
+            await db.SaveChangesAsync(cts.Token);
+
+            // Ensure Production Manager exists
+            var prodManagerUser = await db.Users.FirstOrDefaultAsync(u => 
+                u.Role == AppRoles.ProductionManager || 
+                u.Role == AppRoles.ProductionManagerDisplay ||
+                u.Username == "prod_manager" || 
+                u.Email == "prod.manager@facestone.com", cts.Token);
+            if (prodManagerUser == null)
+            {
+                await db.Users.AddAsync(new UserAccount
+                {
+                    Id = Guid.NewGuid(),
+                    FullName = "Eng. Hesham Farouk (مدير الإنتاج)",
+                    Username = "prod_manager",
+                    Email = "prod.manager@facestone.com",
+                    PhoneNumber = "+20 10 4455 8899",
+                    CountryCode = "+20",
+                    Role = AppRoles.ProductionManager,
+                    PasswordHash = HashPassword("Production123!"),
+                    CreatedAt = DateTime.UtcNow
+                }, cts.Token);
+            }
+            else
+            {
+                prodManagerUser.PasswordHash = HashPassword("Production123!");
+                prodManagerUser.Role = AppRoles.ProductionManager;
+            }
+
+            // Ensure Production Manager 2 (Ahmed Nabil) exists with ProductionManager role
+            var prodEmployeeUser = await db.Users.FirstOrDefaultAsync(u => 
+                u.Username == "prod_employee" || 
+                u.Email == "prod.employee@facestone.com", cts.Token);
+            if (prodEmployeeUser == null)
+            {
+                await db.Users.AddAsync(new UserAccount
+                {
+                    Id = Guid.NewGuid(),
+                    FullName = "Ahmed Nabil (مدير الإنتاج - الوردية الثانية)",
+                    Username = "prod_employee",
+                    Email = "prod.employee@facestone.com",
+                    PhoneNumber = "+20 10 7788 9900",
+                    CountryCode = "+20",
+                    Role = AppRoles.ProductionManager,
+                    PasswordHash = HashPassword("Production123!"),
+                    CreatedAt = DateTime.UtcNow
+                }, cts.Token);
+            }
+            else
+            {
+                prodEmployeeUser.FullName = "Ahmed Nabil (مدير الإنتاج - الوردية الثانية)";
+                prodEmployeeUser.PasswordHash = HashPassword("Production123!");
+                prodEmployeeUser.Role = AppRoles.ProductionManager;
+            }
+
+            await db.SaveChangesAsync(cts.Token);
+
+            // Initialize Production Sequences if needed
+            var seqTypes = new[] { "ORDER", "BATCH", "OUTPUT", "REWORK", "DAILY_SUBMISSION" };
+            foreach (var st in seqTypes)
+            {
+                if (!await db.ProductionSequences.AnyAsync(s => s.SequenceType == st, cts.Token))
+                {
+                    await db.ProductionSequences.AddAsync(new ProductionSequence { SequenceType = st, NextValue = 1 }, cts.Token);
+                }
+            }
+            await db.SaveChangesAsync(cts.Token);
+
+            // ========================================================================
+            // SEED: STORAGE REDESIGN (Locations, Clients, Sequences, Ledger Stock)
+            // ========================================================================
+            if (!await db.StorageLocations.AnyAsync(cts.Token))
+            {
+                logger.LogInformation("Seeding default storage locations...");
+                await db.StorageLocations.AddRangeAsync(new[]
+                {
+                    new StorageLocation { Name = "مستودع الخامات الرئيسي", Code = "WH-MAIN", Description = "المستودع المركزي لتخزين الإسمنت والركام والمواد الخام", IsActive = true },
+                    new StorageLocation { Name = "صوامع الإسمنت الرئيسية", Code = "SILO-CEM", Description = "صوامع تخزين بودرة الإسمنت البورتلاندي السائب", IsActive = true },
+                    new StorageLocation { Name = "مستودع قطاع ج", Code = "WH-SEC-C", Description = "مستودع تشوين الركام والسن والرمل بموقع حلوان", IsActive = true },
+                    new StorageLocation { Name = "مستودع الكيماويات والمضافات", Code = "WH-CHEM", Description = "مستودع تخزين مضافات الخرسانة السائلة والكيميائية", IsActive = true }
+                }, cts.Token);
+                await db.SaveChangesAsync(cts.Token);
+            }
+
+            if (!await db.StorageClients.AnyAsync(cts.Token))
+            {
+                logger.LogInformation("Seeding default FaceStone clients and destinations...");
+                var client1 = new StorageClient
+                {
+                    Name = "شركة المقاولون العرب",
+                    PhoneNumber = "+20 10 1234 5678",
+                    IsActive = true,
+                    Destinations = new List<StorageClientDestination>
+                    {
+                        new StorageClientDestination { DestinationName = "مشروع العاصمة الإدارية - الحي السكني R3", IsActive = true },
+                        new StorageClientDestination { DestinationName = "مشروع مونوريل شرق النيل - قطاع 2", IsActive = true },
+                        new StorageClientDestination { DestinationName = "مشروع محور روض الفرج وكوبري تحيا مصر", IsActive = true }
+                    }
+                };
+
+                var client2 = new StorageClient
+                {
+                    Name = "أوراسكوم للإنشاءات",
+                    PhoneNumber = "+20 10 2345 6789",
+                    IsActive = true,
+                    Destinations = new List<StorageClientDestination>
+                    {
+                        new StorageClientDestination { DestinationName = "مشروع المتحف المصري الكبير", IsActive = true },
+                        new StorageClientDestination { DestinationName = "مشروع محطة الضبعة النووية", IsActive = true },
+                        new StorageClientDestination { DestinationName = "مشروع مترو الأنفاق الخط الرابع", IsActive = true }
+                    }
+                };
+
+                var client3 = new StorageClient
+                {
+                    Name = "حسن علام القابضة",
+                    PhoneNumber = "+20 10 3456 7890",
+                    IsActive = true,
+                    Destinations = new List<StorageClientDestination>
+                    {
+                        new StorageClientDestination { DestinationName = "مشروع أبراج مدينة العلمين الجديدة", IsActive = true },
+                        new StorageClientDestination { DestinationName = "مشروع محطة قطارات بشتيل الذكية", IsActive = true }
+                    }
+                };
+
+                var client4 = new StorageClient
+                {
+                    Name = "مجموعة طلعت مصطفى",
+                    PhoneNumber = "+20 10 4567 8901",
+                    IsActive = true,
+                    Destinations = new List<StorageClientDestination>
+                    {
+                        new StorageClientDestination { DestinationName = "مشروع مدينتي - قطاع البناء 4", IsActive = true },
+                        new StorageClientDestination { DestinationName = "مشروع مدينة نور كابيتال سيتي", IsActive = true }
+                    }
+                };
+
+                var client5 = new StorageClient
+                {
+                    Name = "شركة بالم هيلز للتعمير",
+                    PhoneNumber = "+20 10 5678 9012",
+                    IsActive = true,
+                    Destinations = new List<StorageClientDestination>
+                    {
+                        new StorageClientDestination { DestinationName = "مشروع بادية - 6 أكتوبر", IsActive = true },
+                        new StorageClientDestination { DestinationName = "مشروع كمبوند بالم هيلز التجمع الخامس", IsActive = true }
+                    }
+                };
+
+                var client6 = new StorageClient
+                {
+                    Name = "السويدي إليكتريك",
+                    PhoneNumber = "+20 10 6789 0123",
+                    IsActive = true,
+                    Destinations = new List<StorageClientDestination>
+                    {
+                        new StorageClientDestination { DestinationName = "مجمع العاشر من رمضان الصناعي", IsActive = true },
+                        new StorageClientDestination { DestinationName = "مشروع محطة بنبان للطاقة الشمسية", IsActive = true }
+                    }
+                };
+
+                await db.StorageClients.AddRangeAsync(new[] { client1, client2, client3, client4, client5, client6 }, cts.Token);
+                await db.SaveChangesAsync(cts.Token);
+            }
+
+            if (!await db.StorageSequences.AnyAsync(cts.Token))
+            {
+                logger.LogInformation("Seeding initial storage sequence values...");
+                await db.StorageSequences.AddRangeAsync(new[]
+                {
+                    new StorageSequence { SequenceType = "IMPORT", NextValue = 1 },
+                    new StorageSequence { SequenceType = "EXPORT", NextValue = 1 },
+                    new StorageSequence { SequenceType = "TRANSFER", NextValue = 1 }
+                }, cts.Token);
+                await db.SaveChangesAsync(cts.Token);
+            }
+
+            // Seed standard materials and initial inventory ledger balances if needed
+            var mainLocation = await db.StorageLocations.FirstOrDefaultAsync(l => l.Code == "WH-MAIN", cts.Token);
+            if (mainLocation != null)
+            {
+                var standardMaterials = new (string Name, decimal Stock, string Type)[]
+                {
+                    ("إسمنت بورتلاندي عادي رتبة 42.5", 500.000m, MaterialProcessType.Mechanical),
+                    ("ركام خرساني متدرج (سن 1)", 450.000m, MaterialProcessType.Mechanical),
+                    ("ركام خرساني متدرج (سن 2)", 400.000m, MaterialProcessType.Mechanical),
+                    ("رمل سيليكا ناعم معتمد", 350.000m, MaterialProcessType.Mechanical),
+                    ("بودرة كربونات الكالسيوم", 200.000m, MaterialProcessType.Mechanical),
+                    ("مضافات ومخفضات مياه فائقة (Slurry)", 150.000m, MaterialProcessType.Chemical)
+                };
+
+                foreach (var matInfo in standardMaterials)
+                {
+                    var mat = await db.RawMaterials.FirstOrDefaultAsync(m => m.Name == matInfo.Name, cts.Token);
+                    if (mat == null)
+                    {
+                        mat = new RawMaterial
+                        {
+                            Name = matInfo.Name,
+                            MaterialType = matInfo.Type,
+                            InitialQuantity = matInfo.Stock,
+                            CreatedAt = DateTime.UtcNow,
+                            CreatedBy = "Storage Manager"
+                        };
+                        await db.RawMaterials.AddAsync(mat, cts.Token);
+                        await db.SaveChangesAsync(cts.Token);
+                    }
+                    else if (string.IsNullOrEmpty(mat.MaterialType) || mat.MaterialType == "MECHANICAL" && matInfo.Type == MaterialProcessType.Chemical)
+                    {
+                        mat.MaterialType = matInfo.Type;
+                        await db.SaveChangesAsync(cts.Token);
+                    }
+
+                    // Check if opening stock exists in ledger
+                    var hasLedgerStock = await db.StorageInventoryLedger.AnyAsync(l => 
+                        l.StorageLocationId == mainLocation.Id && l.RawMaterialId == mat.Id, cts.Token);
+                    
+                    if (!hasLedgerStock)
+                    {
+                        await db.StorageInventoryLedger.AddAsync(new StorageInventoryLedger
+                        {
+                            StorageLocationId = mainLocation.Id,
+                            RawMaterialId = mat.Id,
+                            MovementType = "OPENING_BALANCE",
+                            Quantity = matInfo.Stock,
+                            RunningBalance = matInfo.Stock,
+                            MovementDate = DateTime.UtcNow.AddDays(-7),
+                            CreatedAt = DateTime.UtcNow.AddDays(-7),
+                            CreatedBy = "System Initializer"
+                        }, cts.Token);
+                    }
+                }
+                await db.SaveChangesAsync(cts.Token);
+            }
+
+            // Initialize Laboratory Production Reference Sequence if needed
+            var labSeq = await db.LaboratoryProductionSequences.FirstOrDefaultAsync(s => s.SequenceName == "PRODUCTION_REFERENCE", cts.Token);
+            if (labSeq == null)
+            {
+                labSeq = new LaboratoryProductionSequence
+                {
+                    SequenceName = "PRODUCTION_REFERENCE",
+                    NextValue = 1
+                };
+                await db.LaboratoryProductionSequences.AddAsync(labSeq, cts.Token);
+                await db.SaveChangesAsync(cts.Token);
+            }
+
+            // Seed initial demo Laboratory records for Reference #1 and Reference #2
+            if (!await db.LaboratoryRawMaterialReports.AnyAsync(cts.Token))
+            {
+                logger.LogInformation("Seeding initial Laboratory Raw Material Reports and production traceability records...");
+
+                var cementMat = await db.RawMaterials.FirstOrDefaultAsync(m => m.Name.Contains("إسمنت") || m.MaterialType == "MECHANICAL", cts.Token);
+                var slurryMat = await db.RawMaterials.FirstOrDefaultAsync(m => m.Name.Contains("مضافات") || m.MaterialType == "CHEMICAL", cts.Token);
+                var trans1 = await db.Transportations.FirstOrDefaultAsync(t => t.ApprovalStatus == "APPROVED", cts.Token);
+                var po1 = await db.PurchaseOrders.FirstOrDefaultAsync(cts.Token);
+
+                var ref1 = new LaboratoryRawMaterialReport
+                {
+                    ProductionReferenceNumber = 1,
+                    LaboratorySection = "PHYSICAL",
+                    AnalysisDateTime = DateTime.UtcNow.AddDays(-5),
+                    RawMaterialDescription = "إسمنت بورتلاندي عادي رتبة 42.5N فحص ميكانيكي وفيزيائي",
+                    RawMaterialId = cementMat?.Id,
+                    SupplierName = "شركة أسمنت السويس الوطنية",
+                    SourceTransportationId = trans1?.Id,
+                    TransportationTransactionNumber = trans1?.TransactionNumber ?? 1001,
+                    PurchaseOrderId = po1?.Id,
+                    PONumber = po1?.PONumber ?? "PO-2026-ST-001",
+                    ReceivedQuantity = 60.000m,
+                    AcceptedQuantity = 55.000m,
+                    RejectedQuantity = 5.000m,
+                    AnalysisResultsJson = "{\"fineness\":\"3450\",\"sieveResidue90\":\"4.2\",\"moisture\":\"0.75\",\"specificGravity\":\"3.12\",\"compStrength2D\":\"22.5\",\"compStrength28D\":\"46.8\",\"soundness\":\"1.4\",\"initialSettingTime\":\"145\",\"finalSettingTime\":\"210\"}",
+                    InspectionDecision = "PARTIALLY_ACCEPTED",
+                    Notes = "تم قبول 55 طن مطابقة للمواصفة القياسية المصرية، واستبعاد 5 أطنان لوجود تكتلات رطوبة جزئية أثناء النقل.",
+                    ResponsibleEmployee = "Eng. Tarek Mahmoud (مسؤول المعمل الفيزيائي)",
+                    ApprovalStatus = "APPROVED",
+                    ReviewedBy = "مراقب ومراجع العمليات (Control & Monitoring)",
+                    ReviewedAt = DateTime.UtcNow.AddDays(-5),
+                    IsStorageReceived = true,
+                    StorageReceivedAt = DateTime.UtcNow.AddDays(-4),
+                    CreatedAt = DateTime.UtcNow.AddDays(-5),
+                    CreatedBy = "phys_lab"
+                };
+
+                var ref2 = new LaboratoryRawMaterialReport
+                {
+                    ProductionReferenceNumber = 2,
+                    LaboratorySection = "CHEMICAL",
+                    AnalysisDateTime = DateTime.UtcNow.AddDays(-3),
+                    RawMaterialDescription = "مضافات ومخفضات مياه فائقة للأداء العالي (Slurry Admixture)",
+                    RawMaterialId = slurryMat?.Id,
+                    SupplierName = "سولفاي كيميكالز الشرق الأوسط",
+                    SourceTransportationId = null,
+                    PurchaseOrderId = po1?.Id,
+                    PONumber = po1?.PONumber ?? "PO-2026-ST-001",
+                    ReceivedQuantity = 30.000m,
+                    AcceptedQuantity = 30.000m,
+                    RejectedQuantity = 0.000m,
+                    AnalysisResultsJson = "{\"activeSolids\":\"38.5\",\"pH\":\"7.4\",\"density\":\"1.18\",\"chlorideContent\":\"0.02\",\"sulfateSO3\":\"0.15\",\"insolubleResidue\":\"0.05\",\"lossOnIgnition\":\"0.6\"}",
+                    InspectionDecision = "ACCEPTED",
+                    Notes = "عينة مطابقة لمتطلبات المواصفات الكيميائية والاشتراطات البيئية وتم اعتماد كامل الكمية.",
+                    ResponsibleEmployee = "Chemist Mona Adel (مسؤولة المعمل الكيميائي)",
+                    ApprovalStatus = "APPROVED",
+                    ReviewedBy = "مراقب ومراجع العمليات (Control & Monitoring)",
+                    ReviewedAt = DateTime.UtcNow.AddDays(-3),
+                    IsStorageReceived = false,
+                    CreatedAt = DateTime.UtcNow.AddDays(-3),
+                    CreatedBy = "chem_lab"
+                };
+
+                await db.LaboratoryRawMaterialReports.AddRangeAsync(new[] { ref1, ref2 }, cts.Token);
+                await db.SaveChangesAsync(cts.Token);
+
+                // In-Process test report linked to Ref #1
+                var inProc1 = new LaboratoryInProcessReport
+                {
+                    ProductionReferenceNumber = 1,
+                    RawMaterialReportId = ref1.Id,
+                    ProductionBatchNumber = "BATCH-2026-C35-01",
+                    LaboratorySection = "PHYSICAL",
+                    ProductName = "خلطة خرسانية جاهزة عالية الإجهاد رتبة C35",
+                    TestDateTime = DateTime.UtcNow.AddDays(-3),
+                    ProductionStage = "الخلط الأولي (Mixing)",
+                    AnalysisResultsJson = "{\"slump\":\"12.5\",\"slumpFlow\":\"550\",\"concreteTemp\":\"24.5\",\"airContent\":\"1.8\",\"unitWeight\":\"2385\"}",
+                    SpecificationCriteria = "الهبوط: 10-14 سم | درجة الحرارة: < 30°C | المحتوى الهوائي: < 2%",
+                    InspectionDecision = "MEETS_REQUIREMENTS",
+                    Notes = "فحص متجانس، القوام مطابق ونسبة السيولة والدمك ممتازة داخل الخلاط المركزي.",
+                    ResponsibleEmployee = "Eng. Tarek Mahmoud (مسؤول المعمل الفيزيائي)",
+                    CreatedAt = DateTime.UtcNow.AddDays(-3),
+                    CreatedBy = "phys_lab"
+                };
+
+                await db.LaboratoryInProcessReports.AddAsync(inProc1, cts.Token);
+                await db.SaveChangesAsync(cts.Token);
+
+                // Final Product Conformity Certificate linked to Ref #1
+                var finalCert1 = new LaboratoryFinalConformityCertificate
+                {
+                    CertificateNumber = "CERT-2026-0001",
+                    ProductionReferenceNumber = 1,
+                    RawMaterialReportId = ref1.Id,
+                    LaboratorySection = "PHYSICAL",
+                    FinalProductName = "خرسانة جاهزة عالية الإجهاد رتبة C35",
+                    ActualFinalProductQuantity = 52.000m,
+                    QuantityUnit = "طن",
+                    ProductionBatchNumber = "BATCH-2026-C35-01",
+                    ProductionCompletionDateTime = DateTime.UtcNow.AddDays(-2),
+                    ActualRawMaterialInputQuantity = 55.000m,
+                    CalculatedDifference = 3.000m,
+                    ActualMeasuredWaste = 1.500m,
+                    WasteClassification = "RECOVERABLE_MATERIAL",
+                    ConformityDecision = "CONFORMS",
+                    NonConformityAction = null,
+                    SpecificationResultsJson = "{\"compStrength7D\":\"28.5\",\"compStrength28D\":\"38.4\",\"waterAbsorption\":\"3.2\",\"flexuralStrength\":\"4.8\",\"density\":\"2410\"}",
+                    Observations = "المنتج حقق مقاومة ضغط تتجاوز الرتبة التصميمية C35 بعد 7 و 28 يوماً. الهالك تم استرداده كركام تدوير.",
+                    ResponsibleEmployee = "Eng. Tarek Mahmoud (مسؤول المعمل الفيزيائي)",
+                    ApprovalStatus = "APPROVED",
+                    ReviewedBy = "مراقب ومراجع العمليات (Control & Monitoring)",
+                    ReviewedAt = DateTime.UtcNow.AddDays(-2),
+                    IsStoragePosted = true,
+                    StoragePostedAt = DateTime.UtcNow.AddDays(-2),
+                    CreatedAt = DateTime.UtcNow.AddDays(-2),
+                    CreatedBy = "phys_lab"
+                };
+
+                await db.LaboratoryFinalConformityCertificates.AddAsync(finalCert1, cts.Token);
+                await db.SaveChangesAsync(cts.Token);
+
+                // Update sequence NextValue to 3
+                labSeq.NextValue = 3;
+                await db.SaveChangesAsync(cts.Token);
+            }
+
+            // Seed initial demo Production Orders, Batches, and Outputs if table is empty
+            if (!await db.ProductionOrders.AnyAsync(cts.Token))
+            {
+                logger.LogInformation("Seeding initial Production Orders, Batches, and Outputs...");
+                var loc = await db.StorageLocations.FirstOrDefaultAsync(cts.Token);
+                var cementMat = await db.RawMaterials.FirstOrDefaultAsync(m => m.Name.Contains("إسمنت"), cts.Token);
+                var slurryMat = await db.RawMaterials.FirstOrDefaultAsync(m => m.Name.Contains("مضافات"), cts.Token);
+
+                var pOrder1 = new ProductionOrder
+                {
+                    OrderNumber = "ORD-2026-0001",
+                    ProductionReferenceNumber = 1,
+                    ProductName = "حجر صناعي واجهات بيج نخب أول",
+                    RequestedQuantity = 100.000m,
+                    Unit = "طن",
+                    StorageLocationId = loc?.Id ?? 1,
+                    StorageLocationName = loc?.Name ?? "مستودع الخامات الرئيسي",
+                    Status = "IN_PRODUCTION",
+                    CurrentStage = "التشكيل والصب",
+                    ResponsibleEmployee = "Eng. Hesham Farouk (مدير الإنتاج)",
+                    PlannedStartDate = DateTime.UtcNow.AddDays(-2),
+                    ActualStartDate = DateTime.UtcNow.AddDays(-2),
+                    IsStorageApproved = true,
+                    StorageApprovedAt = DateTime.UtcNow.AddDays(-2),
+                    StorageApprovedBy = "Storage & Factory Operations Manager",
+                    CreatedAt = DateTime.UtcNow.AddDays(-2),
+                    CreatedBy = "prod_manager"
+                };
+
+                if (cementMat != null)
+                {
+                    pOrder1.Items.Add(new ProductionOrderItem
+                    {
+                        RawMaterialId = cementMat.Id,
+                        MaterialName = cementMat.Name,
+                        RequestedQuantity = 75.000m,
+                        IssuedQuantity = 75.000m,
+                        ConsumedQuantity = 75.000m,
+                        Unit = "طن"
+                    });
+                }
+
+                if (slurryMat != null)
+                {
+                    pOrder1.Items.Add(new ProductionOrderItem
+                    {
+                        RawMaterialId = slurryMat.Id,
+                        MaterialName = slurryMat.Name,
+                        RequestedQuantity = 25.000m,
+                        IssuedQuantity = 25.000m,
+                        ConsumedQuantity = 25.000m,
+                        Unit = "طن"
+                    });
+                }
+
+                await db.ProductionOrders.AddAsync(pOrder1, cts.Token);
+                await db.SaveChangesAsync(cts.Token);
+
+                var pBatch1 = new ProductionBatch
+                {
+                    BatchNumber = "BATCH-2026-0001",
+                    ProductionOrderId = pOrder1.Id,
+                    ProductionReferenceNumber = 1,
+                    CurrentStage = "التشكيل والصب",
+                    Status = "IN_PROGRESS",
+                    QualityHold = false,
+                    TotalInputQuantity = 100.000m,
+                    TotalOutputQuantity = 92.000m,
+                    TotalWasteQuantity = 8.000m,
+                    StartedAt = DateTime.UtcNow.AddDays(-2),
+                    ResponsibleEmployee = "Eng. Hesham Farouk (مدير الإنتاج)",
+                    CreatedAt = DateTime.UtcNow.AddDays(-2),
+                    CreatedBy = "prod_manager"
+                };
+
+                await db.ProductionBatches.AddAsync(pBatch1, cts.Token);
+                await db.SaveChangesAsync(cts.Token);
+
+                // Add demo outputs: 1 Semi-Finished, 1 Finished, 1 Recoverable Waste
+                var out1 = new ProductionOutput
+                {
+                    OutputNumber = "OUT-2026-0001",
+                    ProductionOrderId = pOrder1.Id,
+                    ProductionBatchId = pBatch1.Id,
+                    ProductionReferenceNumber = 1,
+                    ProductName = "حجر واجهات بيج نخب أول - معالج نصف مصنع",
+                    Classification = "SEMI_FINISHED",
+                    Quantity = 40.000m,
+                    Unit = "طن",
+                    ProductionStage = "التشكيل والصب",
+                    NextStage = "المعالجة الكيميائية والتجفيف",
+                    DestinationStorageLocationId = loc?.Id,
+                    DestinationStorageLocationName = loc?.Name,
+                    LaboratoryConformityStatus = "NOT_APPLICABLE",
+                    ResponsibleEmployee = "Ahmed Nabil (مسؤول خط الإنتاج والتشغيل)",
+                    CreatedAt = DateTime.UtcNow.AddDays(-1),
+                    CreatedBy = "prod_employee"
+                };
+
+                var out2 = new ProductionOutput
+                {
+                    OutputNumber = "OUT-2026-0002",
+                    ProductionOrderId = pOrder1.Id,
+                    ProductionBatchId = pBatch1.Id,
+                    ProductionReferenceNumber = 1,
+                    ProductName = "حجر صناعي واجهات بيج نخب أول تام الصنع",
+                    Classification = "FINISHED",
+                    Quantity = 52.000m,
+                    Unit = "طن",
+                    ProductionStage = "المرحلة النهائية",
+                    DestinationStorageLocationId = loc?.Id,
+                    DestinationStorageLocationName = loc?.Name,
+                    LaboratoryConformityStatus = "CONFORMS",
+                    ResponsibleEmployee = "Eng. Hesham Farouk (مدير الإنتاج)",
+                    CreatedAt = DateTime.UtcNow.AddHours(-12),
+                    CreatedBy = "prod_manager"
+                };
+
+                var out3 = new ProductionOutput
+                {
+                    OutputNumber = "OUT-2026-0003",
+                    ProductionOrderId = pOrder1.Id,
+                    ProductionBatchId = pBatch1.Id,
+                    ProductionReferenceNumber = 1,
+                    ProductName = "كسارة وركام خرساني مسترد لإعادة التدوير",
+                    Classification = "RECOVERABLE_WASTE",
+                    Quantity = 8.000m,
+                    Unit = "طن",
+                    ProductionStage = "المرحلة النهائية",
+                    DestinationStorageLocationId = loc?.Id,
+                    DestinationStorageLocationName = loc?.Name,
+                    LaboratoryConformityStatus = "NOT_APPLICABLE",
+                    ResponsibleEmployee = "Ahmed Nabil (مسؤول خط الإنتاج والتشغيل)",
+                    CreatedAt = DateTime.UtcNow.AddHours(-10),
+                    CreatedBy = "prod_employee"
+                };
+
+                await db.ProductionOutputs.AddRangeAsync(new[] { out1, out2, out3 }, cts.Token);
+                await db.SaveChangesAsync(cts.Token);
+
+                // Update sequence next values
+                var ordSeq = await db.ProductionSequences.FirstOrDefaultAsync(s => s.SequenceType == "ORDER", cts.Token);
+                if (ordSeq != null) ordSeq.NextValue = 2;
+
+                var batSeq = await db.ProductionSequences.FirstOrDefaultAsync(s => s.SequenceType == "BATCH", cts.Token);
+                if (batSeq != null) batSeq.NextValue = 2;
+
+                var outSeq = await db.ProductionSequences.FirstOrDefaultAsync(s => s.SequenceType == "OUTPUT", cts.Token);
+                if (outSeq != null) outSeq.NextValue = 4;
+
+                await db.SaveChangesAsync(cts.Token);
+            }
 
             // Seed initial Storage Transactions if table is empty
             if (!await db.StorageTransactions.AnyAsync(cts.Token))
@@ -1776,8 +2818,6 @@ IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_ChatMessages_LiveSessi
                     }
                 }, cts.Token);
             }
-
-            await db.SaveChangesAsync(cts.Token);
         }
         catch (Exception ex)
         {

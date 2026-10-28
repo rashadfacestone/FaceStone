@@ -22,6 +22,274 @@ namespace FaceStone.Web.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("FaceStone.Web.Models.AttendanceAttachment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AttendanceSubmissionId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("FilePath")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<long>("FileSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("FileType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("OriginalFileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<DateTime>("UploadedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AttendanceSubmissionId");
+
+                    b.ToTable("AttendanceAttachments", (string)null);
+                });
+
+            modelBuilder.Entity("FaceStone.Web.Models.AttendanceRecord", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ApprovalStatus")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasDefaultValue("PENDING");
+
+                    b.Property<int?>("AttendanceSubmissionId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("CheckInTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("CheckOutTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("EmployeeName")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("EmployeeRole")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("IsTestData")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("RejectionReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime?>("ReviewedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ReviewedBy")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<Guid?>("ReviewedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasDefaultValue("Present");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AttendanceSubmissionId");
+
+                    b.HasIndex("Date");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("AttendanceRecords", (string)null);
+                });
+
+            modelBuilder.Entity("FaceStone.Web.Models.AttendanceSubmission", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AbsentCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ApprovalStatus")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasDefaultValue("PENDING");
+
+                    b.Property<DateTime>("AttendanceDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("PresentCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RejectionReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime?>("ReviewedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ReviewedBy")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<Guid?>("ReviewedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("SubmittedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<string>("SubmittedBy")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<Guid?>("SubmittedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("TotalEmployeesCount")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApprovalStatus");
+
+                    b.HasIndex("AttendanceDate");
+
+                    b.HasIndex("SubmittedAt");
+
+                    b.ToTable("AttendanceSubmissions", (string)null);
+                });
+
+            modelBuilder.Entity("FaceStone.Web.Models.BankTransaction", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("BankName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Direction")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasDefaultValue("In");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("ReferenceNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("TransactionDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("TransactionType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BankName");
+
+                    b.HasIndex("Direction");
+
+                    b.HasIndex("TransactionDate");
+
+                    b.ToTable("BankTransactions", (string)null);
+                });
+
             modelBuilder.Entity("FaceStone.Web.Models.ChatAttachment", b =>
                 {
                     b.Property<Guid>("Id")
@@ -172,6 +440,360 @@ namespace FaceStone.Web.Migrations
                     b.ToTable("ChatMessages", (string)null);
                 });
 
+            modelBuilder.Entity("FaceStone.Web.Models.DailyProductionDetail", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("DailyProductionSubmissionId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("NetQuantity")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<int?>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ProductName")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.Property<decimal?>("ProductWaste")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<decimal>("ProductionRatePerHour")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<string>("Unit")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasDefaultValue("طن");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DailyProductionSubmissionId");
+
+                    b.HasIndex("ProductName");
+
+                    b.ToTable("DailyProductionDetails", (string)null);
+                });
+
+            modelBuilder.Entity("FaceStone.Web.Models.DailyProductionSubmission", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<decimal>("DurationHours")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<string>("EmployeeEmail")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("EmployeeName")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<decimal>("NetProductionQuantity")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime>("ProductionDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("ProductionRatePerHour")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<int?>("ProductionReferenceNumber")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Shift")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("ShiftEnd")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("ShiftStart")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasDefaultValue("SUBMITTED");
+
+                    b.Property<string>("SubmissionNumber")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<decimal>("TotalGrossQuantity")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<decimal>("WastePercentage")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<decimal>("WasteQuantity")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeEmail");
+
+                    b.HasIndex("ProductionDate");
+
+                    b.HasIndex("ProductionReferenceNumber");
+
+                    b.HasIndex("Shift");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("SubmissionNumber")
+                        .IsUnique();
+
+                    b.ToTable("DailyProductionSubmissions", (string)null);
+                });
+
+            modelBuilder.Entity("FaceStone.Web.Models.EmployeeFinancialRecord", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Allowances")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasDefaultValue(0m);
+
+                    b.Property<string>("BankAccountNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<decimal>("BasicSalary")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasDefaultValue(0m);
+
+                    b.Property<DateTime>("EffectiveFrom")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("InsuranceDeductions")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasDefaultValue(0m);
+
+                    b.Property<decimal>("NetSalary")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasDefaultValue(0m);
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("PaymentMethod")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasDefaultValue("Bank Transfer");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("EmployeeFinancialRecords", (string)null);
+                });
+
+            modelBuilder.Entity("FaceStone.Web.Models.EmployeeLending", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ApprovalStatus")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasDefaultValue("معتمد");
+
+                    b.Property<string>("ApprovedBy")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<decimal>("LendingAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<decimal>("PaidAmount")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasDefaultValue(0m);
+
+                    b.Property<decimal>("RemainingAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("RequestDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RequestDate");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("EmployeeLendings", (string)null);
+                });
+
+            modelBuilder.Entity("FaceStone.Web.Models.Expense", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Beneficiary")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("ExpenseDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("PaymentMethod")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasDefaultValue("Bank Transfer");
+
+                    b.Property<string>("ReferenceNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Category");
+
+                    b.HasIndex("ExpenseDate");
+
+                    b.ToTable("Expenses", (string)null);
+                });
+
             modelBuilder.Entity("FaceStone.Web.Models.FinancePayment", b =>
                 {
                     b.Property<int>("Id")
@@ -228,6 +850,574 @@ namespace FaceStone.Web.Migrations
                     b.HasIndex("PurchaseOrderId");
 
                     b.ToTable("FinancePayments", (string)null);
+                });
+
+            modelBuilder.Entity("FaceStone.Web.Models.FormApprovalHistory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("ActorName")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("ActorRole")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<Guid?>("ActorUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Comment")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("FormId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("FormType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("NewStatus")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("PONumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("PreviousStatus")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("Timestamp")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<string>("TransactionOrMovementNumber")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Timestamp");
+
+                    b.HasIndex("FormType", "FormId");
+
+                    b.ToTable("FormApprovalHistories", (string)null);
+                });
+
+            modelBuilder.Entity("FaceStone.Web.Models.LaboratoryFinalConformityCertificate", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("ActualFinalProductQuantity")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<decimal?>("ActualMeasuredWaste")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<decimal>("ActualRawMaterialInputQuantity")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<string>("ApprovalStatus")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasDefaultValue("PENDING");
+
+                    b.Property<string>("AttachmentFileName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<long>("AttachmentFileSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("AttachmentFileType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("AttachmentPath")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("CalculatedDifference")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<string>("CertificateNumber")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("ClassifiedProductType")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("ConformityDecision")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("FinalProductName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<bool>("IsStoragePosted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("LaboratorySection")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("NonConformityAction")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Observations")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ProductionBatchNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("ProductionCompletionDateTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("ProductionReferenceNumber")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ProductionWorkInProcessId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("QuantityUnit")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasDefaultValue("طن");
+
+                    b.Property<int?>("RawMaterialReportId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RejectionReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("ResponsibleEmployee")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<Guid?>("ResponsibleUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ReviewedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ReviewedBy")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<Guid?>("ReviewedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ReworkInstructions")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SpecificationResultsJson")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("StoragePostedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("WasteClassification")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasDefaultValue("ORDINARY_WASTE");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApprovalStatus");
+
+                    b.HasIndex("CertificateNumber")
+                        .IsUnique();
+
+                    b.HasIndex("ConformityDecision");
+
+                    b.HasIndex("LaboratorySection");
+
+                    b.HasIndex("ProductionReferenceNumber");
+
+                    b.HasIndex("ProductionWorkInProcessId");
+
+                    b.HasIndex("RawMaterialReportId");
+
+                    b.ToTable("LaboratoryFinalConformityCertificates", (string)null);
+                });
+
+            modelBuilder.Entity("FaceStone.Web.Models.LaboratoryInProcessReport", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AnalysisResultsJson")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("AttachmentFileName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<long>("AttachmentFileSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("AttachmentFileType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("AttachmentPath")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("InspectionDecision")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("LaboratorySection")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ProductName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("ProductionBatchNumber")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("ProductionReferenceNumber")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ProductionStage")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int?>("ProductionWorkInProcessId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("RawMaterialReportId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ResponsibleEmployee")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<Guid?>("ResponsibleUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("SpecificationCriteria")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("TestDateTime")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LaboratorySection");
+
+                    b.HasIndex("ProductionReferenceNumber");
+
+                    b.HasIndex("ProductionStage");
+
+                    b.HasIndex("ProductionWorkInProcessId");
+
+                    b.HasIndex("RawMaterialReportId");
+
+                    b.HasIndex("TestDateTime");
+
+                    b.ToTable("LaboratoryInProcessReports", (string)null);
+                });
+
+            modelBuilder.Entity("FaceStone.Web.Models.LaboratoryProductionSequence", b =>
+                {
+                    b.Property<string>("SequenceName")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("NextValue")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(1);
+
+                    b.HasKey("SequenceName");
+
+                    b.ToTable("LaboratoryProductionSequences", (string)null);
+                });
+
+            modelBuilder.Entity("FaceStone.Web.Models.LaboratoryRawMaterialReport", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("AcceptedQuantity")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<DateTime>("AnalysisDateTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("AnalysisResultsJson")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ApprovalStatus")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasDefaultValue("PENDING");
+
+                    b.Property<string>("AttachmentFileName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<long>("AttachmentFileSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("AttachmentFileType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("AttachmentPath")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("BatchNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("ComplyStatus")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasDefaultValue("COMPLY");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("InspectionDecision")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("IsStorageReceived")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LabManagerDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("LabManagerName")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("LabManagerSignature")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("LaboratorySection")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PONumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("ProductionReferenceNumber")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("PurchaseOrderId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RawMaterialDescription")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.Property<int?>("RawMaterialId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("ReceivedQuantity")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<decimal>("RejectedQuantity")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<string>("RejectionReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime?>("ReportIssueDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ResponsibleEmployee")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<Guid?>("ResponsibleUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ReviewedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ReviewedBy")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<Guid?>("ReviewedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("SampleDescription")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("SampleName")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)")
+                        .HasDefaultValue("سيليكا باودر (Micro Silica Powder)");
+
+                    b.Property<int>("SampleNumber")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("SampleReceivedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("SourceTransportationId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("StorageOperationId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("StorageReceivedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("SupplierName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int?>("TransportationTransactionNumber")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AnalysisDateTime");
+
+                    b.HasIndex("ApprovalStatus");
+
+                    b.HasIndex("BatchNumber");
+
+                    b.HasIndex("ComplyStatus");
+
+                    b.HasIndex("InspectionDecision");
+
+                    b.HasIndex("LaboratorySection");
+
+                    b.HasIndex("ProductionReferenceNumber");
+
+                    b.HasIndex("PurchaseOrderId");
+
+                    b.HasIndex("RawMaterialId");
+
+                    b.HasIndex("SampleNumber");
+
+                    b.HasIndex("SourceTransportationId");
+
+                    b.HasIndex("ResponsibleUserId", "SampleNumber")
+                        .IsUnique()
+                        .HasFilter("[ResponsibleUserId] IS NOT NULL AND [SampleNumber] > 0");
+
+                    b.ToTable("LaboratoryRawMaterialReports", (string)null);
+                });
+
+            modelBuilder.Entity("FaceStone.Web.Models.LaboratoryUserSampleSequence", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("NextSampleNumber")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(1);
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.HasKey("UserId");
+
+                    b.ToTable("LaboratoryUserSampleSequences", (string)null);
                 });
 
             modelBuilder.Entity("FaceStone.Web.Models.LiveLocationSession", b =>
@@ -349,6 +1539,679 @@ namespace FaceStone.Web.Migrations
                     b.ToTable("Management", (string)null);
                 });
 
+            modelBuilder.Entity("FaceStone.Web.Models.ProductionBatch", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("BatchNumber")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("CurrentStage")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ProductionOrderId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ProductionReferenceNumber")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ProductionWorkInProcessId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("QualityHold")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("QualityHoldAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("QualityHoldReason")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("QualityHoldReleasedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("QualityHoldReleasedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("QualityHoldReportId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ResponsibleEmployee")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<Guid?>("ResponsibleUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("StartedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasDefaultValue("IN_PROGRESS");
+
+                    b.Property<decimal>("TotalInputQuantity")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<decimal>("TotalOutputQuantity")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<decimal>("TotalWasteQuantity")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BatchNumber")
+                        .IsUnique();
+
+                    b.HasIndex("ProductionOrderId");
+
+                    b.HasIndex("ProductionReferenceNumber");
+
+                    b.HasIndex("ProductionWorkInProcessId");
+
+                    b.HasIndex("QualityHold");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("ProductionBatches", (string)null);
+                });
+
+            modelBuilder.Entity("FaceStone.Web.Models.ProductionOrder", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("ActualStartDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("AttachmentFileName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<long>("AttachmentFileSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("AttachmentFileType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("AttachmentPath")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("CompletedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("CurrentStage")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasDefaultValue("الخلط الأولي");
+
+                    b.Property<bool>("IsStorageApproved")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OrderNumber")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime?>("PlannedStartDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ProductName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int?>("ProductionReferenceNumber")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("RequestedQuantity")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<string>("ResponsibleEmployee")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<Guid?>("ResponsibleUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasDefaultValue("DRAFT");
+
+                    b.Property<DateTime?>("StorageApprovedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("StorageApprovedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("StorageLocationId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("StorageLocationName")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<int?>("StorageOperationId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Unit")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasDefaultValue("طن");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("OrderNumber")
+                        .IsUnique();
+
+                    b.HasIndex("ProductionReferenceNumber");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("StorageLocationId");
+
+                    b.HasIndex("StorageOperationId");
+
+                    b.ToTable("ProductionOrders", (string)null);
+                });
+
+            modelBuilder.Entity("FaceStone.Web.Models.ProductionOrderItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("ConsumedQuantity")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<decimal>("IssuedQuantity")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<int?>("LaboratoryRawMaterialReportId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("MaterialName")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ProductionOrderId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RawMaterialId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("RequestedQuantity")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<int?>("StorageLocationId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Unit")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasDefaultValue("طن");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductionOrderId");
+
+                    b.HasIndex("RawMaterialId");
+
+                    b.ToTable("ProductionOrderItems", (string)null);
+                });
+
+            modelBuilder.Entity("FaceStone.Web.Models.ProductionOutput", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AttachmentFileName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<long>("AttachmentFileSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("AttachmentFileType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("AttachmentPath")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Classification")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<int?>("DestinationStorageLocationId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("DestinationStorageLocationName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsReworkCreated")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsStorageReceived")
+                        .HasColumnType("bit");
+
+                    b.Property<int?>("LaboratoryCertificateId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("LaboratoryConformityStatus")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasDefaultValue("PENDING_INSPECTION");
+
+                    b.Property<string>("NextStage")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("NonConformityAction")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("OutputDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("OutputNumber")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("ProductName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("ProductionBatchId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ProductionOrderId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ProductionReferenceNumber")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ProductionStage")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<string>("ResponsibleEmployee")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<Guid?>("ResponsibleUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int?>("ReworkOrderId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("StorageOperationId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("StorageReceivedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("StorageReceivedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("StorageReceivedQuantity")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<string>("Unit")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasDefaultValue("طن");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Classification");
+
+                    b.HasIndex("DestinationStorageLocationId");
+
+                    b.HasIndex("IsStorageReceived");
+
+                    b.HasIndex("LaboratoryCertificateId");
+
+                    b.HasIndex("LaboratoryConformityStatus");
+
+                    b.HasIndex("OutputNumber")
+                        .IsUnique();
+
+                    b.HasIndex("ProductionBatchId");
+
+                    b.HasIndex("ProductionOrderId");
+
+                    b.HasIndex("ProductionReferenceNumber");
+
+                    b.HasIndex("StorageOperationId");
+
+                    b.ToTable("ProductionOutputs", (string)null);
+                });
+
+            modelBuilder.Entity("FaceStone.Web.Models.ProductionRework", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("Instructions")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("NewProductionBatchId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("NewProductionOrderId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("OriginalProductionBatchId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("OriginalProductionOrderId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("OriginalProductionOutputId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ProductionReferenceNumber")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("ResponsibleEmployee")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<Guid?>("ResponsibleUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ReworkNumber")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasDefaultValue("PENDING");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OriginalProductionBatchId");
+
+                    b.HasIndex("OriginalProductionOrderId");
+
+                    b.HasIndex("OriginalProductionOutputId");
+
+                    b.HasIndex("ProductionReferenceNumber");
+
+                    b.HasIndex("ReworkNumber")
+                        .IsUnique();
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("ProductionReworks", (string)null);
+                });
+
+            modelBuilder.Entity("FaceStone.Web.Models.ProductionSequence", b =>
+                {
+                    b.Property<string>("SequenceType")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("NextValue")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(1);
+
+                    b.HasKey("SequenceType");
+
+                    b.ToTable("ProductionSequences", (string)null);
+                });
+
+            modelBuilder.Entity("FaceStone.Web.Models.ProductionWorkInProcess", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ClassificationHistory")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("DestinationStorageLocationId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("DestinationStorageLocationName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("FinalProductName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal?>("FinalProductQuantity")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<bool>("IsRecoveredStockPosted")
+                        .HasColumnType("bit");
+
+                    b.Property<decimal>("MaterialQuantityIssued")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OutputResponsibleEmployee")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<int?>("ProductionReferenceNumber")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RawMaterialId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("RecoverableMaterialId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RecoverableProductName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<decimal?>("RecoverableQuantity")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<string>("RecoverableUnit")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasDefaultValue("طن");
+
+                    b.Property<DateTime?>("RecoveredStockPostedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("SourceStorageLocation")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasDefaultValue("قيد التشغيل");
+
+                    b.Property<int>("StorageOperationId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("StorageOperationItemId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TrackingNumber")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("TransferDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("WasteClassification")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasDefaultValue("ORDINARY_WASTE");
+
+                    b.Property<decimal?>("WastePercentage")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("WasteQuantity")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DestinationStorageLocationId");
+
+                    b.HasIndex("ProductionReferenceNumber");
+
+                    b.HasIndex("RawMaterialId");
+
+                    b.HasIndex("RecoverableMaterialId");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("StorageOperationId");
+
+                    b.HasIndex("StorageOperationItemId");
+
+                    b.HasIndex("TrackingNumber")
+                        .IsUnique();
+
+                    b.ToTable("ProductionWorkInProcess", (string)null);
+                });
+
             modelBuilder.Entity("FaceStone.Web.Models.PurchaseOrder", b =>
                 {
                     b.Property<int>("Id")
@@ -384,6 +2247,20 @@ namespace FaceStone.Web.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("PaymentStatus")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasDefaultValue("غير مدفوع");
+
+                    b.Property<DateTime?>("PaymentStatusUpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PaymentStatusUpdatedBy")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
 
                     b.Property<decimal>("PricePerTon")
                         .HasPrecision(18, 2)
@@ -424,9 +2301,627 @@ namespace FaceStone.Web.Migrations
                     b.HasIndex("PONumber")
                         .IsUnique();
 
+                    b.HasIndex("PaymentStatus");
+
                     b.HasIndex("Supplier");
 
                     b.ToTable("PurchaseOrders", (string)null);
+                });
+
+            modelBuilder.Entity("FaceStone.Web.Models.PurchaseOrderPaymentAudit", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("ChangedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<string>("ChangedBy")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("NewStatus")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("PONumber")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("PreviousStatus")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int?>("PurchaseOrderId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChangedAt");
+
+                    b.HasIndex("PONumber");
+
+                    b.HasIndex("PurchaseOrderId");
+
+                    b.ToTable("PurchaseOrderPaymentAudits", (string)null);
+                });
+
+            modelBuilder.Entity("FaceStone.Web.Models.RawMaterial", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("InitialQuantity")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)")
+                        .HasDefaultValue(0m);
+
+                    b.Property<string>("MaterialType")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasDefaultValue("MECHANICAL");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("RawMaterials", (string)null);
+                });
+
+            modelBuilder.Entity("FaceStone.Web.Models.StorageClient", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("StorageClients", (string)null);
+                });
+
+            modelBuilder.Entity("FaceStone.Web.Models.StorageClientDestination", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<string>("DestinationName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("StorageClientId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StorageClientId");
+
+                    b.ToTable("StorageClientDestinations", (string)null);
+                });
+
+            modelBuilder.Entity("FaceStone.Web.Models.StorageInventoryLedger", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("MovementDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("MovementType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<int>("RawMaterialId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("RunningBalance")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<int>("StorageLocationId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("StorageOperationId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("StorageOperationItemId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MovementDate");
+
+                    b.HasIndex("RawMaterialId");
+
+                    b.HasIndex("StorageOperationId");
+
+                    b.HasIndex("StorageOperationItemId");
+
+                    b.HasIndex("StorageLocationId", "RawMaterialId");
+
+                    b.ToTable("StorageInventoryLedger", (string)null);
+                });
+
+            modelBuilder.Entity("FaceStone.Web.Models.StorageItemTransaction", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Destination")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("DestinationType")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<int>("RawMaterialId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("RunningQuantityBalance")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)")
+                        .HasDefaultValue(0m);
+
+                    b.Property<decimal>("RunningValueBalance")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasDefaultValue(0m);
+
+                    b.Property<int?>("SourceTransportationId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("SourceTransportationNumber")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("TotalValue")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasDefaultValue(0m);
+
+                    b.Property<DateTime>("TransactionDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("TransactionType")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasDefaultValue("Incoming");
+
+                    b.Property<decimal>("UnitPrice")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasDefaultValue(0m);
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RawMaterialId");
+
+                    b.HasIndex("SourceTransportationId")
+                        .IsUnique()
+                        .HasFilter("[SourceTransportationId] IS NOT NULL");
+
+                    b.HasIndex("TransactionDate");
+
+                    b.ToTable("StorageItemTransactions", (string)null);
+                });
+
+            modelBuilder.Entity("FaceStone.Web.Models.StorageLocation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("StorageLocations", (string)null);
+                });
+
+            modelBuilder.Entity("FaceStone.Web.Models.StorageOperation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ApprovalStatus")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasDefaultValue("PENDING");
+
+                    b.Property<int?>("ClientId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ClientName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ClientPhone")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("DestinationDepartment")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("DestinationId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("DestinationName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DiscrepancyExplanation")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DocumentAttachmentPath")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DocumentFileName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<long>("DocumentFileSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("DocumentFileType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal?>("ExternalReportedWeight")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<decimal?>("InternalEmptyWeight")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<decimal?>("InternalLoadedWeight")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<decimal?>("InternalNetWeight")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<DateTime?>("InternalWeighingTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("InventoryPostedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDiscrepancyFlagged")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsInventoryPosted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("MaterialType")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OperationType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int?>("ProductionReferenceNumber")
+                        .HasColumnType("int");
+
+                    b.Property<string>("QocAttachmentPath")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("QocFileName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<long>("QocFileSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("QocFileType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RejectionReason")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ResponsibleEmployee")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<Guid?>("ResponsibleUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ReviewedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ReviewedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("ReviewedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Source")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SourcePhone")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("StorageLocationId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("StorageLocationName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime>("TransactionDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("TransactionNumber")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("TransportationId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("WeighbridgeAttachmentPath")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("WeighbridgeFileName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<long>("WeighbridgeFileSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("WeighbridgeFileType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("WeighbridgeReference")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("WeighingResponsibleEmployee")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<decimal?>("WeightDifference")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<decimal?>("WeightDifferencePercentage")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApprovalStatus");
+
+                    b.HasIndex("ClientId");
+
+                    b.HasIndex("DestinationId");
+
+                    b.HasIndex("ProductionReferenceNumber");
+
+                    b.HasIndex("StorageLocationId");
+
+                    b.HasIndex("TransactionDate");
+
+                    b.HasIndex("TransportationId");
+
+                    b.HasIndex("OperationType", "TransactionNumber")
+                        .IsUnique();
+
+                    b.ToTable("StorageOperations", (string)null);
+                });
+
+            modelBuilder.Entity("FaceStone.Web.Models.StorageOperationItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("MaterialName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<int>("RawMaterialId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("StorageOperationId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TrackingNumber")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RawMaterialId");
+
+                    b.HasIndex("StorageOperationId");
+
+                    b.ToTable("StorageOperationItems", (string)null);
+                });
+
+            modelBuilder.Entity("FaceStone.Web.Models.StorageSequence", b =>
+                {
+                    b.Property<string>("SequenceType")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("NextValue")
+                        .HasColumnType("int");
+
+                    b.HasKey("SequenceType");
+
+                    b.ToTable("StorageSequences", (string)null);
                 });
 
             modelBuilder.Entity("FaceStone.Web.Models.StorageTransaction", b =>
@@ -444,6 +2939,13 @@ namespace FaceStone.Web.Migrations
                         .HasColumnType("nvarchar(50)")
                         .HasDefaultValue("Import");
 
+                    b.Property<string>("ApprovalStatus")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasDefaultValue("PENDING");
+
                     b.Property<decimal>("ClosingBalance")
                         .ValueGeneratedOnAdd()
                         .HasPrecision(18, 3)
@@ -458,6 +2960,9 @@ namespace FaceStone.Web.Migrations
                     b.Property<string>("CreatedBy")
                         .HasMaxLength(150)
                         .HasColumnType("nvarchar(150)");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("DestinationStorageLocation")
                         .HasMaxLength(200)
@@ -573,6 +3078,20 @@ namespace FaceStone.Web.Migrations
                     b.Property<int>("ReferenceNumber")
                         .HasColumnType("int");
 
+                    b.Property<string>("RejectionReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime?>("ReviewedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ReviewedBy")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<Guid?>("ReviewedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("ServiceType")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
@@ -663,6 +3182,13 @@ namespace FaceStone.Web.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ApprovalStatus")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasDefaultValue("PENDING");
 
                     b.Property<DateTime?>("ArrivalTime")
                         .HasColumnType("datetime2");
@@ -835,6 +3361,9 @@ namespace FaceStone.Web.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<int?>("ProductionReferenceNumber")
+                        .HasColumnType("int");
+
                     b.Property<int?>("PurchaseOrderId")
                         .HasColumnType("int");
 
@@ -853,6 +3382,20 @@ namespace FaceStone.Web.Migrations
                     b.Property<string>("RecipientTitle")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("RejectionReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime?>("ReviewedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ReviewedBy")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<Guid?>("ReviewedByUserId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<int?>("ShippingDurationMinutes")
                         .HasColumnType("int");
@@ -924,6 +3467,8 @@ namespace FaceStone.Web.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ProductionReferenceNumber");
+
                     b.HasIndex("PurchaseOrderId");
 
                     b.HasIndex("PONumber", "TransactionNumber")
@@ -993,6 +3538,34 @@ namespace FaceStone.Web.Migrations
                     b.ToTable("Users", (string)null);
                 });
 
+            modelBuilder.Entity("FaceStone.Web.Models.AttendanceAttachment", b =>
+                {
+                    b.HasOne("FaceStone.Web.Models.AttendanceSubmission", "AttendanceSubmission")
+                        .WithMany("Attachments")
+                        .HasForeignKey("AttendanceSubmissionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AttendanceSubmission");
+                });
+
+            modelBuilder.Entity("FaceStone.Web.Models.AttendanceRecord", b =>
+                {
+                    b.HasOne("FaceStone.Web.Models.AttendanceSubmission", "AttendanceSubmission")
+                        .WithMany("Records")
+                        .HasForeignKey("AttendanceSubmissionId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("FaceStone.Web.Models.UserAccount", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("AttendanceSubmission");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("FaceStone.Web.Models.ChatAttachment", b =>
                 {
                     b.HasOne("FaceStone.Web.Models.ChatMessage", "Message")
@@ -1004,6 +3577,39 @@ namespace FaceStone.Web.Migrations
                     b.Navigation("Message");
                 });
 
+            modelBuilder.Entity("FaceStone.Web.Models.DailyProductionDetail", b =>
+                {
+                    b.HasOne("FaceStone.Web.Models.DailyProductionSubmission", "DailyProductionSubmission")
+                        .WithMany("Details")
+                        .HasForeignKey("DailyProductionSubmissionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("DailyProductionSubmission");
+                });
+
+            modelBuilder.Entity("FaceStone.Web.Models.EmployeeFinancialRecord", b =>
+                {
+                    b.HasOne("FaceStone.Web.Models.UserAccount", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("FaceStone.Web.Models.EmployeeLending", b =>
+                {
+                    b.HasOne("FaceStone.Web.Models.UserAccount", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("FaceStone.Web.Models.FinancePayment", b =>
                 {
                     b.HasOne("FaceStone.Web.Models.PurchaseOrder", "PurchaseOrder")
@@ -1012,6 +3618,322 @@ namespace FaceStone.Web.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("PurchaseOrder");
+                });
+
+            modelBuilder.Entity("FaceStone.Web.Models.LaboratoryFinalConformityCertificate", b =>
+                {
+                    b.HasOne("FaceStone.Web.Models.ProductionWorkInProcess", "ProductionWorkInProcess")
+                        .WithMany()
+                        .HasForeignKey("ProductionWorkInProcessId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("FaceStone.Web.Models.LaboratoryRawMaterialReport", "RawMaterialReport")
+                        .WithMany("FinalCertificates")
+                        .HasForeignKey("RawMaterialReportId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("ProductionWorkInProcess");
+
+                    b.Navigation("RawMaterialReport");
+                });
+
+            modelBuilder.Entity("FaceStone.Web.Models.LaboratoryInProcessReport", b =>
+                {
+                    b.HasOne("FaceStone.Web.Models.ProductionWorkInProcess", "ProductionWorkInProcess")
+                        .WithMany()
+                        .HasForeignKey("ProductionWorkInProcessId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("FaceStone.Web.Models.LaboratoryRawMaterialReport", "RawMaterialReport")
+                        .WithMany("InProcessReports")
+                        .HasForeignKey("RawMaterialReportId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("ProductionWorkInProcess");
+
+                    b.Navigation("RawMaterialReport");
+                });
+
+            modelBuilder.Entity("FaceStone.Web.Models.LaboratoryRawMaterialReport", b =>
+                {
+                    b.HasOne("FaceStone.Web.Models.PurchaseOrder", "PurchaseOrder")
+                        .WithMany()
+                        .HasForeignKey("PurchaseOrderId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("FaceStone.Web.Models.RawMaterial", "RawMaterial")
+                        .WithMany()
+                        .HasForeignKey("RawMaterialId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("FaceStone.Web.Models.Transportation", "SourceTransportation")
+                        .WithMany()
+                        .HasForeignKey("SourceTransportationId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("PurchaseOrder");
+
+                    b.Navigation("RawMaterial");
+
+                    b.Navigation("SourceTransportation");
+                });
+
+            modelBuilder.Entity("FaceStone.Web.Models.ProductionBatch", b =>
+                {
+                    b.HasOne("FaceStone.Web.Models.ProductionOrder", "ProductionOrder")
+                        .WithMany("Batches")
+                        .HasForeignKey("ProductionOrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("FaceStone.Web.Models.ProductionWorkInProcess", "ProductionWorkInProcess")
+                        .WithMany()
+                        .HasForeignKey("ProductionWorkInProcessId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("ProductionOrder");
+
+                    b.Navigation("ProductionWorkInProcess");
+                });
+
+            modelBuilder.Entity("FaceStone.Web.Models.ProductionOrder", b =>
+                {
+                    b.HasOne("FaceStone.Web.Models.StorageLocation", "StorageLocation")
+                        .WithMany()
+                        .HasForeignKey("StorageLocationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("FaceStone.Web.Models.StorageOperation", "StorageOperation")
+                        .WithMany()
+                        .HasForeignKey("StorageOperationId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("StorageLocation");
+
+                    b.Navigation("StorageOperation");
+                });
+
+            modelBuilder.Entity("FaceStone.Web.Models.ProductionOrderItem", b =>
+                {
+                    b.HasOne("FaceStone.Web.Models.ProductionOrder", "ProductionOrder")
+                        .WithMany("Items")
+                        .HasForeignKey("ProductionOrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("FaceStone.Web.Models.RawMaterial", "RawMaterial")
+                        .WithMany()
+                        .HasForeignKey("RawMaterialId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ProductionOrder");
+
+                    b.Navigation("RawMaterial");
+                });
+
+            modelBuilder.Entity("FaceStone.Web.Models.ProductionOutput", b =>
+                {
+                    b.HasOne("FaceStone.Web.Models.StorageLocation", "DestinationStorageLocation")
+                        .WithMany()
+                        .HasForeignKey("DestinationStorageLocationId");
+
+                    b.HasOne("FaceStone.Web.Models.LaboratoryFinalConformityCertificate", "LaboratoryCertificate")
+                        .WithMany()
+                        .HasForeignKey("LaboratoryCertificateId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("FaceStone.Web.Models.ProductionBatch", "ProductionBatch")
+                        .WithMany("Outputs")
+                        .HasForeignKey("ProductionBatchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("FaceStone.Web.Models.ProductionOrder", "ProductionOrder")
+                        .WithMany("Outputs")
+                        .HasForeignKey("ProductionOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("FaceStone.Web.Models.StorageOperation", "StorageOperation")
+                        .WithMany()
+                        .HasForeignKey("StorageOperationId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("DestinationStorageLocation");
+
+                    b.Navigation("LaboratoryCertificate");
+
+                    b.Navigation("ProductionBatch");
+
+                    b.Navigation("ProductionOrder");
+
+                    b.Navigation("StorageOperation");
+                });
+
+            modelBuilder.Entity("FaceStone.Web.Models.ProductionWorkInProcess", b =>
+                {
+                    b.HasOne("FaceStone.Web.Models.StorageLocation", "DestinationStorageLocation")
+                        .WithMany()
+                        .HasForeignKey("DestinationStorageLocationId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("FaceStone.Web.Models.RawMaterial", "RawMaterial")
+                        .WithMany()
+                        .HasForeignKey("RawMaterialId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("FaceStone.Web.Models.RawMaterial", "RecoverableMaterial")
+                        .WithMany()
+                        .HasForeignKey("RecoverableMaterialId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("FaceStone.Web.Models.StorageOperation", "StorageOperation")
+                        .WithMany("ProductionBatches")
+                        .HasForeignKey("StorageOperationId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("FaceStone.Web.Models.StorageOperationItem", "StorageOperationItem")
+                        .WithMany()
+                        .HasForeignKey("StorageOperationItemId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("DestinationStorageLocation");
+
+                    b.Navigation("RawMaterial");
+
+                    b.Navigation("RecoverableMaterial");
+
+                    b.Navigation("StorageOperation");
+
+                    b.Navigation("StorageOperationItem");
+                });
+
+            modelBuilder.Entity("FaceStone.Web.Models.PurchaseOrderPaymentAudit", b =>
+                {
+                    b.HasOne("FaceStone.Web.Models.PurchaseOrder", "PurchaseOrder")
+                        .WithMany("PaymentAudits")
+                        .HasForeignKey("PurchaseOrderId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("PurchaseOrder");
+                });
+
+            modelBuilder.Entity("FaceStone.Web.Models.StorageClientDestination", b =>
+                {
+                    b.HasOne("FaceStone.Web.Models.StorageClient", "StorageClient")
+                        .WithMany("Destinations")
+                        .HasForeignKey("StorageClientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("StorageClient");
+                });
+
+            modelBuilder.Entity("FaceStone.Web.Models.StorageInventoryLedger", b =>
+                {
+                    b.HasOne("FaceStone.Web.Models.RawMaterial", "RawMaterial")
+                        .WithMany()
+                        .HasForeignKey("RawMaterialId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("FaceStone.Web.Models.StorageLocation", "StorageLocation")
+                        .WithMany()
+                        .HasForeignKey("StorageLocationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("FaceStone.Web.Models.StorageOperation", "StorageOperation")
+                        .WithMany("LedgerMovements")
+                        .HasForeignKey("StorageOperationId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("FaceStone.Web.Models.StorageOperationItem", "StorageOperationItem")
+                        .WithMany()
+                        .HasForeignKey("StorageOperationItemId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("RawMaterial");
+
+                    b.Navigation("StorageLocation");
+
+                    b.Navigation("StorageOperation");
+
+                    b.Navigation("StorageOperationItem");
+                });
+
+            modelBuilder.Entity("FaceStone.Web.Models.StorageItemTransaction", b =>
+                {
+                    b.HasOne("FaceStone.Web.Models.RawMaterial", "RawMaterial")
+                        .WithMany("Transactions")
+                        .HasForeignKey("RawMaterialId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("FaceStone.Web.Models.Transportation", "SourceTransportation")
+                        .WithMany()
+                        .HasForeignKey("SourceTransportationId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("RawMaterial");
+
+                    b.Navigation("SourceTransportation");
+                });
+
+            modelBuilder.Entity("FaceStone.Web.Models.StorageOperation", b =>
+                {
+                    b.HasOne("FaceStone.Web.Models.StorageClient", "Client")
+                        .WithMany()
+                        .HasForeignKey("ClientId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("FaceStone.Web.Models.StorageClientDestination", "Destination")
+                        .WithMany()
+                        .HasForeignKey("DestinationId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("FaceStone.Web.Models.StorageLocation", "StorageLocation")
+                        .WithMany()
+                        .HasForeignKey("StorageLocationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("FaceStone.Web.Models.Transportation", "Transportation")
+                        .WithMany()
+                        .HasForeignKey("TransportationId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Client");
+
+                    b.Navigation("Destination");
+
+                    b.Navigation("StorageLocation");
+
+                    b.Navigation("Transportation");
+                });
+
+            modelBuilder.Entity("FaceStone.Web.Models.StorageOperationItem", b =>
+                {
+                    b.HasOne("FaceStone.Web.Models.RawMaterial", "RawMaterial")
+                        .WithMany()
+                        .HasForeignKey("RawMaterialId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("FaceStone.Web.Models.StorageOperation", "StorageOperation")
+                        .WithMany("Items")
+                        .HasForeignKey("StorageOperationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("RawMaterial");
+
+                    b.Navigation("StorageOperation");
                 });
 
             modelBuilder.Entity("FaceStone.Web.Models.StorageTransaction", b =>
@@ -1051,18 +3973,72 @@ namespace FaceStone.Web.Migrations
                     b.Navigation("PurchaseOrder");
                 });
 
+            modelBuilder.Entity("FaceStone.Web.Models.AttendanceSubmission", b =>
+                {
+                    b.Navigation("Attachments");
+
+                    b.Navigation("Records");
+                });
+
             modelBuilder.Entity("FaceStone.Web.Models.ChatMessage", b =>
                 {
                     b.Navigation("Attachments");
                 });
 
+            modelBuilder.Entity("FaceStone.Web.Models.DailyProductionSubmission", b =>
+                {
+                    b.Navigation("Details");
+                });
+
+            modelBuilder.Entity("FaceStone.Web.Models.LaboratoryRawMaterialReport", b =>
+                {
+                    b.Navigation("FinalCertificates");
+
+                    b.Navigation("InProcessReports");
+                });
+
+            modelBuilder.Entity("FaceStone.Web.Models.ProductionBatch", b =>
+                {
+                    b.Navigation("Outputs");
+                });
+
+            modelBuilder.Entity("FaceStone.Web.Models.ProductionOrder", b =>
+                {
+                    b.Navigation("Batches");
+
+                    b.Navigation("Items");
+
+                    b.Navigation("Outputs");
+                });
+
             modelBuilder.Entity("FaceStone.Web.Models.PurchaseOrder", b =>
                 {
+                    b.Navigation("PaymentAudits");
+
                     b.Navigation("Payments");
 
                     b.Navigation("StorageTransactions");
 
                     b.Navigation("TransportationTransactions");
+                });
+
+            modelBuilder.Entity("FaceStone.Web.Models.RawMaterial", b =>
+                {
+                    b.Navigation("Transactions");
+                });
+
+            modelBuilder.Entity("FaceStone.Web.Models.StorageClient", b =>
+                {
+                    b.Navigation("Destinations");
+                });
+
+            modelBuilder.Entity("FaceStone.Web.Models.StorageOperation", b =>
+                {
+                    b.Navigation("Items");
+
+                    b.Navigation("LedgerMovements");
+
+                    b.Navigation("ProductionBatches");
                 });
 
             modelBuilder.Entity("FaceStone.Web.Models.StorageTransaction", b =>

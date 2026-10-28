@@ -19,5 +19,10 @@ public class DepartmentListResponseDto
     public bool HasStorageAccess { get; set; }
     public bool HasManagementAccess { get; set; }
     public bool HasControlMonitoringAccess { get; set; }
+    public bool HasAttendanceAccess { get; set; }
+    public bool HasLaboratoryAccess { get; set; }
+    public bool HasPhysicalLabAccess { get; set; }
+    public bool HasChemicalLabAccess { get; set; }
+    public string LaboratorySectionRedirect { get; set; } = string.Empty;
     public List<DepartmentSummaryDto> Departments { get; set; } = new();
 }

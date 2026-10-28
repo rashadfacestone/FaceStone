@@ -158,6 +158,30 @@ class RealTimeChatService {
         console.log('[ControlMonitoring/RealTime] Form approval status changed:', data);
         window.dispatchEvent(new CustomEvent('facestone:realtime:control-monitoring', { detail: data }));
         window.dispatchEvent(new CustomEvent('facestone:data-changed', { detail: data }));
+        if (data?.status === 'REJECTED') {
+          window.dispatchEvent(new CustomEvent('facestone:realtime:form-rejected', { detail: data }));
+        } else if (data?.status === 'APPROVED') {
+          window.dispatchEvent(new CustomEvent('facestone:realtime:form-approved', { detail: data }));
+        }
+      });
+
+      this.hubConnection.on('OnFormRejected', (data) => {
+        console.log('[ControlMonitoring/RealTime] Form rejected:', data);
+        window.dispatchEvent(new CustomEvent('facestone:realtime:form-rejected', { detail: data }));
+        window.dispatchEvent(new CustomEvent('facestone:realtime:control-monitoring', { detail: data }));
+        window.dispatchEvent(new CustomEvent('facestone:data-changed', { detail: data }));
+      });
+
+      this.hubConnection.on('OnFormRejectedForEmployee', (data) => {
+        console.log('[ControlMonitoring/RealTime] Form rejected for employee:', data);
+        window.dispatchEvent(new CustomEvent('facestone:realtime:form-rejected', { detail: data }));
+      });
+
+      this.hubConnection.on('OnFormApproved', (data) => {
+        console.log('[ControlMonitoring/RealTime] Form approved:', data);
+        window.dispatchEvent(new CustomEvent('facestone:realtime:form-approved', { detail: data }));
+        window.dispatchEvent(new CustomEvent('facestone:realtime:control-monitoring', { detail: data }));
+        window.dispatchEvent(new CustomEvent('facestone:data-changed', { detail: data }));
       });
 
       // Lifecycle hooks

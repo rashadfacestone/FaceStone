@@ -5,33 +5,7 @@
    Extends and unifies with FaceStone Finance Design System
    ========================================================================== */
 
-/* Department Card Accent */
-.control-icon {
-  background: linear-gradient(135deg, rgba(2, 132, 199, 0.15), rgba(14, 165, 233, 0.25)) !important;
-  color: #0284C7 !important;
-  border: 1px solid rgba(2, 132, 199, 0.3) !important;
-}
-
-.dept-card-control {
-  border-top: 3px solid #0284C7 !important;
-}
-
-.dept-card-control:hover {
-  border-color: #0284C7 !important;
-  box-shadow: 0 12px 28px rgba(2, 132, 199, 0.16) !important;
-}
-
-.btn-enter-control {
-  background: #0284C7 !important;
-  color: #FFFFFF !important;
-  border: 1px solid #0284C7 !important;
-}
-
-.btn-enter-control:hover {
-  background: #0369A1 !important;
-  border-color: #0369A1 !important;
-  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.3) !important;
-}
+/* Department Card uses unified FaceStone design system in chat-app.css */
 
 /* Control & Monitoring Page Root */
 #control-monitoring-page-root {

@@ -361,3 +361,12 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+
+# FaceStone dynamic runtime uploads & sensitive documents
+uploads/
+wwwroot/uploads/
+
+# Local scratch test scripts & browser automation artifacts
+scratch/
+!scratch/check_pos.ps1

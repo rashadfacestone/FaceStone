@@ -150,4 +150,168 @@ public static class AppRoles
         }
         return false;
     }
+
+    public const string AttendanceEmployee = "ATTENDANCE_EMPLOYEE";
+    public const string AttendanceEmployeeDisplay = "Attendance Employee";
+
+    public static readonly string[] AttendanceAllowedRoles =
+    {
+        CEO,
+        IT,
+        AttendanceEmployee,
+        AttendanceEmployeeDisplay
+    };
+
+    public static bool HasAttendanceAccess(string? role)
+    {
+        if (string.IsNullOrWhiteSpace(role)) return false;
+        var r = role.Trim();
+        foreach (var allowed in AttendanceAllowedRoles)
+        {
+            if (r.Equals(allowed, StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+        return false;
+    }
+
+    public static bool CanSubmitAttendance(string? role)
+    {
+        return HasAttendanceAccess(role);
+    }
+
+    // =========================================================================
+    // LABORATORY DEPARTMENT ROLES (المعمل الفيزيائي والمعمل الكيميائي)
+    // =========================================================================
+    public const string PhysicalLabEmployee = "PHYSICAL_LAB_EMPLOYEE";
+    public const string PhysicalLabEmployeeDisplay = "Physical Laboratory Employee";
+    public const string ChemicalLabEmployee = "CHEMICAL_LAB_EMPLOYEE";
+    public const string ChemicalLabEmployeeDisplay = "Chemical Laboratory Employee";
+
+    public static readonly string[] PhysicalLabAllowedRoles =
+    {
+        CEO,
+        IT,
+        PhysicalLabEmployee,
+        PhysicalLabEmployeeDisplay
+    };
+
+    public static readonly string[] ChemicalLabAllowedRoles =
+    {
+        CEO,
+        IT,
+        ChemicalLabEmployee,
+        ChemicalLabEmployeeDisplay
+    };
+
+    public static readonly string[] LaboratoryAllowedRoles =
+    {
+        CEO,
+        IT,
+        PhysicalLabEmployee,
+        PhysicalLabEmployeeDisplay,
+        ChemicalLabEmployee,
+        ChemicalLabEmployeeDisplay
+    };
+
+    public static bool HasLaboratoryAccess(string? role)
+    {
+        if (string.IsNullOrWhiteSpace(role)) return false;
+        var r = role.Trim();
+        foreach (var allowed in LaboratoryAllowedRoles)
+        {
+            if (r.Equals(allowed, StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+        return false;
+    }
+
+    public static bool HasPhysicalLabAccess(string? role)
+    {
+        if (string.IsNullOrWhiteSpace(role)) return false;
+        var r = role.Trim();
+        foreach (var allowed in PhysicalLabAllowedRoles)
+        {
+            if (r.Equals(allowed, StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+        return false;
+    }
+
+    public static bool HasChemicalLabAccess(string? role)
+    {
+        if (string.IsNullOrWhiteSpace(role)) return false;
+        var r = role.Trim();
+        foreach (var allowed in ChemicalLabAllowedRoles)
+        {
+            if (r.Equals(allowed, StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+        return false;
+    }
+
+    public static string GetDefaultLaboratorySection(string? role)
+    {
+        if (string.IsNullOrWhiteSpace(role)) return string.Empty;
+        var r = role.Trim();
+        if (r.Equals(PhysicalLabEmployee, StringComparison.OrdinalIgnoreCase) ||
+            r.Equals(PhysicalLabEmployeeDisplay, StringComparison.OrdinalIgnoreCase))
+            return "PHYSICAL";
+        if (r.Equals(ChemicalLabEmployee, StringComparison.OrdinalIgnoreCase) ||
+            r.Equals(ChemicalLabEmployeeDisplay, StringComparison.OrdinalIgnoreCase))
+            return "CHEMICAL";
+        if (r.Equals(CEO, StringComparison.OrdinalIgnoreCase) ||
+            r.Equals(IT, StringComparison.OrdinalIgnoreCase))
+            return "ALL";
+        return string.Empty;
+    }
+
+    // =========================================================================
+    // PRODUCTION DEPARTMENT ROLES (قسم الإنتاج)
+    // =========================================================================
+    public const string ProductionManager = "PRODUCTION_MANAGER";
+    public const string ProductionManagerDisplay = "Production Manager";
+    public const string ProductionEmployee = "PRODUCTION_EMPLOYEE";
+    public const string ProductionEmployeeDisplay = "Production Employee";
+
+    public static readonly string[] ProductionAllowedRoles =
+    {
+        CEO,
+        IT,
+        ProductionManager,
+        ProductionManagerDisplay,
+        ProductionEmployee,
+        ProductionEmployeeDisplay
+    };
+
+    public static readonly string[] ProductionManagerAllowedRoles =
+    {
+        CEO,
+        IT,
+        ProductionManager,
+        ProductionManagerDisplay
+    };
+
+    public static bool HasProductionAccess(string? role)
+    {
+        if (string.IsNullOrWhiteSpace(role)) return false;
+        var r = role.Trim();
+        foreach (var allowed in ProductionAllowedRoles)
+        {
+            if (r.Equals(allowed, StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+        return false;
+    }
+
+    public static bool IsProductionManager(string? role)
+    {
+        if (string.IsNullOrWhiteSpace(role)) return false;
+        var r = role.Trim();
+        foreach (var allowed in ProductionManagerAllowedRoles)
+        {
+            if (r.Equals(allowed, StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+        return false;
+    }
 }

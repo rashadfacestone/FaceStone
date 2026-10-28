@@ -142,6 +142,11 @@ public class Transportation
     public string? Notes { get; set; }
  
     /// <summary>
+    /// الرقم المرجعي التتبعي للإنتاج المشترك الصادر من قسم المعمل
+    /// </summary>
+    public int? ProductionReferenceNumber { get; set; }
+ 
+    /// <summary>
     /// اكرامية - Tip/Gratuity field collected for Transportation transactions (decimal)
     /// </summary>
     public decimal Ikramiya { get; set; }

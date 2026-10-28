@@ -38,8 +38,57 @@ public class DepartmentController : ControllerBase
         var hasStorage = AppRoles.HasStorageAccess(role);
         var hasManagement = AppRoles.HasManagementAccess(role);
         var hasControlMonitoring = AppRoles.HasControlMonitoringAccess(role);
+        var hasAttendance = AppRoles.HasAttendanceAccess(role);
+        var hasLaboratory = AppRoles.HasLaboratoryAccess(role);
+        var hasProduction = AppRoles.HasProductionAccess(role);
+        var hasPhysicalLab = AppRoles.HasPhysicalLabAccess(role);
+        var hasChemicalLab = AppRoles.HasChemicalLabAccess(role);
+        var labRedirectSection = AppRoles.GetDefaultLaboratorySection(role);
+        var defaultLabRoute = labRedirectSection == "CHEMICAL" ? "/laboratory/chemical" : "/laboratory/physical";
 
         var departments = new List<DepartmentSummaryDto>();
+
+        if (hasProduction)
+        {
+            departments.Add(new DepartmentSummaryDto
+            {
+                Id = "production",
+                Name = "PRODUCTION",
+                DisplayName = "Production Department (قسم الإنتاج)",
+                Description = "Production requests, batch tracking, in-process testing, output classification, and rework management.",
+                Icon = "production",
+                IsAvailable = true,
+                Route = "/production"
+            });
+        }
+
+        if (hasLaboratory)
+        {
+            departments.Add(new DepartmentSummaryDto
+            {
+                Id = "laboratory",
+                Name = "LABORATORY",
+                DisplayName = "Laboratory Department (قسم المعمل)",
+                Description = "Raw material inspection, production reference origin, in-process testing, and final product conformity certificates.",
+                Icon = "laboratory",
+                IsAvailable = true,
+                Route = defaultLabRoute
+            });
+        }
+
+        if (hasAttendance)
+        {
+            departments.Add(new DepartmentSummaryDto
+            {
+                Id = "attendance",
+                Name = "ATTENDANCE",
+                DisplayName = "Attendance Department",
+                Description = "Employee attendance records, daily attendance sheets, and presence monitoring.",
+                Icon = "attendance",
+                IsAvailable = true,
+                Route = "/attendance"
+            });
+        }
 
         if (hasFinance)
         {
@@ -111,7 +160,7 @@ public class DepartmentController : ControllerBase
             });
         }
 
-        _logger.LogInformation("Departments requested by user with role '{Role}'. Finance: {HasFinance}, Transportation: {HasTrans}, Storage: {HasStorage}, Management: {HasMgmt}, ControlMonitoring: {HasControl}", role, hasFinance, hasTransportation, hasStorage, hasManagement, hasControlMonitoring);
+        _logger.LogInformation("Departments requested by user with role '{Role}'. Finance: {HasFinance}, Trans: {HasTrans}, Storage: {HasStorage}, Mgmt: {HasMgmt}, Control: {HasControl}, Lab: {HasLab}", role, hasFinance, hasTransportation, hasStorage, hasManagement, hasControlMonitoring, hasLaboratory);
 
         return Ok(ApiResponse<DepartmentListResponseDto>.Ok(new DepartmentListResponseDto
         {
@@ -121,6 +170,11 @@ public class DepartmentController : ControllerBase
             HasStorageAccess = hasStorage,
             HasManagementAccess = hasManagement,
             HasControlMonitoringAccess = hasControlMonitoring,
+            HasAttendanceAccess = hasAttendance,
+            HasLaboratoryAccess = hasLaboratory,
+            HasPhysicalLabAccess = hasPhysicalLab,
+            HasChemicalLabAccess = hasChemicalLab,
+            LaboratorySectionRedirect = labRedirectSection,
             Departments = departments
         }));
     }
@@ -251,6 +305,8 @@ public class DepartmentController : ControllerBase
     /// Supports both direct API callers (returns 200 / 403 / 401) and browser navigation.
     /// </summary>
     [HttpGet("/storage")]
+    [HttpGet("/storage/item-card")]
+    [HttpGet("/storage/add-item")]
     [HttpGet("/departments/storage")]
     public IActionResult HandleStorageDirect()
     {
@@ -420,6 +476,205 @@ public class DepartmentController : ControllerBase
         }
 
         return Ok(ApiResponse.Ok("FaceStone Control & Monitoring Department."));
+    }
+
+    /// <summary>
+    /// Direct route protection for /attendance endpoint.
+    /// Supports both direct API callers and browser navigation.
+    /// </summary>
+    [HttpGet("/attendance")]
+    [HttpGet("/attendance/{*subpath}")]
+    [HttpGet("attendance")]
+    public IActionResult HandleAttendanceDirect()
+    {
+        if (Request.Headers.Accept.Any(a => a != null && a.Contains("text/html")))
+        {
+            var indexPath = Path.Combine(_env.WebRootPath, "index.html");
+            if (System.IO.File.Exists(indexPath))
+            {
+                SetNoCacheHeaders();
+                return PhysicalFile(indexPath, "text/html");
+            }
+        }
+
+        if (!User.Identity?.IsAuthenticated ?? true)
+        {
+            return Unauthorized(ApiResponse.Fail("Authentication required to access Attendance."));
+        }
+
+        var role = User.FindFirst(ClaimTypes.Role)?.Value ?? string.Empty;
+        if (!AppRoles.HasAttendanceAccess(role))
+        {
+            _logger.LogWarning("Access Denied to /attendance for user role: {Role}", role);
+            return StatusCode(StatusCodes.Status403Forbidden, 
+                ApiResponse.Fail("Access Denied: Attendance department is restricted to authorized personnel."));
+        }
+
+        return Ok(ApiResponse.Ok("FaceStone Attendance Department."));
+    }
+
+    /// <summary>
+    /// Backend authorization guard for Laboratory department.
+    /// Returns default section redirection ("PHYSICAL", "CHEMICAL", or "ALL").
+    /// </summary>
+    [HttpGet("laboratory")]
+    [HttpGet("/api/departments/laboratory")]
+    [Authorize(Policy = "LaboratoryAccess")]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public IActionResult VerifyLaboratoryAccess()
+    {
+        var role = User.FindFirst(ClaimTypes.Role)?.Value ?? string.Empty;
+        var section = AppRoles.GetDefaultLaboratorySection(role);
+        var defaultRoute = section == "CHEMICAL" ? "/laboratory/chemical" : "/laboratory/physical";
+        return Ok(ApiResponse<object>.Ok(new
+        {
+            role = role,
+            defaultSection = section,
+            laboratorySectionRedirect = defaultRoute,
+            hasLaboratoryAccess = true,
+            hasPhysicalLabAccess = AppRoles.HasPhysicalLabAccess(role),
+            hasChemicalLabAccess = AppRoles.HasChemicalLabAccess(role)
+        }, "Access Granted: Authorized for Laboratory Department."));
+    }
+
+    /// <summary>
+    /// Guard for Physical Laboratory section.
+    /// </summary>
+    [HttpGet("laboratory/physical")]
+    [HttpGet("/api/departments/laboratory/physical")]
+    [Authorize(Policy = "PhysicalLabAccess")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
+    public IActionResult VerifyPhysicalLabAccess()
+    {
+        return Ok(ApiResponse.Ok("Access Granted: Authorized for Physical Laboratory."));
+    }
+
+    /// <summary>
+    /// Guard for Chemical Laboratory section.
+    /// </summary>
+    [HttpGet("laboratory/chemical")]
+    [HttpGet("/api/departments/laboratory/chemical")]
+    [Authorize(Policy = "ChemicalLabAccess")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
+    public IActionResult VerifyChemicalLabAccess()
+    {
+        return Ok(ApiResponse.Ok("Access Granted: Authorized for Chemical Laboratory."));
+    }
+
+    /// <summary>
+    /// Direct route protection for /laboratory, /laboratory/physical, and /laboratory/chemical.
+    /// Supports both direct API callers and SPA browser navigation.
+    /// </summary>
+    [HttpGet("/laboratory")]
+    [HttpGet("/laboratory/{*subpath}")]
+    public IActionResult HandleLaboratoryDirect(string? subpath = null)
+    {
+        if (Request.Headers.Accept.Any(a => a != null && a.Contains("text/html")))
+        {
+            var indexPath = Path.Combine(_env.WebRootPath, "index.html");
+            if (System.IO.File.Exists(indexPath))
+            {
+                SetNoCacheHeaders();
+                return PhysicalFile(indexPath, "text/html");
+            }
+        }
+
+        if (!User.Identity?.IsAuthenticated ?? true)
+        {
+            return Unauthorized(ApiResponse.Fail("Authentication required to access Laboratory."));
+        }
+
+        var role = User.FindFirst(ClaimTypes.Role)?.Value ?? string.Empty;
+        if (!AppRoles.HasLaboratoryAccess(role))
+        {
+            _logger.LogWarning("Access Denied to /laboratory for user role: {Role}", role);
+            return StatusCode(StatusCodes.Status403Forbidden,
+                ApiResponse.Fail("Access Denied: Laboratory department is restricted to authorized laboratory personnel, IT, and CEO."));
+        }
+
+        var normalizedSub = (subpath ?? string.Empty).Trim().ToLowerInvariant();
+        if (normalizedSub.StartsWith("physical") && !AppRoles.HasPhysicalLabAccess(role))
+        {
+            return StatusCode(StatusCodes.Status403Forbidden,
+                ApiResponse.Fail("Access Denied: Physical Laboratory is restricted to Physical Laboratory personnel, IT, and CEO."));
+        }
+
+        if (normalizedSub.StartsWith("chemical") && !AppRoles.HasChemicalLabAccess(role))
+        {
+            return StatusCode(StatusCodes.Status403Forbidden,
+                ApiResponse.Fail("Access Denied: Chemical Laboratory is restricted to Chemical Laboratory personnel, IT, and CEO."));
+        }
+
+        return Ok(ApiResponse.Ok("FaceStone Laboratory Department."));
+    }
+
+    /// <summary>
+    /// Check whether the current user is authorized to access the Production Department.
+    /// Returns 200 OK for CEO, IT, PRODUCTION_MANAGER, and PRODUCTION_EMPLOYEE.
+    /// Returns 403 Forbidden for unauthorized roles.
+    /// </summary>
+    [HttpGet("/api/departments/production")]
+    [HttpGet("/api/department/production")]
+    [HttpGet("production")]
+    [Authorize]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
+    public IActionResult CheckProductionAccess()
+    {
+        var role = User.FindFirst(ClaimTypes.Role)?.Value ?? string.Empty;
+        if (!AppRoles.HasProductionAccess(role))
+        {
+            _logger.LogWarning("Access Denied to Production Department for user with role: {Role}", role);
+            return StatusCode(StatusCodes.Status403Forbidden,
+                ApiResponse.Fail("Access Denied: Production department is restricted to Production Manager, Production Employees, IT, and CEO."));
+        }
+
+        var isManager = AppRoles.IsProductionManager(role);
+        return Ok(ApiResponse<object>.Ok(new
+        {
+            hasProductionAccess = true,
+            isProductionManager = isManager,
+            role = role,
+            department = "Production"
+        }, "Access Granted: Authorized for Production Department."));
+    }
+
+    /// <summary>
+    /// Direct route protection for /production.
+    /// Supports both direct API callers and SPA browser navigation.
+    /// </summary>
+    [HttpGet("/production")]
+    [HttpGet("/production/{*subpath}")]
+    public IActionResult HandleProductionDirect(string? subpath = null)
+    {
+        if (Request.Headers.Accept.Any(a => a != null && a.Contains("text/html")))
+        {
+            var indexPath = Path.Combine(_env.WebRootPath, "index.html");
+            if (System.IO.File.Exists(indexPath))
+            {
+                SetNoCacheHeaders();
+                return PhysicalFile(indexPath, "text/html");
+            }
+        }
+
+        if (!User.Identity?.IsAuthenticated ?? true)
+        {
+            return Unauthorized(ApiResponse.Fail("Authentication required to access Production."));
+        }
+
+        var role = User.FindFirst(ClaimTypes.Role)?.Value ?? string.Empty;
+        if (!AppRoles.HasProductionAccess(role))
+        {
+            _logger.LogWarning("Access Denied to /production for user role: {Role}", role);
+            return StatusCode(StatusCodes.Status403Forbidden,
+                ApiResponse.Fail("Access Denied: Production department is restricted to Production Manager, Production Employees, IT, and CEO."));
+        }
+
+        return Ok(ApiResponse.Ok("FaceStone Production Department."));
     }
 
     private void SetNoCacheHeaders()

@@ -221,6 +221,12 @@ public class AuthService : IAuthService
                 "TRANSPORTATION_MANAGER" or "Transportation Manager" => AppRoles.TransportationManager,
                 "STORAGE_MANAGER" or "Storage Manager" or "StorageManager" => AppRoles.StorageManager,
                 "FACTORY_MANAGER" or "Factory Manager" => AppRoles.FactoryManager,
+                "PRODUCTION_MANAGER" or "Production Manager" => AppRoles.ProductionManager,
+                "PRODUCTION_EMPLOYEE" or "Production Employee" => AppRoles.ProductionEmployee,
+                "PHYSICAL_LAB_EMPLOYEE" or "Physical Laboratory Employee" => AppRoles.PhysicalLabEmployee,
+                "CHEMICAL_LAB_EMPLOYEE" or "Chemical Laboratory Employee" => AppRoles.ChemicalLabEmployee,
+                "CONTROL_MONITORING" or "Control Monitoring" => AppRoles.ControlMonitoring,
+                "ATTENDANCE_EMPLOYEE" or "Attendance Employee" => AppRoles.AttendanceEmployee,
                 "Accountant" => AppRoles.Accountant,
                 "Employee" => AppRoles.Employee,
                 _ => AppRoles.Employee

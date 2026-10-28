@@ -67,6 +67,8 @@ class ChatApp {
     this.ensureManagementElementsInDom();
     this.ensureFinanceElementsInDom();
     this.ensureControlMonitoringElementsInDom();
+    this.ensureLaboratoryElementsInDom();
+    this.ensureProductionElementsInDom();
 
     // Transportation Page Elements
     this.transportationPageRoot = document.getElementById('transportation-page-root');
@@ -86,6 +88,23 @@ class ChatApp {
     // Control & Monitoring Page Elements
     this.controlMonitoringPageRoot = document.getElementById('control-monitoring-page-root');
     this.controlMonitoringBackBtn = document.getElementById('control-monitoring-back-to-departments-btn');
+
+    // Attendance Page Elements
+    this.attendancePageRoot = document.getElementById('attendance-page-root');
+    this.attendanceBackBtn = document.getElementById('attendance-back-to-departments-btn');
+    this.btnEnterAttendance = document.getElementById('btn-enter-attendance');
+
+    // Laboratory Page Elements
+    this.laboratoryPageRoot = document.getElementById('laboratory-page-root');
+    this.laboratoryBackBtn = document.getElementById('laboratory-back-to-departments-btn');
+    this.btnEnterLaboratory = document.getElementById('btn-enter-laboratory');
+    this.cardDeptLaboratory = document.getElementById('card-dept-laboratory');
+
+    // Production Page Elements
+    this.productionPageRoot = document.getElementById('production-page-root');
+    this.productionBackBtn = document.getElementById('production-back-to-departments-btn');
+    this.btnEnterProduction = document.getElementById('btn-enter-production');
+    this.cardDeptProduction = document.getElementById('card-dept-production');
 
     // Access Denied Elements
     this.accessDeniedRoot = document.getElementById('access-denied-root');
@@ -220,6 +239,30 @@ class ChatApp {
     });
 
     this.controlMonitoringBackBtn?.addEventListener('click', () => {
+      this.backToDepartments();
+    });
+
+    this.btnEnterAttendance?.addEventListener('click', () => {
+      this.enterDepartment('attendance');
+    });
+
+    this.attendanceBackBtn?.addEventListener('click', () => {
+      this.backToDepartments();
+    });
+
+    this.btnEnterLaboratory?.addEventListener('click', () => {
+      this.enterDepartment('laboratory');
+    });
+
+    this.laboratoryBackBtn?.addEventListener('click', () => {
+      this.backToDepartments();
+    });
+
+    this.btnEnterProduction?.addEventListener('click', () => {
+      this.enterDepartment('production');
+    });
+
+    this.productionBackBtn?.addEventListener('click', () => {
       this.backToDepartments();
     });
 
@@ -687,6 +730,43 @@ class ChatApp {
       }
     }
 
+    if (this.attendancePageRoot) {
+      this.attendancePageRoot.style.display = (viewName === 'attendance') ? 'flex' : 'none';
+      if (viewName === 'attendance') {
+        const u = chatState.currentUser || ChatApi.getCurrentUser();
+        if (window.AttendanceApp) {
+          window.AttendanceApp.init();
+          window.AttendanceApp.updateUserBadge(u);
+          window.AttendanceApp.loadAttendanceData();
+        }
+        document.dispatchEvent(new CustomEvent('chat:view:changed', { detail: { view: 'attendance', user: u } }));
+      }
+    }
+
+    if (this.laboratoryPageRoot) {
+      this.laboratoryPageRoot.style.display = (viewName === 'laboratory') ? 'block' : 'none';
+      if (viewName === 'laboratory') {
+        const u = chatState.currentUser || ChatApi.getCurrentUser();
+        if (window.LaboratoryApp) {
+          window.LaboratoryApp.init();
+          window.LaboratoryApp.updateUserBadge(u);
+        }
+        document.dispatchEvent(new CustomEvent('chat:view:changed', { detail: { view: 'laboratory', user: u } }));
+      }
+    }
+
+    if (this.productionPageRoot) {
+      this.productionPageRoot.style.display = (viewName === 'production') ? 'block' : 'none';
+      if (viewName === 'production') {
+        const u = chatState.currentUser || ChatApi.getCurrentUser();
+        if (window.ProductionApp) {
+          window.ProductionApp.init();
+          window.ProductionApp.updateUserBadge(u);
+        }
+        document.dispatchEvent(new CustomEvent('chat:view:changed', { detail: { view: 'production', user: u } }));
+      }
+    }
+
     if (this.accessDeniedRoot) {
       this.accessDeniedRoot.style.display = (viewName === 'access-denied') ? 'flex' : 'none';
     }
@@ -722,11 +802,35 @@ class ChatApp {
     this.controlMonitoringBackBtn = document.getElementById('control-monitoring-back-to-departments-btn');
   }
 
+  static ensureAttendanceElementsInDom() {
+    this.cardDeptAttendance = document.getElementById('card-dept-attendance');
+    this.btnEnterAttendance = document.getElementById('btn-enter-attendance');
+    this.attendancePageRoot = document.getElementById('attendance-page-root');
+    this.attendanceBackBtn = document.getElementById('attendance-back-to-departments-btn');
+  }
+
+  static ensureLaboratoryElementsInDom() {
+    this.cardDeptLaboratory = document.getElementById('card-dept-laboratory');
+    this.btnEnterLaboratory = document.getElementById('btn-enter-laboratory');
+    this.laboratoryPageRoot = document.getElementById('laboratory-page-root');
+    this.laboratoryBackBtn = document.getElementById('laboratory-back-to-departments-btn');
+  }
+
+  static ensureProductionElementsInDom() {
+    this.cardDeptProduction = document.getElementById('card-dept-production');
+    this.btnEnterProduction = document.getElementById('btn-enter-production');
+    this.productionPageRoot = document.getElementById('production-page-root');
+    this.productionBackBtn = document.getElementById('production-back-to-departments-btn');
+  }
+
   static updateDepartmentCardsVisibility(user, deptRes = null) {
     this.ensureStorageElementsInDom();
     this.ensureManagementElementsInDom();
     this.ensureFinanceElementsInDom();
     this.ensureControlMonitoringElementsInDom();
+    this.ensureAttendanceElementsInDom();
+    this.ensureLaboratoryElementsInDom();
+    this.ensureProductionElementsInDom();
     if (!user) return;
     const role = (user.role || '').trim().toUpperCase();
 
@@ -738,12 +842,20 @@ class ChatApp {
     const isStorageManager = role === 'STORAGE_MANAGER' || role === 'STORAGE MANAGER' || role === 'STORAGEMANAGER' || role.includes('STORAGE');
     const isFactoryManager = role === 'FACTORY_MANAGER' || role === 'FACTORY MANAGER' || role.includes('FACTORY');
     const isControlMonitoring = role === 'CONTROL_MONITORING' || role === 'CONTROL MONITORING' || role.includes('CONTROL');
+    const isAttendanceEmployee = role === 'ATTENDANCE_EMPLOYEE' || role === 'ATTENDANCE EMPLOYEE' || role.includes('ATTENDANCE');
+    const isPhysicalLab = role === 'PHYSICAL_LAB_EMPLOYEE' || role === 'PHYSICAL LABORATORY EMPLOYEE' || role.includes('PHYSICAL_LAB');
+    const isChemicalLab = role === 'CHEMICAL_LAB_EMPLOYEE' || role === 'CHEMICAL LABORATORY EMPLOYEE' || role.includes('CHEMICAL_LAB');
+    const isProdManager = role === 'PRODUCTION_MANAGER' || role === 'PRODUCTION MANAGER' || role.includes('PRODUCTION_MAN');
+    const isProdEmployee = role === 'PRODUCTION_EMPLOYEE' || role === 'PRODUCTION EMPLOYEE' || role.includes('PRODUCTION');
 
     let hasFinance = (isCeo || isIt || isAccountant);
     let hasTrans = (isCeo || isIt || isTransManager);
     let hasStorage = (isCeo || isIt || isStorageManager);
     let hasManagement = (isCeo || isIt || isFactoryManager);
     let hasControlMonitoring = (isCeo || isIt || isControlMonitoring);
+    let hasAttendance = (isCeo || isIt || isAttendanceEmployee);
+    let hasLaboratory = (isCeo || isIt || isPhysicalLab || isChemicalLab);
+    let hasProduction = (isCeo || isIt || isProdManager || isProdEmployee);
 
     // If server response is available, use it to confirm/override
     if (deptRes && deptRes.success && deptRes.data) {
@@ -762,6 +874,15 @@ class ChatApp {
       if (typeof deptRes.data.hasControlMonitoringAccess === 'boolean') {
         hasControlMonitoring = deptRes.data.hasControlMonitoringAccess;
       }
+      if (typeof deptRes.data.hasAttendanceAccess === 'boolean') {
+        hasAttendance = deptRes.data.hasAttendanceAccess;
+      }
+      if (typeof deptRes.data.hasLaboratoryAccess === 'boolean') {
+        hasLaboratory = deptRes.data.hasLaboratoryAccess;
+      }
+      if (typeof deptRes.data.hasProductionAccess === 'boolean') {
+        hasProduction = deptRes.data.hasProductionAccess;
+      }
       if (Array.isArray(deptRes.data.departments)) {
         const availableDepts = deptRes.data.departments.filter(d => d.isAvailable !== false).map(d => (d.id || '').toLowerCase());
         hasFinance = availableDepts.includes('finance');
@@ -769,6 +890,9 @@ class ChatApp {
         hasStorage = availableDepts.includes('storage');
         hasManagement = availableDepts.includes('management');
         hasControlMonitoring = availableDepts.includes('control-monitoring');
+        hasAttendance = availableDepts.includes('attendance');
+        hasLaboratory = availableDepts.includes('laboratory');
+        hasProduction = availableDepts.includes('production');
       }
     }
 
@@ -777,6 +901,9 @@ class ChatApp {
     const cardStorage = document.getElementById('card-dept-storage') || this.cardDeptStorage;
     const cardManagement = document.getElementById('card-dept-management') || this.cardDeptManagement;
     const cardControl = document.getElementById('card-dept-control') || this.cardDeptControl;
+    const cardAttendance = document.getElementById('card-dept-attendance') || this.cardDeptAttendance;
+    const cardLaboratory = document.getElementById('card-dept-laboratory') || this.cardDeptLaboratory;
+    const cardProduction = document.getElementById('card-dept-production') || this.cardDeptProduction;
 
     if (cardFinance) {
       cardFinance.style.display = hasFinance ? 'flex' : 'none';
@@ -792,6 +919,15 @@ class ChatApp {
     }
     if (cardControl) {
       cardControl.style.display = hasControlMonitoring ? 'flex' : 'none';
+    }
+    if (cardAttendance) {
+      cardAttendance.style.display = hasAttendance ? 'flex' : 'none';
+    }
+    if (cardLaboratory) {
+      cardLaboratory.style.display = hasLaboratory ? 'flex' : 'none';
+    }
+    if (cardProduction) {
+      cardProduction.style.display = hasProduction ? 'flex' : 'none';
     }
   }
 
@@ -809,14 +945,23 @@ class ChatApp {
       this.enterDepartment('finance', targetSubRoute);
     } else if (path === '/transportation' || hash === '#/transportation') {
       this.enterDepartment('transportation');
-    } else if (path === '/departments/storage' || path === '/storage' || hash === '#/departments/storage' || hash === '#/storage') {
-      this.enterDepartment('storage');
+    } else if (path.startsWith('/storage') || path.startsWith('/departments/storage') || hash.startsWith('#/storage') || hash.startsWith('#/departments/storage')) {
+      const targetSubRoute = path.startsWith('/storage') ? window.location.pathname : (hash.startsWith('#/storage') ? hash.replace('#', '') : '/storage');
+      this.enterDepartment('storage', targetSubRoute);
     } else if (path.startsWith('/management') || hash.startsWith('#/management')) {
       const targetSubRoute = path.startsWith('/management') ? window.location.pathname : hash.replace('#', '');
       this.enterDepartment('management', targetSubRoute);
     } else if (path.startsWith('/control-monitoring') || hash.startsWith('#/control-monitoring')) {
       const targetSubRoute = path.startsWith('/control-monitoring') ? window.location.pathname : hash.replace('#', '');
       this.enterDepartment('control-monitoring', targetSubRoute);
+    } else if (path.startsWith('/attendance') || hash.startsWith('#/attendance')) {
+      this.enterDepartment('attendance');
+    } else if (path.startsWith('/laboratory') || hash.startsWith('#/laboratory')) {
+      const targetSubRoute = path.startsWith('/laboratory') ? window.location.pathname : hash.replace('#', '');
+      this.enterDepartment('laboratory', targetSubRoute);
+    } else if (path.startsWith('/production') || hash.startsWith('#/production')) {
+      const targetSubRoute = path.startsWith('/production') ? window.location.pathname : hash.replace('#', '');
+      this.enterDepartment('production', targetSubRoute);
     } else {
       this.showView('departments');
       const u = chatState.currentUser || ChatApi.getCurrentUser();
@@ -835,6 +980,17 @@ class ChatApp {
       case 'CONTROL_MONITORING':
       case 'CONTROL MONITORING':
       case 'CONTROL_MONITORING EMPLOYEE': return 'مراقب ومراجع العمليات';
+      case 'ATTENDANCE_EMPLOYEE':
+      case 'ATTENDANCE EMPLOYEE':
+      case 'ATTENDANCE': return 'موظف الحضور والانصراف';
+      case 'PHYSICAL_LAB_EMPLOYEE':
+      case 'PHYSICAL LABORATORY EMPLOYEE': return 'موظف المعمل الفيزيائي';
+      case 'CHEMICAL_LAB_EMPLOYEE':
+      case 'CHEMICAL LABORATORY EMPLOYEE': return 'موظف المعمل الكيميائي';
+      case 'PRODUCTION_MANAGER':
+      case 'PRODUCTION MANAGER': return 'مدير إدارة الإنتاج';
+      case 'PRODUCTION_EMPLOYEE':
+      case 'PRODUCTION EMPLOYEE': return 'مسؤول خط الإنتاج والتشغيل';
       case 'ACCOUNTANT': return 'محاسب مالي';
       case 'TRANSPORTATION_MANAGER':
       case 'TRANSPORTATION MANAGER': return 'مدير حركة النقل';
@@ -917,6 +1073,14 @@ class ChatApp {
       await this.enterDepartment('management', targetSubRoute);
     } else if (path.startsWith('/control-monitoring') || hash.startsWith('#/control-monitoring')) {
       await this.enterDepartment('control-monitoring');
+    } else if (path.startsWith('/attendance') || hash.startsWith('#/attendance')) {
+      await this.enterDepartment('attendance');
+    } else if (path.startsWith('/laboratory') || hash.startsWith('#/laboratory')) {
+      const targetSubRoute = path.startsWith('/laboratory') ? window.location.pathname : hash.replace('#', '');
+      await this.enterDepartment('laboratory', targetSubRoute);
+    } else if (path.startsWith('/production') || hash.startsWith('#/production')) {
+      const targetSubRoute = path.startsWith('/production') ? window.location.pathname : hash.replace('#', '');
+      await this.enterDepartment('production', targetSubRoute);
     } else {
       this.showView('departments');
       if (window.location.pathname !== '/departments') {
@@ -977,15 +1141,29 @@ class ChatApp {
       const res = await ChatApi.verifyStorageAccess();
       if (res.success && res.status !== 403) {
         this.showView('storage');
-        if (window.location.pathname !== '/departments/storage') {
-          history.pushState({ view: 'storage' }, '', '/departments/storage');
+        const user = chatState.currentUser || ChatApi.getCurrentUser();
+        if (window.StorageApp) {
+          window.StorageApp.init();
+          window.StorageApp.updateUserBadge(user);
+          if (subRoute && subRoute !== '/storage' && subRoute !== '/departments/storage') {
+            window.StorageApp.handleRoute(subRoute);
+          } else {
+            window.StorageApp.showDashboardHub();
+          }
+        }
+        if (subRoute && subRoute !== '/storage' && subRoute !== '/departments/storage') {
+          if (window.location.pathname !== subRoute) {
+            history.pushState({ view: 'storage', subRoute }, '', subRoute);
+          }
+        } else if (window.location.pathname !== '/storage') {
+          history.pushState({ view: 'storage' }, '', '/storage');
         }
       } else {
         // 403 Forbidden: Render Access Denied screen
         this.setAccessDeniedDept('Storage', 'CEO, IT, and Storage Manager');
         this.showView('access-denied');
-        if (window.location.pathname !== '/departments/storage') {
-          history.pushState({ view: 'access-denied' }, '', '/departments/storage');
+        if (window.location.pathname !== '/storage') {
+          history.pushState({ view: 'access-denied' }, '', '/storage');
         }
       }
     } else if (dept === 'management') {
@@ -1048,6 +1226,73 @@ class ChatApp {
           history.pushState({ view: 'access-denied' }, '', '/control-monitoring');
         }
       }
+    } else if (dept === 'attendance') {
+      const res = await ChatApi.verifyAttendanceAccess();
+      if (res.success && res.status !== 403) {
+        this.showView('attendance');
+        const user = chatState.currentUser || ChatApi.getCurrentUser();
+        if (window.AttendanceApp) {
+          window.AttendanceApp.init();
+          window.AttendanceApp.updateUserBadge(user);
+          window.AttendanceApp.loadAttendanceData();
+        }
+        if (window.location.pathname !== '/attendance') {
+          history.pushState({ view: 'attendance' }, '', '/attendance');
+        }
+      } else {
+        this.setAccessDeniedDept('Attendance', 'Authorized Personnel');
+        this.showView('access-denied');
+        if (window.location.pathname !== '/attendance') {
+          history.pushState({ view: 'access-denied' }, '', '/attendance');
+        }
+      }
+    } else if (dept === 'laboratory') {
+      const res = await ChatApi.verifyLaboratoryAccess();
+      if (res.success && res.status !== 403) {
+        this.showView('laboratory');
+        const user = chatState.currentUser || ChatApi.getCurrentUser();
+        if (window.LaboratoryApp) {
+          window.LaboratoryApp.init();
+          window.LaboratoryApp.updateUserBadge(user);
+          await window.LaboratoryApp.resolveAccessAndRedirect(subRoute);
+        }
+        const defaultSec = res.data && res.data.defaultSection ? res.data.defaultSection : 'PHYSICAL';
+        const targetPath = subRoute || (defaultSec === 'CHEMICAL' ? '/laboratory/chemical' : '/laboratory/physical');
+        if (window.location.pathname !== targetPath) {
+          history.pushState({ view: 'laboratory', subRoute: targetPath }, '', targetPath);
+        }
+      } else {
+        this.setAccessDeniedDept('Laboratory', 'Physical / Chemical Laboratory Personnel, IT, and CEO');
+        this.showView('access-denied');
+        if (window.location.pathname !== '/laboratory') {
+          history.pushState({ view: 'access-denied' }, '', '/laboratory');
+        }
+      }
+    } else if (dept === 'production') {
+      const res = await ChatApi.verifyProductionAccess();
+      if (res.success && res.status !== 403) {
+        this.showView('production');
+        const user = chatState.currentUser || ChatApi.getCurrentUser();
+        if (window.ProductionApp) {
+          window.ProductionApp.init();
+          window.ProductionApp.updateUserBadge(user);
+          if (subRoute && subRoute !== '/production') {
+            window.ProductionApp.handleRoute(subRoute);
+          } else {
+            window.ProductionApp.loadStats();
+            window.ProductionApp.showSection('inventory');
+          }
+        }
+        if (window.location.pathname !== '/production') {
+          history.pushState({ view: 'production' }, '', '/production');
+        }
+      } else {
+        this.setAccessDeniedDept('Production', 'Production Manager, Production Employees, IT, and CEO');
+        this.showView('access-denied');
+        if (window.location.pathname !== '/production') {
+          history.pushState({ view: 'access-denied' }, '', '/production');
+        }
+      }
     }
   }
 
@@ -1066,6 +1311,8 @@ class ChatApp {
     else if (deptName === 'Storage') deptAr = 'إدارة المستودعات والمخازن';
     else if (deptName === 'Management') deptAr = 'الإدارة العامة ومراقبة الجودة';
     else if (deptName === 'ControlMonitoring') deptAr = 'قسم التحكم والمراقبة';
+    else if (deptName === 'Laboratory') deptAr = 'قسم المعمل (الفيزيائي / الكيميائي)';
+    else if (deptName === 'Production') deptAr = 'إدارة وقسم الإنتاج';
 
     let rolesAr = allowedRoles;
     if (allowedRoles.includes('Accountants')) rolesAr = 'المحاسبون، تقنية المعلومات، والرئيس التنفيذي';
@@ -1073,6 +1320,7 @@ class ChatApp {
     else if (allowedRoles.includes('Storage Manager')) rolesAr = 'الرئيس التنفيذي، تقنية المعلومات، ومدير المستودعات';
     else if (allowedRoles.includes('Factory Manager')) rolesAr = 'الرئيس التنفيذي، تقنية المعلومات، ومدير المصنع';
     else if (allowedRoles.includes('Control & Monitoring Employees')) rolesAr = 'الرئيس التنفيذي، تقنية المعلومات، وموظفو قسم التحكم والمراقبة';
+    else if (allowedRoles.includes('Laboratory')) rolesAr = 'الرئيس التنفيذي، تقنية المعلومات، وموظفو المعمل الفيزيائي والكيميائي';
 
     if (this.accessDeniedMsg) {
       this.accessDeniedMsg.innerHTML = `ليس لديك صلاحية للوصول إلى <strong>${deptAr}</strong>.`;
@@ -2445,6 +2693,98 @@ class ChatApp {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
   }
 
+  static showRejectionToastCard(data) {
+    const container = document.getElementById('chat-toast-container');
+    if (!container || !data) return;
+
+    const txNum = data.txNumber || ('#' + data.formId);
+    const formType = (data.formType || '').toLowerCase();
+    const typeArabic = formType === 'transportation' ? 'حركة نقل' : (formType === 'storage' ? 'حركة مستودع' : data.formType);
+    const poNum = data.po || '—';
+    const reasonText = data.reason ? data.reason.trim() : '';
+    const dateFormatted = new Date(data.timestamp || Date.now()).toLocaleString('ar-EG');
+
+    const card = document.createElement('div');
+    card.className = 'chat-rejection-toast-card';
+    card.style.cssText = `
+      background: #FFFFFF;
+      border: 2px solid #EF4444;
+      border-right: 6px solid #DC2626;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px -5px rgba(220, 38, 38, 0.25), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+      padding: 16px;
+      margin-bottom: 12px;
+      max-width: 440px;
+      width: calc(100vw - 32px);
+      font-family: inherit;
+      color: #0F172A;
+      direction: rtl;
+      position: relative;
+      animation: slideInToast 0.3s ease;
+      box-sizing: border-box;
+      pointer-events: auto;
+    `;
+
+    card.innerHTML = `
+      <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 8px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 1.25rem;">❌</span>
+          <strong style="color: #DC2626; font-size: 1.05rem;">تم رفض الطلب رقم ${this.escape(txNum)}</strong>
+        </div>
+        <button type="button" class="chat-toast-close" style="background:none; border:none; color:#94A3B8; font-size:1.1rem; cursor:pointer; padding:0 4px;" aria-label="إغلاق">✕</button>
+      </div>
+      <div style="font-size: 0.85rem; line-height: 1.6; color: #334155; margin-bottom: 10px; background: #FEF2F2; padding: 10px; border-radius: 8px; border: 1px solid #FEE2E2;">
+        <div><strong>نوع الطلب:</strong> ${this.escape(typeArabic)}</div>
+        <div><strong>أمر الشراء:</strong> <span dir="ltr" style="font-family:monospace; font-weight:700;">${this.escape(poNum)}</span></div>
+        <div><strong>رقم الحركة:</strong> <span dir="ltr" style="font-family:monospace; font-weight:700;">${this.escape(txNum)}</span></div>
+        <div><strong>حالة الطلب:</strong> <span style="display:inline-block; padding:2px 8px; border-radius:9999px; background:#FEE2E2; color:#991B1B; font-weight:800; font-size:0.75rem;">مرفوض (REJECTED)</span></div>
+        ${reasonText ? `<div style="margin-top:4px; color:#B91C1C;"><strong>سبب الرفض:</strong> ${this.escape(reasonText)}</div>` : '<div style="margin-top:4px; color:#6B7280;"><em>لم يتم إدخال سبب محدد</em></div>'}
+        <div style="font-size: 0.75rem; color: #64748B; margin-top: 4px;"><strong>التاريخ والوقت:</strong> ${this.escape(dateFormatted)}</div>
+      </div>
+      <div style="display: flex; gap: 8px; justify-content: flex-end;">
+        <button type="button" class="chat-toast-open-btn" style="display:inline-flex; align-items:center; gap:6px; background:#2563EB; color:#FFFFFF; border:none; padding:8px 14px; border-radius:6px; font-weight:700; font-size:0.85rem; cursor:pointer;">
+          ✏️ فتح الطلب وتعديله (Edit Request)
+        </button>
+      </div>
+    `;
+
+    // Bind Close
+    card.querySelector('.chat-toast-close')?.addEventListener('click', () => {
+      card.remove();
+    });
+
+    // Bind Open & Edit
+    card.querySelector('.chat-toast-open-btn')?.addEventListener('click', async () => {
+      card.remove();
+      if (formType === 'transportation') {
+        await ChatApp.enterDepartment('transportation');
+        setTimeout(() => {
+          if (window.TransportationApp) {
+            window.TransportationApp.loadForEdit(data.formId);
+          }
+        }, 200);
+      } else if (formType === 'storage') {
+        await ChatApp.enterDepartment('storage');
+        setTimeout(() => {
+          if (window.StorageApp) {
+            window.StorageApp.loadForEdit(data.formId);
+          }
+        }, 200);
+      }
+    });
+
+    container.appendChild(card);
+
+    // Auto dismiss after 20 seconds
+    setTimeout(() => {
+      if (card.parentNode) {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(-10px)';
+        setTimeout(() => card.remove(), 300);
+      }
+    }, 20000);
+  }
+
   static escape(str) {
     if (!str) return '';
     const p = document.createElement('p');
@@ -2452,6 +2792,13 @@ class ChatApp {
     return p.innerHTML;
   }
 }
+
+// Global Rejection Real-Time Event Listener
+window.addEventListener('facestone:realtime:form-rejected', (e) => {
+  if (e.detail) {
+    ChatApp.showRejectionToastCard(e.detail);
+  }
+});
 
 // Global Demo Credential Auto-Fill
 window.fillDemoAccount = function(identifier, password) {

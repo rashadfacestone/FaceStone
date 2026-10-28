@@ -8,6 +8,8 @@ public class ControlMonitoringDashboardStatsDto
     public int PendingReviewsCount { get; set; }
     public int TransportationPendingCount { get; set; }
     public int StoragePendingCount { get; set; }
+    public int AttendancePendingCount { get; set; }
+    public int LaboratoryPendingCount { get; set; }
     public int ApprovedTodayCount { get; set; }
     public int RejectedTodayCount { get; set; }
 }
@@ -28,7 +30,7 @@ public class FormAttachmentDto
 public class ControlMonitoringReviewItemDto
 {
     public int Id { get; set; }
-    public string FormType { get; set; } = string.Empty; // "Transportation" | "Storage"
+    public string FormType { get; set; } = string.Empty; // "Transportation" | "Storage" | "Attendance"
     public int FormId { get; set; }
     public string? PONumber { get; set; }
     public string TransactionNumber { get; set; } = string.Empty;
@@ -45,6 +47,15 @@ public class ControlMonitoringReviewItemDto
 
     // Audit Trail
     public List<FormApprovalHistoryDto> AuditTrail { get; set; } = new();
+
+    // =========================================================================
+    // Attendance specific fields
+    // =========================================================================
+    public DateTime? AttendanceDate { get; set; }
+    public int? TotalEmployeesCount { get; set; }
+    public int? PresentCount { get; set; }
+    public int? AbsentCount { get; set; }
+    public List<AttendanceRecordItemDto> AttendanceRecords { get; set; } = new();
 
     // =========================================================================
     // Transportation specific fields
@@ -116,6 +127,21 @@ public class ControlMonitoringReviewItemDto
     public string? CreatedBy { get; set; }
     public DateTime? CreatedAt { get; set; }
 
+    // =========================================================================
+    // Laboratory specific fields
+    // =========================================================================
+    public int? ProductionReferenceNumber { get; set; }
+    public string? LaboratorySection { get; set; } // "PHYSICAL" | "CHEMICAL"
+    public string? InspectionDecision { get; set; } // "ACCEPTED", "PARTIALLY_ACCEPTED", "REJECTED", "CONFORMS", etc.
+    public decimal? AcceptedQuantity { get; set; }
+    public decimal? RejectedQuantity { get; set; }
+    public decimal? OutputQuantity { get; set; }
+    public decimal? WasteQuantityDifference { get; set; }
+    public decimal? MeasuredWasteQuantity { get; set; }
+    public string? WasteClassification { get; set; }
+    public string? NonConformingAction { get; set; }
+    public string? AnalysisResultsJson { get; set; }
+
     // Notes
     public string? Notes { get; set; }
 }
@@ -150,4 +176,15 @@ public class ResubmitDecisionDto
     public string? Comment { get; set; }
 
     public string? GetComment() => !string.IsNullOrWhiteSpace(Comment) ? Comment : Notes;
+}
+
+public class PagedHistoryResultDto
+{
+    public List<ControlMonitoringReviewItemDto> Items { get; set; } = new();
+    public int TotalCount { get; set; }
+    public int Page { get; set; }
+    public int PageSize { get; set; }
+    public int TotalPages => PageSize > 0 ? (int)Math.Ceiling((double)TotalCount / PageSize) : 0;
+    public bool HasPreviousPage => Page > 1;
+    public bool HasNextPage => Page < TotalPages;
 }

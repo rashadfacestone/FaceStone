@@ -22,6 +22,10 @@
       this.dsAttachmentFile = null;
       this.bolAttachmentFile = null;
 
+      // Edit / Resubmit State
+      this.editingTxId = null;
+      this.editingTx = null;
+
       this.init();
     }
 
@@ -817,15 +821,21 @@
 
       // Section 1 Mandatory Attachment Check
       if (!this.wbAttachmentFile) {
-        this.setAttachmentError(this.wbAttachmentError, 'Attachment is required for this section. (مرفق قسم الميزان مطلوب)');
-        isValid = false;
+        const hasExisting = this.editingTx && (this.editingTx.weighbridgeFileName || this.editingTx.weighbridgeAttachmentPath);
+        if (!hasExisting) {
+          this.setAttachmentError(this.wbAttachmentError, 'Attachment is required for this section. (مرفق قسم الميزان مطلوب)');
+          isValid = false;
+        }
       }
 
       // SECTION 2 VALIDATIONS:
       // Section 2 Mandatory Attachment Check
       if (!this.dsAttachmentFile) {
-        this.setAttachmentError(this.dsAttachmentError, 'Attachment is required for this section. (مرفق قسم يومية التوريد مطلوب)');
-        isValid = false;
+        const hasExisting = this.editingTx && (this.editingTx.dailySupplyFileName || this.editingTx.dailySupplyAttachmentPath);
+        if (!hasExisting) {
+          this.setAttachmentError(this.dsAttachmentError, 'Attachment is required for this section. (مرفق قسم يومية التوريد مطلوب)');
+          isValid = false;
+        }
       }
 
       // SECTION 3 VALIDATIONS:
@@ -861,8 +871,11 @@
 
       // Section 3 Mandatory Attachment Check
       if (!this.bolAttachmentFile) {
-        this.setAttachmentError(this.bolAttachmentError, 'Attachment is required for this section. (مرفق قسم بوليصة الشحن مطلوب)');
-        isValid = false;
+        const hasExisting = this.editingTx && (this.editingTx.billOfLadingFileName || this.editingTx.billOfLadingAttachmentPath);
+        if (!hasExisting) {
+          this.setAttachmentError(this.bolAttachmentError, 'Attachment is required for this section. (مرفق قسم بوليصة الشحن مطلوب)');
+          isValid = false;
+        }
       }
 
       // SECTION 4 VALIDATIONS:
@@ -988,9 +1001,19 @@
           formData.append('invoiceFile', this.bolAttachmentFile); // Backwards compatibility
         }
 
-        const res = await window.ChatApi?.submitTransportationTransaction(formData);
+        let res;
+        const isResubmit = !!this.editingTxId;
+        if (isResubmit) {
+          res = await window.ChatApi?.resubmitTransportation(this.editingTxId, formData);
+        } else {
+          res = await window.ChatApi?.submitTransportationTransaction(formData);
+        }
+
         if (res && res.success && res.data) {
-          this.showSuccessStep(res.data);
+          this.editingTxId = null;
+          this.editingTx = null;
+          if (this.submitBtnText) this.submitBtnText.textContent = 'تسجيل واعتماد الحركة';
+          this.showSuccessStep(res.data, isResubmit);
           this.loadRecentTransactions();
           this.loadConfig();
         } else {
@@ -1005,7 +1028,7 @@
       }
     }
 
-    showSuccessStep(txData) {
+    showSuccessStep(txData, isResubmit = false) {
       if (this.stepPoEntry) this.stepPoEntry.style.display = 'none';
       if (this.stepForm) this.stepForm.style.display = 'none';
       if (this.stepSuccess) this.stepSuccess.style.display = 'block';
@@ -1042,7 +1065,11 @@
             sub.parentNode.insertBefore(cmNotice, sub.nextSibling);
           }
         }
-        cmNotice.innerHTML = '⏳ حالة النموذج: <strong>قيد مراجعة وتدقيق قسم التحكم والمراقبة</strong> — لن يتم اعتماد الحركة أو ترحيلها حتى يتم قبولها من موظف الرقابة.';
+        if (isResubmit) {
+          cmNotice.innerHTML = '🔄 <strong>تمت إعادة تقديم الطلب بنجاح</strong> — عاد الطلب إلى قائمة انتظار التحكم والمراقبة (PENDING) للمراجعة والتدقيق.';
+        } else {
+          cmNotice.innerHTML = '⏳ حالة النموذج: <strong>قيد مراجعة وتدقيق قسم التحكم والمراقبة</strong> — لن يتم اعتماد الحركة أو ترحيلها حتى يتم قبولها من موظف الرقابة.';
+        }
       }
 
       this.stepSuccess.scrollIntoView({ behavior: 'smooth' });
@@ -1098,7 +1125,7 @@
             <div>
               <span class="cm-badge cm-badge-rejected">✕ مرفوض</span>
               ${reasonText}
-              <button type="button" class="trans-resubmit-btn" data-id="${tx.id}" style="display:inline-block; margin-top:4px; padding:3px 8px; font-size:0.75rem; background:#2563eb; color:#fff; border:none; border-radius:4px; cursor:pointer;">إعادة تقديم</button>
+              <button type="button" class="trans-edit-request-btn" data-id="${tx.id}" style="display:inline-flex; align-items:center; gap:4px; margin-top:4px; padding:3px 8px; font-size:0.75rem; font-weight:700; background:#2563eb; color:#fff; border:none; border-radius:4px; cursor:pointer;" title="تعديل بيانات الطلب الأصلي وإعادة تقديمه">✏️ تعديل الطلب (Edit Request)</button>
             </div>
           `;
         } else {
@@ -1130,35 +1157,177 @@
 
       this.recentTableBody.innerHTML = rowsHtml;
 
-      this.recentTableBody.querySelectorAll('.trans-resubmit-btn').forEach(btn => {
-        btn.addEventListener('click', async (e) => {
+      this.recentTableBody.querySelectorAll('.trans-edit-request-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
           const txId = e.currentTarget.getAttribute('data-id');
-          const comment = prompt('هل ترغب بإضافة توضيح للمراجعة عند إعادة التقديم؟ (اختياري)');
-          if (comment !== null) {
-            btn.disabled = true;
-            btn.textContent = 'جاري التقديم...';
-            try {
-              const res = await window.ChatApi?.resubmitControlMonitoringForm('Transportation', txId, comment);
-              if (res && res.success) {
-                alert('تمت إعادة تقديم النموذج بنجاح لقسم التحكم والمراقبة.');
-                this.loadRecentTransactions();
-              } else {
-                alert('تعذر إعادة التقديم: ' + (res?.message || 'خطأ غير معروف'));
-                btn.disabled = false;
-                btn.textContent = 'إعادة تقديم';
-              }
-            } catch (err) {
-              console.error(err);
-              alert('حدث خطأ أثناء الاتصال بالخادم.');
-              btn.disabled = false;
-              btn.textContent = 'إعادة تقديم';
-            }
-          }
+          this.loadForEdit(txId);
         });
       });
     }
 
+    async loadForEdit(txId) {
+      if (!txId) return;
+      try {
+        this.showAlert('جاري تحميل بيانات الطلب للتعديل...', 'info');
+        const res = await window.ChatApi?.getTransportationById(txId);
+        if (!res || !res.success || !res.data) {
+          this.showAlert(res?.message || 'تعذر تحميل بيانات الطلب المرفوض.', 'error');
+          return;
+        }
+
+        const tx = res.data;
+        this.editingTxId = tx.id;
+        this.editingTx = tx;
+
+        // Ensure PO data is initialized
+        if (tx.poNumber) {
+          try {
+            const poRes = await window.ChatApi?.getTransportationPurchaseOrder(tx.poNumber);
+            if (poRes && poRes.success && poRes.data) {
+              this.currentPo = poRes.data;
+            } else {
+              this.currentPo = {
+                poNumber: tx.poNumber,
+                destination: tx.destination || 'Cairo Factory',
+                supplier: tx.companyName || 'FaceStone Partner',
+                companyName: tx.companyName || 'FaceStone Partner',
+                remainingQuantity: 999999
+              };
+            }
+          } catch {
+            this.currentPo = {
+              poNumber: tx.poNumber,
+              destination: tx.destination || 'Cairo Factory',
+              supplier: tx.companyName || 'FaceStone Partner',
+              companyName: tx.companyName || 'FaceStone Partner',
+              remainingQuantity: 999999
+            };
+          }
+        }
+
+        // Switch steps
+        if (this.stepPoEntry) this.stepPoEntry.style.display = 'none';
+        if (this.stepSuccess) this.stepSuccess.style.display = 'none';
+        if (this.stepForm) this.stepForm.style.display = 'block';
+
+        // Summary Bar
+        if (this.summaryPo) this.summaryPo.textContent = tx.poNumber;
+        if (this.summarySupplier) this.summarySupplier.textContent = tx.companyName || 'FaceStone Partner';
+        if (this.summaryDestination) this.summaryDestination.textContent = tx.destination;
+        if (this.verifiedPoBadge) this.verifiedPoBadge.textContent = tx.poNumber;
+
+        // Daily Supply PO display
+        if (this.dailyPoDisplay) this.dailyPoDisplay.value = tx.poNumber;
+
+        // Section 3: Prepopulated PO fields
+        if (this.companyInput) this.companyInput.value = tx.companyName || '';
+        if (this.destinationInput) this.destinationInput.value = tx.destination || '';
+        if (this.sourceDisplay) this.sourceDisplay.value = tx.source || 'Face stone (Full Concrete Solutions)';
+
+        // Populate fields
+        if (this.txNumberInput) this.txNumberInput.value = tx.transactionNumber;
+        if (this.txDateInput && tx.transactionDate) {
+          this.txDateInput.value = tx.transactionDate.substring(0, 16);
+          const formatted = this.formatDateTimeDisplay(this.txDateInput.value);
+          if (this.dailyShipDateDisplay) this.dailyShipDateDisplay.value = formatted;
+          if (this.shipDateDisplay) this.shipDateDisplay.value = formatted;
+        }
+
+        // Weighbridge codes
+        if (this.wbInternalCodeInput) this.wbInternalCodeInput.value = tx.internalWeighbridgeCode || '';
+        if (this.wbExternalCodeInput) this.wbExternalCodeInput.value = tx.externalWeighbridgeCode || '';
+
+        // Weights
+        if (this.wbIntEmpty) this.wbIntEmpty.value = tx.weightBeforeLoading ?? '';
+        if (this.wbIntLoaded) this.wbIntLoaded.value = tx.weightWhenExitingFactory ?? '';
+        if (this.wbExtLoaded) this.wbExtLoaded.value = tx.externalLoadedWeight ?? '';
+        if (this.wbExtEmpty) this.wbExtEmpty.value = tx.externalEmptyWeight ?? '';
+
+        // Weighbridge timestamps
+        if (this.wbIntLoadedTime) {
+          this.wbIntLoadedTime.value = tx.internalLoadedWeightTime ? tx.internalLoadedWeightTime.substring(0, 16) : '';
+          const val = this.formatDateTimeDisplay(this.wbIntLoadedTime.value);
+          if (this.departureDisplay) this.departureDisplay.value = val;
+          if (this.dailyDepartureDisplay) this.dailyDepartureDisplay.value = val;
+        }
+        if (this.wbIntEmptyTime) this.wbIntEmptyTime.value = tx.internalEmptyWeightTime ? tx.internalEmptyWeightTime.substring(0, 16) : '';
+        if (this.wbExtLoadedTime) {
+          this.wbExtLoadedTime.value = tx.externalLoadedWeightTime ? tx.externalLoadedWeightTime.substring(0, 16) : '';
+          const val = this.formatDateTimeDisplay(this.wbExtLoadedTime.value);
+          if (this.arrivalDisplay) this.arrivalDisplay.value = val;
+          if (this.dailyArrivalDisplay) this.dailyArrivalDisplay.value = val;
+        }
+        if (this.wbExtEmptyTime) this.wbExtEmptyTime.value = tx.externalEmptyWeightTime ? tx.externalEmptyWeightTime.substring(0, 16) : '';
+
+        // Car & Driver
+        if (this.carInput) this.carInput.value = tx.carNumber || '';
+        if (this.driverSelect) {
+          if (tx.driverName && !Array.from(this.driverSelect.options).some(o => o.value === tx.driverName)) {
+            const opt = document.createElement('option');
+            opt.value = tx.driverName;
+            opt.textContent = tx.driverName;
+            this.driverSelect.appendChild(opt);
+          }
+          this.driverSelect.value = tx.driverName || '';
+        }
+        if (this.driverPhoneInput) this.driverPhoneInput.value = tx.driverPhone || '';
+        if (this.materialSelect) this.materialSelect.value = tx.materialType || 'powder';
+
+        // Recipient & Checklist
+        if (this.recNameInput) this.recNameInput.value = tx.recipientName || '';
+        if (this.recTitleSelect) this.recTitleSelect.value = tx.recipientTitle || '';
+        if (this.recDateInput) this.recDateInput.value = tx.receivedDate ? tx.receivedDate.substring(0, 16) : '';
+
+        const recSt = (tx.receivingStatus || '').toLowerCase();
+        if (this.statusSafeCheckbox) this.statusSafeCheckbox.checked = recSt.includes('safe');
+        if (this.statusIntactCheckbox) this.statusIntactCheckbox.checked = recSt.includes('intact');
+
+        // Custody, Ikramiya, Notes
+        if (this.custodyInput) this.custodyInput.value = tx.custodyAmount ?? '0';
+        if (this.ikramiyaInput) this.ikramiyaInput.value = tx.ikramiya ?? '0.00';
+        if (this.notesInput) this.notesInput.value = tx.notes || '';
+
+        // Attachments display
+        this.displayExistingAttachment(this.wbPlaceholder, this.wbFilePreview, this.wbFileName, this.wbFileSize, tx.weighbridgeFileName, tx.weighbridgeFileSize);
+        this.displayExistingAttachment(this.dsPlaceholder, this.dsFilePreview, this.dsFileName, this.dsFileSize, tx.dailySupplyFileName, tx.dailySupplyFileSize);
+        this.displayExistingAttachment(this.bolPlaceholder, this.bolFilePreview, this.bolFileName, this.bolFileSize, tx.billOfLadingFileName, tx.billOfLadingFileSize);
+
+        // Recalculate weights & shipping times
+        this.recalculateAllWeights();
+        this.recalculateShippingTime();
+
+        // Change submit button text
+        if (this.submitBtnText) this.submitBtnText.textContent = 'إعادة تقديم الطلب بعد التعديل (Resubmit Request)';
+
+        // Show edit alert banner
+        const reasonPart = tx.rejectionReason ? ` | سبب الرفض: "${this.escapeHtml(tx.rejectionReason)}"` : '';
+        this.showAlert(`✏️ أنت الآن تقوم بتعديل الطلب المرفوض #${tx.transactionNumber} (أمر الشراء: ${tx.poNumber})${reasonPart}. قم بتصحيح البيانات المطلوبة ثم اضغط على "إعادة تقديم الطلب بعد التعديل".`, 'error');
+
+        // Scroll to form
+        if (this.stepForm) {
+          this.stepForm.scrollIntoView({ behavior: 'smooth' });
+        }
+      } catch (err) {
+        console.error('Failed to load transaction for edit:', err);
+        this.showAlert('حدث خطأ أثناء تحميل بيانات الطلب للتعديل.', 'error');
+      }
+    }
+
+    displayExistingAttachment(placeholderEl, previewEl, nameEl, sizeEl, fileName, fileSize) {
+      if (fileName && previewEl && nameEl) {
+        nameEl.textContent = `${fileName} (المرفق الحالي محفوظ)`;
+        if (sizeEl) sizeEl.textContent = fileSize ? this.formatFileSize(fileSize) : '';
+        if (placeholderEl) placeholderEl.style.display = 'none';
+        previewEl.style.display = 'flex';
+      }
+    }
+
     resetFormKeepPo() {
+      // Clear edit state
+      this.editingTxId = null;
+      this.editingTx = null;
+      if (this.submitBtnText) this.submitBtnText.textContent = 'تسجيل واعتماد الحركة';
+
       // Clear file attachments
       this.wbAttachmentFile = null;
       this.dsAttachmentFile = null;

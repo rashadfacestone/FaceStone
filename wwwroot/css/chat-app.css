@@ -2827,7 +2827,8 @@ a {
 .btn-enter-finance,
 .btn-enter-trans,
 .btn-enter-storage,
-.btn-enter-management {
+.btn-enter-management,
+.btn-enter-control {
   background: #0F172A;
   color: #FFFFFF;
   border: 1px solid #0F172A;
@@ -2836,10 +2837,48 @@ a {
 .btn-enter-finance:hover,
 .btn-enter-trans:hover,
 .btn-enter-storage:hover,
-.btn-enter-management:hover {
+.btn-enter-management:hover,
+.btn-enter-control:hover {
   background: #1E293B;
   color: #FFFFFF;
   border-color: #1E293B;
+}
+
+/* Unified Control & Monitoring Department Card Design - Identical to FaceStone Department Cards */
+.dept-card-control,
+#card-dept-control {
+  background: #FFFFFF !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 16px !important;
+  padding: 1.75rem !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05), 0 10px 15px -3px rgba(15, 23, 42, 0.03) !important;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease !important;
+}
+
+.dept-card-control:hover,
+#card-dept-control:hover {
+  transform: translateY(-4px) !important;
+  box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.03) !important;
+  border-color: #CBD5E1 !important;
+}
+
+.dept-card-control .control-icon {
+  width: 52px !important;
+  height: 52px !important;
+  border-radius: 14px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: #F8FAFC !important;
+  border: 1px solid #E2E8F0 !important;
+  color: #0F172A !important;
+  transition: all 0.2s ease !important;
+}
+
+.dept-card-control:hover .control-icon {
+  background: #0F172A !important;
+  color: #FFFFFF !important;
+  border-color: #0F172A !important;
 }
 
 /* 3b. Empty Management Department Page */

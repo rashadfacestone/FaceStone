@@ -185,6 +185,8 @@ public class StorageTransaction
     /// </summary>
     public string? CreatedBy { get; set; }
 
+    public Guid? CreatedByUserId { get; set; }
+
     /// <summary>
     /// وقت الإنشاء
     /// </summary>

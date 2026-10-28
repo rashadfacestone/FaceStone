@@ -1,0 +1,1493 @@
+/* ==========================================================================
+   FaceStone Storage Department Stylesheet - Arabic RTL (Cairo & Modern Design)
+   Matches the Finance Department Visual Style & Design System
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Root Container & General Layout
+   -------------------------------------------------------------------------- */
+.storage-dept-root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: #F8FAFC;
+  color: #0F172A;
+  font-family: 'Cairo', 'Segoe UI', Tahoma, sans-serif;
+  direction: rtl;
+  text-align: right;
+  overflow-x: hidden;
+}
+
+.storage-page-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: #FFFFFF;
+  border-bottom: 1px solid #E2E8F0;
+  padding: 0.75rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+}
+
+.storage-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+}
+
+.storage-brand .dept-brand-logo-img {
+  height: 40px;
+  width: auto;
+  object-fit: contain;
+}
+
+.storage-title {
+  display: block;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #0F172A;
+  line-height: 1.2;
+}
+
+.storage-tag {
+  display: block;
+  font-size: 0.775rem;
+  font-weight: 600;
+  color: #64748B;
+}
+
+.storage-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.storage-user-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  background: #F1F5F9;
+  border: 1px solid #E2E8F0;
+  border-radius: 9999px;
+  padding: 4px 12px 4px 6px;
+}
+
+.storage-user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #D97706;
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.storage-user-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.storage-user-name {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #0F172A;
+  line-height: 1.1;
+}
+
+.storage-user-role {
+  font-size: 0.675rem;
+  font-weight: 600;
+  color: #64748B;
+}
+
+.storage-main-container {
+  flex: 1;
+  padding: 1.5rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* --------------------------------------------------------------------------
+   2. Title Banner Card (Matching Finance Banner)
+   -------------------------------------------------------------------------- */
+.storage-mgmt-title-card {
+  background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+  color: #FFFFFF;
+  border-radius: 16px;
+  padding: 1.75rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.15);
+  position: relative;
+  overflow: hidden;
+}
+
+.storage-mgmt-title-card::after {
+  content: '';
+  position: absolute;
+  top: -50px;
+  left: -50px;
+  width: 160px;
+  height: 160px;
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.25) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.storage-mgmt-title-content h1 {
+  margin: 0 0 0.35rem 0;
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: #FFFFFF;
+}
+
+.storage-mgmt-title-content p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #CBD5E1;
+  max-width: 650px;
+  line-height: 1.5;
+}
+
+.storage-badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 6px 14px;
+  border-radius: 9999px;
+  font-size: 0.775rem;
+  font-weight: 700;
+  color: #F8FAFC;
+  white-space: nowrap;
+}
+
+.storage-live-dot {
+  width: 8px;
+  height: 8px;
+  background: #10B981;
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3);
+  animation: pulse-dot 2s infinite;
+}
+
+@keyframes pulse-dot {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  50% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(0.95); opacity: 0.8; }
+}
+
+/* --------------------------------------------------------------------------
+   3. Five Cards Navigation Grid (Matching Finance Nav Cards)
+   -------------------------------------------------------------------------- */
+.storage-nav-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.25rem;
+  margin-top: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.storage-nav-card {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 16px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+  position: relative;
+  overflow: hidden;
+  user-select: none;
+}
+
+.storage-nav-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 4px;
+  background: #E2E8F0;
+  transition: background 0.25s ease;
+}
+
+.storage-nav-card:hover {
+  transform: translateY(-4px);
+  border-color: #CBD5E1;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.09);
+}
+
+.storage-nav-card:focus-visible {
+  outline: 2px solid #F59E0B;
+  outline-offset: 2px;
+}
+
+/* Accent Colors */
+#card-nav-storage-daily-supply:hover::before { background: #2563EB; }
+#card-nav-storage-item-card:hover::before { background: #D97706; }
+#card-nav-storage-entry-finished:hover::before { background: #059669; }
+#card-nav-storage-issue-goods:hover::before { background: #7C3AED; }
+#card-nav-storage-entry-raw:hover::before { background: #0284C7; }
+
+.storage-nav-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.storage-nav-card-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.25s ease;
+}
+
+.storage-nav-card:hover .storage-nav-card-icon {
+  transform: scale(1.08);
+}
+
+.icon-daily-supply { background: #EFF6FF; color: #2563EB; }
+.icon-item-card { background: #FFFBEB; color: #D97706; }
+.icon-entry-finished { background: #ECFDF5; color: #059669; }
+.icon-issue-goods { background: #F5F3FF; color: #7C3AED; }
+.icon-entry-raw { background: #F0F9FF; color: #0284C7; }
+
+.storage-nav-card-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: #F1F5F9;
+  color: #475569;
+}
+
+.storage-nav-card-badge.badge-active {
+  background: #FEF3C7;
+  color: #B45309;
+}
+
+.storage-nav-card-badge.badge-coming-soon {
+  background: #F1F5F9;
+  color: #64748B;
+}
+
+.storage-nav-card-body {
+  flex: 1;
+  margin-bottom: 1.25rem;
+}
+
+.storage-nav-card-title {
+  margin: 0 0 2px 0;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #0F172A;
+}
+
+.storage-nav-card-subtitle {
+  font-size: 0.725rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: #94A3B8;
+  display: block;
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+}
+
+.storage-nav-card-desc {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: #64748B;
+}
+
+.storage-nav-card-footer {
+  border-top: 1px solid #F1F5F9;
+  padding-top: 0.875rem;
+}
+
+.storage-nav-card-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #0F172A;
+  transition: color 0.2s ease, gap 0.2s ease;
+}
+
+.storage-nav-card:hover .storage-nav-card-action {
+  color: #D97706;
+  gap: 10px;
+}
+
+.storage-nav-card.card-disabled {
+  opacity: 0.85;
+}
+
+.storage-nav-card.card-disabled:hover {
+  transform: translateY(-2px);
+}
+
+.storage-nav-card.card-disabled .storage-nav-card-action {
+  color: #94A3B8;
+}
+
+/* --------------------------------------------------------------------------
+   4. Sub-view Top Header Bar (Matching Finance Subview Nav)
+   -------------------------------------------------------------------------- */
+.storage-subview-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 14px;
+  padding: 0.875rem 1.25rem;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.03);
+}
+
+.storage-btn-subview-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #0F172A;
+  background: #F1F5F9;
+  border: 1px solid #CBD5E1;
+  border-radius: 10px;
+  padding: 7px 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.storage-btn-subview-back:hover {
+  background: #E2E8F0;
+  border-color: #94A3B8;
+  color: #0F172A;
+}
+
+.storage-subview-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.storage-subview-title-wrap h2 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #0F172A;
+}
+
+.storage-subview-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.storage-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #D97706;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 10px;
+  padding: 8px 16px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.storage-btn-primary:hover {
+  background: #B45309;
+  transform: translateY(-1px);
+}
+
+.storage-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #F8FAFC;
+  color: #334155;
+  border: 1px solid #CBD5E1;
+  border-radius: 10px;
+  padding: 8px 16px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.storage-btn-secondary:hover {
+  background: #F1F5F9;
+  border-color: #94A3B8;
+}
+
+/* --------------------------------------------------------------------------
+   5. Material Selector Banner Card
+   -------------------------------------------------------------------------- */
+.storage-material-picker-card {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 14px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.25rem;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.03);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.storage-picker-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+  min-width: 280px;
+}
+
+.storage-picker-label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #334155;
+  white-space: nowrap;
+}
+
+.storage-select-wrap {
+  position: relative;
+  flex: 1;
+  max-width: 450px;
+}
+
+.storage-select {
+  width: 100%;
+  padding: 9px 36px 9px 12px;
+  border: 1px solid #CBD5E1;
+  border-radius: 10px;
+  background: #F8FAFC;
+  color: #0F172A;
+  font-size: 0.9rem;
+  font-weight: 600;
+  appearance: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.storage-select:focus {
+  outline: none;
+  border-color: #D97706;
+  background: #FFFFFF;
+  box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.15);
+}
+
+.storage-select-icon {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: #64748B;
+}
+
+.storage-picker-meta {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  font-size: 0.8rem;
+  color: #64748B;
+}
+
+.storage-picker-meta-item strong {
+  color: #0F172A;
+}
+
+/* --------------------------------------------------------------------------
+   6. KPI Metric Cards (Matching Finance KPI cards)
+   -------------------------------------------------------------------------- */
+.storage-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.storage-kpi-card {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 14px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.03);
+  position: relative;
+  overflow: hidden;
+}
+
+.storage-kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 4px;
+  background: #CBD5E1;
+}
+
+.storage-kpi-card.kpi-amber::before { background: #D97706; }
+.storage-kpi-card.kpi-emerald::before { background: #059669; }
+.storage-kpi-card.kpi-blue::before { background: #2563EB; }
+.storage-kpi-card.kpi-cyan::before { background: #0284C7; }
+.storage-kpi-card.kpi-purple::before { background: #7C3AED; }
+
+.storage-kpi-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.storage-kpi-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #64748B;
+}
+
+.storage-kpi-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+}
+
+.kpi-amber .storage-kpi-icon { background: #FFFBEB; color: #D97706; }
+.kpi-emerald .storage-kpi-icon { background: #ECFDF5; color: #059669; }
+.kpi-blue .storage-kpi-icon { background: #EFF6FF; color: #2563EB; }
+.kpi-cyan .storage-kpi-icon { background: #F0F9FF; color: #0284C7; }
+.kpi-purple .storage-kpi-icon { background: #F5F3FF; color: #7C3AED; }
+
+.storage-kpi-val {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #0F172A;
+  font-feature-settings: 'tnum';
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.storage-kpi-unit {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #94A3B8;
+  margin-right: 4px;
+}
+
+/* --------------------------------------------------------------------------
+   7. Form Sections & Form Card
+   -------------------------------------------------------------------------- */
+.storage-form-card {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 16px;
+  padding: 1.75rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+}
+
+.storage-form-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #F1F5F9;
+  padding-bottom: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.storage-form-header-title h3 {
+  margin: 0 0 4px 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #0F172A;
+}
+
+.storage-form-header-title p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #64748B;
+}
+
+.storage-type-toggle-group {
+  display: flex;
+  background: #F1F5F9;
+  padding: 4px;
+  border-radius: 10px;
+  border: 1px solid #E2E8F0;
+}
+
+.storage-type-toggle-btn {
+  padding: 6px 18px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #64748B;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.storage-type-toggle-btn.active {
+  background: #FFFFFF;
+  color: #0F172A;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06);
+}
+
+.storage-type-toggle-btn.btn-incoming.active {
+  color: #059669;
+}
+
+.storage-type-toggle-btn.btn-outgoing.active {
+  color: #D97706;
+}
+
+.storage-form-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.storage-form-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.storage-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.storage-field-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #334155;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.storage-field-label .required {
+  color: #EF4444;
+}
+
+.storage-input {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid #CBD5E1;
+  border-radius: 10px;
+  background: #FFFFFF;
+  color: #0F172A;
+  font-size: 0.9rem;
+  font-family: inherit;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.storage-input:focus {
+  outline: none;
+  border-color: #D97706;
+  box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.15);
+}
+
+.storage-input:read-only {
+  background: #F8FAFC;
+  color: #64748B;
+  cursor: not-allowed;
+}
+
+.storage-input.input-calculated {
+  background: #FEF3C7;
+  color: #92400E;
+  font-weight: 800;
+  border-color: #FCD34D;
+}
+
+.storage-field-hint {
+  font-size: 0.725rem;
+  color: #94A3B8;
+}
+
+.storage-field-error {
+  font-size: 0.75rem;
+  color: #EF4444;
+  font-weight: 600;
+  display: none;
+}
+
+.storage-field-error.visible {
+  display: block;
+}
+
+/* Transportation Import Banner / Trigger */
+.storage-trans-import-banner {
+  background: #EFF6FF;
+  border: 1px dashed #93C5FD;
+  border-radius: 12px;
+  padding: 0.875rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.storage-trans-import-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.storage-trans-import-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: #DBEAFE;
+  color: #2563EB;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.storage-trans-import-text h4 {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 800;
+  color: #1E40AF;
+}
+
+.storage-trans-import-text p {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #3B82F6;
+}
+
+.storage-trans-import-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #DBEAFE;
+  color: #1E40AF;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 0.775rem;
+  font-weight: 700;
+}
+
+/* Balance Projection Preview Card */
+.storage-balance-preview-card {
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  margin-top: 1rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.storage-preview-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.storage-preview-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #64748B;
+  margin-bottom: 2px;
+}
+
+.storage-preview-val {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #0F172A;
+}
+
+.storage-preview-val.highlight {
+  color: #D97706;
+}
+
+.storage-form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  border-top: 1px solid #F1F5F9;
+  padding-top: 1.25rem;
+}
+
+/* --------------------------------------------------------------------------
+   8. Transaction History Ledger Table
+   -------------------------------------------------------------------------- */
+.storage-ledger-card {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+}
+
+.storage-ledger-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.storage-ledger-title h3 {
+  margin: 0 0 2px 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #0F172A;
+}
+
+.storage-ledger-title p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #64748B;
+}
+
+.storage-table-wrapper {
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1px solid #E2E8F0;
+}
+
+.storage-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  text-align: right;
+  min-width: 900px;
+}
+
+.storage-table thead {
+  background: #F8FAFC;
+  border-bottom: 2px solid #E2E8F0;
+}
+
+.storage-table th {
+  padding: 12px 14px;
+  font-size: 0.775rem;
+  font-weight: 800;
+  color: #475569;
+  white-space: nowrap;
+}
+
+.storage-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #F1F5F9;
+  color: #1E293B;
+  vertical-align: middle;
+  font-feature-settings: 'tnum';
+  font-variant-numeric: tabular-nums;
+}
+
+.storage-table tbody tr:hover {
+  background: #F8FAFC;
+}
+
+.storage-td-in {
+  color: #059669;
+  font-weight: 700;
+}
+
+.storage-td-out {
+  color: #D97706;
+  font-weight: 700;
+}
+
+.storage-td-bal {
+  color: #0F172A;
+  font-weight: 800;
+}
+
+.storage-dest-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.725rem;
+  font-weight: 700;
+}
+
+.storage-dest-badge.internal {
+  background: #F0FDF4;
+  color: #166534;
+}
+
+.storage-dest-badge.external {
+  background: #FAF5FF;
+  color: #6B21A8;
+}
+
+.storage-table tfoot {
+  background: #F1F5F9;
+  border-top: 2px solid #CBD5E1;
+  font-weight: 800;
+}
+
+.storage-table tfoot td {
+  padding: 12px 14px;
+  color: #0F172A;
+}
+
+/* --------------------------------------------------------------------------
+   9. Add Item View Card (/storage/add-item)
+   -------------------------------------------------------------------------- */
+.storage-add-item-card {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 16px;
+  padding: 2rem;
+  max-width: 650px;
+  margin: 1.5rem auto 3rem auto;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+}
+
+.storage-add-item-header {
+  border-bottom: 1px solid #F1F5F9;
+  padding-bottom: 1.25rem;
+  margin-bottom: 1.75rem;
+}
+
+.storage-add-item-header h3 {
+  margin: 0 0 6px 0;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #0F172A;
+}
+
+.storage-add-item-header p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #64748B;
+  line-height: 1.5;
+}
+
+/* --------------------------------------------------------------------------
+   10. Modals & Empty States
+   -------------------------------------------------------------------------- */
+.storage-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.storage-modal-box {
+  background: #FFFFFF;
+  border-radius: 18px;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.2);
+  width: 100%;
+  max-width: 800px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: modal-enter 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modal-enter {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.storage-modal-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #E2E8F0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.storage-modal-header h3 {
+  margin: 0 0 2px 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #0F172A;
+}
+
+.storage-modal-header p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #64748B;
+}
+
+.storage-modal-close {
+  background: transparent;
+  border: none;
+  font-size: 1.25rem;
+  color: #64748B;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+}
+
+.storage-modal-close:hover {
+  background: #F1F5F9;
+  color: #0F172A;
+}
+
+.storage-modal-body {
+  padding: 1.25rem 1.5rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.storage-modal-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #E2E8F0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  background: #F8FAFC;
+}
+
+.storage-empty-state {
+  text-align: center;
+  padding: 3rem 1.5rem;
+  color: #64748B;
+}
+
+.storage-empty-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #F1F5F9;
+  color: #94A3B8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem auto;
+}
+
+.storage-empty-title {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #0F172A;
+  margin-bottom: 0.5rem;
+}
+
+.storage-empty-desc {
+  font-size: 0.85rem;
+  color: #64748B;
+  max-width: 400px;
+  margin: 0 auto 1.25rem auto;
+  line-height: 1.5;
+}
+
+/* Notification Alert Toast */
+.storage-alert-toast {
+  position: fixed;
+  bottom: 2rem;
+  left: 2rem;
+  z-index: 2000;
+  background: #0F172A;
+  color: #FFFFFF;
+  padding: 12px 18px;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  animation: slide-up 0.25s ease;
+}
+
+@keyframes slide-up {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.storage-alert-toast.success { background: #065F46; }
+.storage-alert-toast.error { background: #991B1B; }
+.storage-alert-toast.info { background: #1E40AF; }
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .storage-mgmt-title-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1.25rem;
+  }
+  .storage-nav-cards-grid {
+    grid-template-columns: 1fr;
+  }
+  .storage-subview-nav {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .storage-subview-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  .storage-material-picker-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+/* ==========================================================================
+   8. Storage Redesign: 3-Cards Dashboard & Dedicated Operations Forms
+   ========================================================================== */
+
+.storage-3cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+@media (max-width: 992px) {
+  .storage-3cards-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Card 1: Import Theme */
+.card-import-theme {
+  border-top: 4px solid #059669 !important;
+  cursor: pointer;
+}
+.card-import-theme:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px -4px rgba(5, 150, 105, 0.18);
+  border-color: #059669 !important;
+}
+.icon-import-theme {
+  background: #ECFDF5 !important;
+  color: #059669 !important;
+}
+
+/* Card 2: Export Theme */
+.card-export-theme {
+  border-top: 4px solid #D97706 !important;
+  cursor: pointer;
+}
+.card-export-theme:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px -4px rgba(217, 119, 6, 0.18);
+  border-color: #D97706 !important;
+}
+.icon-export-theme {
+  background: #FFFBEB !important;
+  color: #D97706 !important;
+}
+
+/* Card 3: Transfer Theme */
+.card-transfer-theme {
+  border-top: 4px solid #2563EB !important;
+  cursor: pointer;
+}
+.card-transfer-theme:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px -4px rgba(37, 99, 235, 0.18);
+  border-color: #2563EB !important;
+}
+.icon-transfer-theme {
+  background: #EFF6FF !important;
+  color: #2563EB !important;
+}
+
+/* Badges for cards */
+.badge-blue {
+  background: #EFF6FF !important;
+  color: #1D4ED8 !important;
+  border-color: #BFDBFE !important;
+}
+.badge-amber {
+  background: #FFFBEB !important;
+  color: #B45309 !important;
+  border-color: #FDE68A !important;
+}
+
+/* Subview Title Cards */
+.storage-subview-banner {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 16px;
+  padding: 1.25rem 1.75rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+}
+.storage-subview-banner-title {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.storage-subview-banner-title h2 {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #0F172A;
+}
+.storage-subview-banner-title span {
+  font-size: 0.8rem;
+  color: #64748B;
+  display: block;
+}
+
+/* Form Grids */
+.storage-form-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+.storage-form-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+@media (max-width: 768px) {
+  .storage-form-grid-2,
+  .storage-form-grid-3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.storage-readonly-box {
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 10px;
+  padding: 0.65rem 1rem;
+  font-weight: 700;
+  color: #1E293B;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-feature-settings: 'tnum';
+}
+
+.storage-seq-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #F1F5F9;
+  border: 1px solid #CBD5E1;
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 0.8rem;
+  color: #475569;
+  font-weight: 800;
+}
+
+/* Checklist Cards for multi-select materials */
+.storage-materials-checklist-card {
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+.storage-checklist-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.75rem;
+  margin-top: 1rem;
+  max-height: 220px;
+  overflow-y: auto;
+  padding-left: 6px;
+}
+.storage-check-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #1E293B;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+.storage-check-label:hover {
+  border-color: #94A3B8;
+  background: #F1F5F9;
+}
+.storage-check-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #D97706;
+  cursor: pointer;
+}
+.storage-check-label.is-checked {
+  border-color: #059669;
+  background: #F0FDF4;
+  color: #065F46;
+}
+
+/* Dynamic Quantities Table */
+.storage-dynamic-quantities-card {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.03);
+}
+.storage-qty-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.75rem;
+}
+.storage-qty-table th {
+  background: #F8FAFC;
+  padding: 10px 14px;
+  text-align: right;
+  font-weight: 800;
+  font-size: 0.85rem;
+  color: #475569;
+  border-bottom: 2px solid #E2E8F0;
+}
+.storage-qty-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid #F1F5F9;
+  vertical-align: middle;
+}
+.storage-qty-table tr:hover td {
+  background: #FAFAFA;
+}
+
+/* Stock Badges */
+.stock-pill-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-feature-settings: 'tnum';
+}
+.stock-pill-available {
+  background: #ECFDF5;
+  color: #065F46;
+  border: 1px solid #A7F3D0;
+}
+.stock-pill-empty {
+  background: #FEF2F2;
+  color: #991B1B;
+  border: 1px solid #FECACA;
+}
+
+/* Operations Ledger Badges */
+.badge-op-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+.badge-op-import {
+  background: #ECFDF5;
+  color: #065F46;
+  border: 1px solid #A7F3D0;
+}
+.badge-op-export {
+  background: #FFFBEB;
+  color: #92400E;
+  border: 1px solid #FDE68A;
+}
+.badge-op-transfer {
+  background: #EFF6FF;
+  color: #1E40AF;
+  border: 1px solid #BFDBFE;
+}
+
+.badge-status-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+.badge-status-pending {
+  background: #FEF3C7;
+  color: #92400E;
+  border: 1px solid #FCD34D;
+}
+.badge-status-approved {
+  background: #D1FAE5;
+  color: #065F46;
+  border: 1px solid #6EE7B7;
+}
+.badge-status-rejected {
+  background: #FEE2E2;
+  color: #991B1B;
+  border: 1px solid #FCA5A5;
+}
+
