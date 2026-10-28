@@ -441,7 +441,7 @@ END
 IF EXISTS (SELECT * FROM sys.tables WHERE name = 'FormApprovalHistories')
     AND EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('FormApprovalHistories') AND name = 'TransactionOrMovementNumber' AND system_type_id = 56)
 BEGIN
-    DROP TABLE FormApprovalHistories;
+    ALTER TABLE FormApprovalHistories ALTER COLUMN TransactionOrMovementNumber NVARCHAR(100) NULL;
 END
 
 IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'FormApprovalHistories')

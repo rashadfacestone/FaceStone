@@ -9,12 +9,18 @@ using FaceStone.Web.Services;
 // FaceStone Web Application Entry Point
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Add Database Context with SQL Server (Active)
+// 1. Add Database Context with SQL Server (Active with resilient Azure SQL retry policy)
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
 builder.Services.AddDbContext<FaceStoneDbContext>(options =>
-    options.UseSqlServer(connectionString));
+    options.UseSqlServer(connectionString, sqlOptions =>
+    {
+        sqlOptions.EnableRetryOnFailure(
+            maxRetryCount: 5,
+            maxRetryDelay: TimeSpan.FromSeconds(30),
+            errorNumbersToAdd: null);
+    }));
 
 // 2. Add API Controllers with JSON configurations
 builder.Services.AddControllers()

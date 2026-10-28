@@ -370,3 +370,7 @@ wwwroot/uploads/
 # Local scratch test scripts & browser automation artifacts
 scratch/
 !scratch/check_pos.ps1
+
+# Visual Studio Connected Services dependencies
+ServiceDependencies/
+**/ServiceDependencies/
