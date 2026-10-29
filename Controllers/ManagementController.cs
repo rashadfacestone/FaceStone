@@ -1603,7 +1603,40 @@ public class ManagementController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> SyncManagementTable()
     {
-        return Ok(ApiResponse.Ok("تمت المزامنة بنجاح."));
+        try
+        {
+            var trans = await _context.Transportations.AsNoTracking().Take(50).ToListAsync();
+            foreach (var t in trans)
+            {
+                var txKey = t.TransactionNumber.ToString();
+                var exists = await _context.Management.AnyAsync(m => m.TransactionNumber == txKey);
+                if (!exists)
+                {
+                    _context.Management.Add(new Models.Management
+                    {
+                        TransactionNumber = txKey,
+                        Date = t.TransactionDate,
+                        PO = t.PONumber,
+                        MaterialType = t.MaterialType ?? string.Empty,
+                        NumberOfTransactions = 1,
+                        TotalReceivedAmount = t.NetWeight,
+                        CarPlatesNumber = t.CarNumber ?? string.Empty,
+                        AcceptedQuantity = t.NetWeight,
+                        UnacceptedPendingQuantity = 0,
+                        DeliveryStatus = t.ReceivingStatus ?? "Approved",
+                        Destination = t.Destination ?? "Cairo Factory",
+                        Notes = t.Notes
+                    });
+                }
+            }
+            await _context.SaveChangesAsync();
+            return Ok(ApiResponse.Ok("تمت المزامنة بنجاح وتحديث جدول الإدارة."));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error syncing management table.");
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiResponse.Fail("فشل مزامنة جدول الإدارة: " + ex.Message));
+        }
     }
 
     // ========================================================================

@@ -1976,8 +1976,8 @@ public class StorageController : ControllerBase
             var form = await Request.ReadFormAsync();
             var dto = new CreateStorageImportRequestDto();
             if (int.TryParse(form["storageLocationId"], out var locId)) dto.StorageLocationId = locId;
-            dto.MaterialType = form["materialType"];
-            dto.Source = form["source"];
+            dto.MaterialType = form["materialType"].ToString() ?? "MECHANICAL";
+            dto.Source = form["source"].ToString() ?? string.Empty;
             dto.SourcePhone = form["sourcePhone"];
             if (DateTime.TryParse(form["transactionDate"], out var dt)) dto.TransactionDate = dt;
             dto.Notes = form["notes"];

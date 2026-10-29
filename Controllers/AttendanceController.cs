@@ -197,10 +197,24 @@ public class AttendanceController : ControllerBase
 
     private async Task<List<AttendanceEmployeeItemDto>> GetEmployeesListAsync()
     {
-        // For demonstration: isolated fake test employees clearly marked as test data.
-        // To later switch to database users, simply return:
-        // return await _db.Users.AsNoTracking().Select(u => new AttendanceEmployeeItemDto { ... }).ToListAsync();
-        return await Task.FromResult(IsolatedTestEmployees.Select(e => new AttendanceEmployeeItemDto
+        // First retrieve active system users from the database
+        var dbUsers = await _db.Users.AsNoTracking().OrderBy(u => u.FullName).ToListAsync();
+        if (dbUsers.Any())
+        {
+            return dbUsers.Select(u => new AttendanceEmployeeItemDto
+            {
+                UserId = u.Id,
+                FullName = u.FullName,
+                Username = u.Username,
+                Role = u.Role,
+                Department = u.Role,
+                IsTestData = false,
+                Status = string.Empty
+            }).ToList();
+        }
+
+        // Fallback for initial empty database demonstration
+        return IsolatedTestEmployees.Select(e => new AttendanceEmployeeItemDto
         {
             UserId = e.UserId,
             FullName = e.FullName,
@@ -209,7 +223,7 @@ public class AttendanceController : ControllerBase
             Department = e.Department,
             IsTestData = true,
             Status = string.Empty
-        }).ToList());
+        }).ToList();
     }
 
     /// <summary>
@@ -729,7 +743,7 @@ public class AttendanceController : ControllerBase
                     UserId = r.UserId,
                     EmployeeName = r.FullName,
                     EmployeeRole = r.Role,
-                    IsTestData = true,
+                    IsTestData = r.IsTestData,
                     Date = timestampUtc?.Date ?? targetDate,
                     Status = r.Status,
                     CheckInTime = r.Status.Equals("Present", StringComparison.OrdinalIgnoreCase)

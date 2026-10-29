@@ -833,7 +833,7 @@ public class ControlMonitoringController : ControllerBase
                     (r.SupplierName != null && r.SupplierName.ToLower().Contains(trimmedSearch)) ||
                     (r.PONumber != null && r.PONumber.ToLower().Contains(trimmedSearch)) ||
                     (r.ResponsibleEmployee != null && r.ResponsibleEmployee.ToLower().Contains(trimmedSearch)) ||
-                    (r.ReviewedBy != null && r.ReviewedBy.ToLower().Contains(trimmedRev)) ||
+                    (r.ReviewedBy != null && r.ReviewedBy.ToLower().Contains(trimmedSearch)) ||
                     (r.RejectionReason != null && r.RejectionReason.ToLower().Contains(trimmedSearch)));
             }
 
@@ -892,7 +892,7 @@ public class ControlMonitoringController : ControllerBase
                     c.ProductionReferenceNumber.ToString().Contains(trimmedSearch) ||
                     c.FinalProductName.ToLower().Contains(trimmedSearch) ||
                     (c.ResponsibleEmployee != null && c.ResponsibleEmployee.ToLower().Contains(trimmedSearch)) ||
-                    (c.ReviewedBy != null && c.ReviewedBy.ToLower().Contains(trimmedRev)) ||
+                    (c.ReviewedBy != null && c.ReviewedBy.ToLower().Contains(trimmedSearch)) ||
                     (c.RejectionReason != null && c.RejectionReason.ToLower().Contains(trimmedSearch)));
             }
 
