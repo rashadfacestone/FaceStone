@@ -21,7 +21,39 @@ public static class DbInitializer
             {
                 logger.LogInformation("[DB] Connection successful to database: {DbName}", dbName);
             }
-            await db.Database.EnsureCreatedAsync(cts.Token);
+
+            // 1. In production / hosted environments, apply pending EF Core migrations safely
+            if (db.Database.IsSqlServer())
+            {
+                try
+                {
+                    var pendingMigrations = (await db.Database.GetPendingMigrationsAsync(cts.Token)).ToList();
+                    if (pendingMigrations.Any())
+                    {
+                        logger.LogInformation("[DB] Applying {Count} pending EF Core migrations to {DbName}: {Migrations}",
+                            pendingMigrations.Count, dbName, string.Join(", ", pendingMigrations));
+                        await db.Database.MigrateAsync(cts.Token);
+                        logger.LogInformation("[DB] EF Core migrations applied successfully.");
+                    }
+                    else
+                    {
+                        logger.LogInformation("[DB] Database is up to date with all EF Core migrations.");
+                    }
+                }
+                catch (Exception exMig)
+                {
+                    logger.LogWarning(exMig, "[DB] Automatic migration check encountered a warning. Falling back to schema verifications.");
+                }
+            }
+
+            try
+            {
+                await db.Database.EnsureCreatedAsync(cts.Token);
+            }
+            catch (Exception exEc)
+            {
+                logger.LogWarning(exEc, "[DB] EnsureCreated check skipped (tables may already exist).");
+            }
 
             // Resilient schema update for existing databases
             try
@@ -2830,5 +2862,511 @@ IF NOT EXISTS (SELECT 1 FROM [__EFMigrationsHistory] WHERE [MigrationId] = '2026
         using var sha = SHA256.Create();
         var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(password + "_FaceStoneSalt_2026"));
         return Convert.ToBase64String(bytes);
+    }
+
+    /// <summary>
+    /// Seeds safe, cohesive, idempotent test records across all departments prefixed with TEST-.
+    /// Safe for production test runs - never overwrites real data and cleanly removable.
+    /// <summary>
+    /// Seeds safe, isolated, and completely idempotent test data prefixed with TEST-
+    /// across all FaceStone operational departments.
+    /// Can be called on startup or via admin API (/api/management/db/seed-test-data).
+    /// </summary>
+    public static async Task<Dictionary<string, object>> SeedSafeTestDataAsync(FaceStoneDbContext db, ILogger logger)
+    {
+        var summary = new Dictionary<string, object>();
+        var now = DateTime.UtcNow;
+
+        // 1. Raw Materials
+        var rawLimestone = await db.RawMaterials.FirstOrDefaultAsync(r => r.Name == "TEST-حجر جيري نقي (Limestone Powder)");
+        if (rawLimestone == null)
+        {
+            rawLimestone = new RawMaterial
+            {
+                Name = "TEST-حجر جيري نقي (Limestone Powder)",
+                InitialQuantity = 450.500m,
+                MaterialType = MaterialProcessType.Mechanical,
+                CreatedAt = now,
+                CreatedBy = "System Seeder"
+            };
+            await db.RawMaterials.AddAsync(rawLimestone);
+        }
+
+        var rawSilica = await db.RawMaterials.FirstOrDefaultAsync(r => r.Name == "TEST-سيليكا ميكرو باودر (Micro Silica)");
+        if (rawSilica == null)
+        {
+            rawSilica = new RawMaterial
+            {
+                Name = "TEST-سيليكا ميكرو باودر (Micro Silica)",
+                InitialQuantity = 180.250m,
+                MaterialType = MaterialProcessType.Chemical,
+                CreatedAt = now,
+                CreatedBy = "System Seeder"
+            };
+            await db.RawMaterials.AddAsync(rawSilica);
+        }
+        await db.SaveChangesAsync();
+
+        // 2. Storage Locations
+        var locYard = await db.StorageLocations.FirstOrDefaultAsync(l => l.Code == "TEST-YARD-A1");
+        if (locYard == null)
+        {
+            locYard = new StorageLocation
+            {
+                Code = "TEST-YARD-A1",
+                Name = "ساحة التخزين الرئيسية - قطاع A1",
+                Description = "TEST-موقع تخزين تجريبي",
+                IsActive = true,
+                CreatedAt = now
+            };
+            await db.StorageLocations.AddAsync(locYard);
+        }
+
+        var locSilo = await db.StorageLocations.FirstOrDefaultAsync(l => l.Code == "TEST-SILO-02");
+        if (locSilo == null)
+        {
+            locSilo = new StorageLocation
+            {
+                Code = "TEST-SILO-02",
+                Name = "صومعة التخزين الجاف 2",
+                Description = "TEST-صومعة تخزين اسمنت ومواد ناعمة",
+                IsActive = true,
+                CreatedAt = now
+            };
+            await db.StorageLocations.AddAsync(locSilo);
+        }
+        await db.SaveChangesAsync();
+
+        // 3. Storage Client & Destination
+        var client = await db.StorageClients.Include(c => c.Destinations).FirstOrDefaultAsync(c => c.Name == "TEST-شركة المقاولون العرب للإنشاءات");
+        if (client == null)
+        {
+            client = new StorageClient
+            {
+                Name = "TEST-شركة المقاولون العرب للإنشاءات",
+                PhoneNumber = "01012345678",
+                IsActive = true,
+                CreatedAt = now,
+                Destinations = new List<StorageClientDestination>
+                {
+                    new StorageClientDestination
+                    {
+                        DestinationName = "مشروع مونوريل العاصمة الإدارية",
+                        IsActive = true,
+                        CreatedAt = now
+                    }
+                }
+            };
+            await db.StorageClients.AddAsync(client);
+            await db.SaveChangesAsync();
+        }
+
+        // 4. Purchase Order
+        var po = await db.PurchaseOrders.FirstOrDefaultAsync(p => p.PONumber == "TEST-PO-2026-001");
+        if (po == null)
+        {
+            po = new PurchaseOrder
+            {
+                PONumber = "TEST-PO-2026-001",
+                Supplier = "TEST-شركة محاجر سيناء للمواد الخام",
+                Quantity = 100.000m,
+                RemainingQuantity = 65.500m,
+                PricePerTon = 1450.00m,
+                TonPrice = 1450.00m,
+                TotalValue = 145000.00m,
+                OrderDate = now.AddDays(-3),
+                PaymentStatus = "غير مدفوع",
+                Destination = "مصنع فيستون بدر",
+                Notes = "TEST-أمر شراء تجريبي لاختبار دورة التوريد",
+                CreatedAt = now.AddDays(-3)
+            };
+            await db.PurchaseOrders.AddAsync(po);
+            await db.SaveChangesAsync();
+        }
+
+        // 5. Transportation Movement
+        var trans = await db.Transportations.FirstOrDefaultAsync(t => t.TransactionNumber == 99001);
+        if (trans == null)
+        {
+            trans = new Transportation
+            {
+                TransactionNumber = 99001,
+                TransactionDate = now.AddDays(-2),
+                CarNumber = "ق هـ د 4821",
+                DriverName = "محمود أحمد حسن",
+                Source = "محاجر السويس",
+                PONumber = "TEST-PO-2026-001",
+                MaterialType = "حجر جيري نقي",
+                WeightBeforeLoading = 13.700m,
+                WeightWhenEnteringFactory = 48.200m,
+                WeightWhenExitingFactory = 13.700m,
+                ExpectedWeight = 34.500m,
+                NetWeight = 34.500m,
+                InternalWeight = 34.500m,
+                ExternalLoadedWeight = 48.200m,
+                ExternalEmptyWeight = 13.700m,
+                ExternalNetWeight = 34.500m,
+                WasteQuantity = 0.000m,
+                CompanyName = "TEST-شركة محاجر سيناء للمواد الخام",
+                Destination = "مصنع فيستون بدر",
+                TransactionStatus = "مكتملة",
+                ReceivingStatus = "Approved / Accepted",
+                Notes = "TEST-حركة نقل شاحنة تجريبية",
+                ProductionReferenceNumber = 88001
+            };
+            await db.Transportations.AddAsync(trans);
+            await db.SaveChangesAsync();
+        }
+
+        // 6. Storage Operation
+        var storageOp = await db.StorageOperations.FirstOrDefaultAsync(o => o.TransactionNumber == 99001);
+        if (storageOp == null)
+        {
+            storageOp = new StorageOperation
+            {
+                TransactionNumber = 99001,
+                OperationType = "IMPORT",
+                TransactionDate = now.AddDays(-2),
+                MaterialType = MaterialProcessType.Mechanical,
+                StorageLocationId = locYard.Id,
+                StorageLocationName = locYard.Name,
+                ClientId = client.Id,
+                ClientName = client.Name,
+                InternalNetWeight = 34.500m,
+                InternalLoadedWeight = 48.200m,
+                InternalEmptyWeight = 13.700m,
+                ExternalReportedWeight = 34.500m,
+                ProductionReferenceNumber = 88001,
+                ApprovalStatus = "APPROVED",
+                IsInventoryPosted = true,
+                ResponsibleEmployee = "مسؤول استلام المخزن",
+                Notes = "TEST-إذن استلام مخزني تجريبي",
+                CreatedBy = "storage.employee@facestone.com",
+                CreatedAt = now.AddDays(-2),
+                Items = new List<StorageOperationItem>
+                {
+                    new StorageOperationItem
+                    {
+                        RawMaterialId = rawLimestone.Id,
+                        MaterialName = rawLimestone.Name,
+                        Quantity = 34.500m,
+                        TrackingNumber = "TEST-TRK-88001",
+                        Notes = "TEST-دفعة استلام توريد أولي"
+                    }
+                }
+            };
+            await db.StorageOperations.AddAsync(storageOp);
+            await db.SaveChangesAsync();
+        }
+
+        // 7. Laboratory Raw Material Report
+        var labRaw = await db.LaboratoryRawMaterialReports.FirstOrDefaultAsync(r => r.ProductionReferenceNumber == 88001);
+        if (labRaw == null)
+        {
+            labRaw = new LaboratoryRawMaterialReport
+            {
+                ProductionReferenceNumber = 88001,
+                SampleNumber = 99001,
+                SampleName = "TEST-حجر جيري نقي (Limestone Powder)",
+                SampleDescription = "عينة بودرة بيضاء ناعمة متجانسة",
+                BatchNumber = "TEST-BATCH-2026-01",
+                RawMaterialId = rawLimestone.Id,
+                SampleReceivedDate = now.AddDays(-2),
+                ReportIssueDate = now.AddDays(-2),
+                LaboratorySection = "PHYSICAL",
+                ComplyStatus = "COMPLY",
+                InspectionDecision = "ACCEPTED",
+                ReceivedQuantity = 34.500m,
+                AcceptedQuantity = 34.500m,
+                RejectedQuantity = 0.000m,
+                Notes = "TEST-مطابقة للمواصفة القياسية المصرية ES 4756-1",
+                LabManagerName = "كيميائي/ رامي إبراهيم",
+                ResponsibleEmployee = "كيميائي/ رامي إبراهيم",
+                ApprovalStatus = "APPROVED",
+                CreatedBy = "phys.lab@facestone.com",
+                CreatedAt = now.AddDays(-2)
+            };
+            await db.LaboratoryRawMaterialReports.AddAsync(labRaw);
+            await db.SaveChangesAsync();
+        }
+
+        // 8. Production Order, Batch & Output
+        var prodOrder = await db.ProductionOrders.FirstOrDefaultAsync(o => o.OrderNumber == "TEST-ORD-2026-001");
+        if (prodOrder == null)
+        {
+            prodOrder = new ProductionOrder
+            {
+                OrderNumber = "TEST-ORD-2026-001",
+                ProductionReferenceNumber = 88001,
+                ProductName = "انترلوك سداسي رمادي 6سم",
+                RequestedQuantity = 50.000m,
+                Unit = "طن",
+                StorageLocationId = locYard.Id,
+                StorageLocationName = locYard.Name,
+                Status = "COMPLETED",
+                CurrentStage = "المرحلة النهائية",
+                ResponsibleEmployee = "مهندس/ سامح عبد الله",
+                PlannedStartDate = now.AddDays(-1),
+                ActualStartDate = now.AddDays(-1),
+                CompletedDate = now.AddDays(-1),
+                Notes = "TEST-أمر إنتاج تجريبي مكتمل",
+                CreatedAt = now.AddDays(-1),
+                CreatedBy = "prod.manager@facestone.com"
+            };
+            await db.ProductionOrders.AddAsync(prodOrder);
+            await db.SaveChangesAsync();
+
+            var prodBatch = new ProductionBatch
+            {
+                ProductionOrderId = prodOrder.Id,
+                BatchNumber = "TEST-BATCH-2026-01",
+                ProductionReferenceNumber = 88001,
+                CurrentStage = "المرحلة النهائية",
+                Status = "COMPLETED",
+                QualityHold = false,
+                TotalInputQuantity = 34.500m,
+                TotalOutputQuantity = 34.000m,
+                TotalWasteQuantity = 0.500m,
+                ResponsibleEmployee = "مهندس/ سامح عبد الله",
+                StartedAt = now.AddDays(-1),
+                CompletedAt = now.AddDays(-1),
+                Notes = "TEST-تشغيلة إنتاج تجريبية",
+                CreatedBy = "prod.manager@facestone.com",
+                CreatedAt = now.AddDays(-1)
+            };
+            await db.ProductionBatches.AddAsync(prodBatch);
+            await db.SaveChangesAsync();
+
+            var prodOut = new ProductionOutput
+            {
+                OutputNumber = "TEST-OUT-2026-01",
+                ProductionOrderId = prodOrder.Id,
+                ProductionBatchId = prodBatch.Id,
+                ProductName = "انترلوك سداسي رمادي 6سم",
+                Classification = "FINISHED",
+                Quantity = 34.000m,
+                Unit = "طن",
+                ProductionStage = "المرحلة النهائية",
+                ResponsibleEmployee = "مهندس/ سامح عبد الله",
+                LaboratoryConformityStatus = "CONFORMS",
+                Notes = "TEST-مخرجات إنتاج تجريبية تامة الصنع",
+                CreatedBy = "prod.manager@facestone.com",
+                CreatedAt = now.AddDays(-1)
+            };
+            await db.ProductionOutputs.AddAsync(prodOut);
+            await db.SaveChangesAsync();
+        }
+
+        // 9. Laboratory Final Certificate
+        var labCert = await db.LaboratoryFinalConformityCertificates.FirstOrDefaultAsync(c => c.CertificateNumber == "TEST-CERT-2026-01");
+        if (labCert == null)
+        {
+            labCert = new LaboratoryFinalConformityCertificate
+            {
+                CertificateNumber = "TEST-CERT-2026-01",
+                ProductionReferenceNumber = 88001,
+                FinalProductName = "انترلوك سداسي رمادي 6سم",
+                ActualFinalProductQuantity = 34.000m,
+                QuantityUnit = "طن",
+                ProductionBatchNumber = "TEST-BATCH-2026-01",
+                ActualRawMaterialInputQuantity = 34.500m,
+                CalculatedDifference = 0.500m,
+                ActualMeasuredWaste = 0.500m,
+                WasteClassification = "ORDINARY_WASTE",
+                ConformityDecision = "CONFORMS",
+                LaboratorySection = "PHYSICAL",
+                Observations = "TEST-شهادة مطابقة نهائية معتمدة",
+                ResponsibleEmployee = "كيميائي/ رامي إبراهيم",
+                ApprovalStatus = "APPROVED",
+                CreatedBy = "phys.lab@facestone.com",
+                CreatedAt = now.AddDays(-1)
+            };
+            await db.LaboratoryFinalConformityCertificates.AddAsync(labCert);
+            await db.SaveChangesAsync();
+        }
+
+        // 10. Daily Production Submission
+        var dps = await db.DailyProductionSubmissions.FirstOrDefaultAsync(s => s.SubmissionNumber == "TEST-DPS-2026-001");
+        if (dps == null)
+        {
+            dps = new DailyProductionSubmission
+            {
+                SubmissionNumber = "TEST-DPS-2026-001",
+                ProductionDate = now.Date,
+                EmployeeId = Guid.NewGuid(),
+                EmployeeName = "مهندس/ سامح عبد الله",
+                EmployeeEmail = "prod.manager@facestone.com",
+                Shift = "الوردية الأولى (الصباحية)",
+                ShiftStart = now.Date.AddHours(8),
+                ShiftEnd = now.Date.AddHours(16),
+                DurationHours = 8.0m,
+                TotalGrossQuantity = 75.000m,
+                WasteQuantity = 1.250m,
+                NetProductionQuantity = 73.750m,
+                ProductionRatePerHour = 9.375m,
+                WastePercentage = 1.667m,
+                Status = "SUBMITTED",
+                Notes = "TEST-تشغيل منتظم للخطوط وسلاسة في تغذية الركام",
+                ProductionReferenceNumber = 88001,
+                CreatedBy = "prod.manager@facestone.com",
+                CreatedAt = now,
+                Details = new List<DailyProductionDetail>
+                {
+                    new DailyProductionDetail
+                    {
+                        ProductName = "انترلوك سداسي رمادي 6سم",
+                        Quantity = 75.000m,
+                        ProductWaste = 1.250m,
+                        NetQuantity = 73.750m,
+                        ProductionRatePerHour = 9.375m,
+                        Unit = "طن",
+                        CreatedAt = now
+                    }
+                }
+            };
+            await db.DailyProductionSubmissions.AddAsync(dps);
+            await db.SaveChangesAsync();
+        }
+
+        // 11. Attendance Submission & Record
+        var attSub = await db.AttendanceSubmissions.FirstOrDefaultAsync(s => s.Notes != null && s.Notes == "TEST-إرسالية حضور وانصراف تجريبية");
+        if (attSub == null)
+        {
+            attSub = new AttendanceSubmission
+            {
+                AttendanceDate = now.Date,
+                TotalEmployeesCount = 15,
+                PresentCount = 14,
+                AbsentCount = 1,
+                ApprovalStatus = "APPROVED",
+                Notes = "TEST-إرسالية حضور وانصراف تجريبية",
+                SubmittedBy = "attendance.employee@facestone.com",
+                SubmittedAt = now.AddHours(-4)
+            };
+            await db.AttendanceSubmissions.AddAsync(attSub);
+            await db.SaveChangesAsync();
+
+            var attRecord = new AttendanceRecord
+            {
+                AttendanceSubmissionId = attSub.Id,
+                Date = now.Date,
+                EmployeeName = "سامح عبد الله",
+                EmployeeRole = "مهندس إنتاج",
+                Status = "Present",
+                IsTestData = true,
+                Notes = "TEST-سجل حضور تجريبي",
+                CheckInTime = now.Date.AddHours(8),
+                CheckOutTime = now.Date.AddHours(16),
+                ApprovalStatus = "APPROVED"
+            };
+            await db.AttendanceRecords.AddAsync(attRecord);
+            await db.SaveChangesAsync();
+        }
+
+        summary["RawMaterials"] = 2;
+        summary["StorageLocations"] = 2;
+        summary["StorageClients"] = 1;
+        summary["PurchaseOrders"] = 1;
+        summary["Transportation"] = 1;
+        summary["StorageOperations"] = 1;
+        summary["LaboratoryRawMaterialReports"] = 1;
+        summary["ProductionOrders"] = 1;
+        summary["ProductionBatches"] = 1;
+        summary["ProductionOutputs"] = 1;
+        summary["LaboratoryFinalConformityCertificates"] = 1;
+        summary["DailyProductionSubmissions"] = 1;
+        summary["AttendanceSubmissions"] = 1;
+        summary["TotalSeededRecords"] = 15;
+        summary["Status"] = "Completed successfully. All records marked with TEST-.";
+
+        return summary;
+    }
+
+    /// <summary>
+    /// Safely purges only records created by the test seeding mechanism (prefixed with TEST-).
+    /// Real production records remain 100% untouched.
+    /// </summary>
+    public static async Task<Dictionary<string, int>> CleanupSafeTestDataAsync(FaceStoneDbContext db, ILogger logger)
+    {
+        var result = new Dictionary<string, int>();
+
+        // 1. Daily Production
+        var testDps = await db.DailyProductionSubmissions.Where(s => s.SubmissionNumber.StartsWith("TEST-")).ToListAsync();
+        var dpsIds = testDps.Select(s => s.Id).ToList();
+        var testDetails = await db.DailyProductionDetails.Where(d => dpsIds.Contains(d.DailyProductionSubmissionId)).ToListAsync();
+        db.DailyProductionDetails.RemoveRange(testDetails);
+        db.DailyProductionSubmissions.RemoveRange(testDps);
+        result["DailyProductionDetails"] = testDetails.Count;
+        result["DailyProductionSubmissions"] = testDps.Count;
+
+        // 2. Lab Certs
+        var testCerts = await db.LaboratoryFinalConformityCertificates.Where(c => c.CertificateNumber.StartsWith("TEST-")).ToListAsync();
+        db.LaboratoryFinalConformityCertificates.RemoveRange(testCerts);
+        result["LaboratoryFinalConformityCertificates"] = testCerts.Count;
+
+        // 3. Production Outputs, Batches, Orders
+        var testOutputs = await db.ProductionOutputs.Where(o => o.OutputNumber.StartsWith("TEST-")).ToListAsync();
+        db.ProductionOutputs.RemoveRange(testOutputs);
+        result["ProductionOutputs"] = testOutputs.Count;
+
+        var testBatches = await db.ProductionBatches.Where(b => b.BatchNumber.StartsWith("TEST-")).ToListAsync();
+        db.ProductionBatches.RemoveRange(testBatches);
+        result["ProductionBatches"] = testBatches.Count;
+
+        var testOrders = await db.ProductionOrders.Where(o => o.OrderNumber.StartsWith("TEST-")).ToListAsync();
+        db.ProductionOrders.RemoveRange(testOrders);
+        result["ProductionOrders"] = testOrders.Count;
+
+        // 4. Lab Raw Material Reports
+        var testLabRaw = await db.LaboratoryRawMaterialReports.Where(r => (r.BatchNumber != null && r.BatchNumber.StartsWith("TEST-")) || (r.Notes != null && r.Notes.StartsWith("TEST-"))).ToListAsync();
+        db.LaboratoryRawMaterialReports.RemoveRange(testLabRaw);
+        result["LaboratoryRawMaterialReports"] = testLabRaw.Count;
+
+        // 5. Storage Operations & Items
+        var testOps = await db.StorageOperations.Where(o => (o.Notes != null && o.Notes.StartsWith("TEST-")) || o.TransactionNumber == 99001).ToListAsync();
+        var opIds = testOps.Select(o => o.Id).ToList();
+        var testOpItems = await db.StorageOperationItems.Where(i => opIds.Contains(i.StorageOperationId) || i.TrackingNumber.StartsWith("TEST-")).ToListAsync();
+        db.StorageOperationItems.RemoveRange(testOpItems);
+        db.StorageOperations.RemoveRange(testOps);
+        result["StorageOperationItems"] = testOpItems.Count;
+        result["StorageOperations"] = testOps.Count;
+
+        // 6. Transportation
+        var testTrans = await db.Transportations.Where(t => t.TransactionNumber == 99001 || (t.Notes != null && t.Notes.StartsWith("TEST-"))).ToListAsync();
+        db.Transportations.RemoveRange(testTrans);
+        result["Transportation"] = testTrans.Count;
+
+        // 7. Attendance
+        var testAttRecs = await db.AttendanceRecords.Where(r => r.Notes != null && r.Notes.StartsWith("TEST-")).ToListAsync();
+        db.AttendanceRecords.RemoveRange(testAttRecs);
+        result["AttendanceRecords"] = testAttRecs.Count;
+
+        var testAttSubs = await db.AttendanceSubmissions.Where(s => s.Notes != null && s.Notes.StartsWith("TEST-")).ToListAsync();
+        db.AttendanceSubmissions.RemoveRange(testAttSubs);
+        result["AttendanceSubmissions"] = testAttSubs.Count;
+
+        // 8. Purchase Orders
+        var testPOs = await db.PurchaseOrders.Where(p => p.PONumber.StartsWith("TEST-")).ToListAsync();
+        db.PurchaseOrders.RemoveRange(testPOs);
+        result["PurchaseOrders"] = testPOs.Count;
+
+        // 9. Storage Clients & Locations
+        var testClients = await db.StorageClients.Include(c => c.Destinations).Where(c => c.Name.StartsWith("TEST-")).ToListAsync();
+        var testClientDests = testClients.SelectMany(c => c.Destinations).ToList();
+        db.StorageClientDestinations.RemoveRange(testClientDests);
+        db.StorageClients.RemoveRange(testClients);
+        result["StorageClients"] = testClients.Count;
+
+        var testLocs = await db.StorageLocations.Where(l => l.Code.StartsWith("TEST-")).ToListAsync();
+        db.StorageLocations.RemoveRange(testLocs);
+        result["StorageLocations"] = testLocs.Count;
+
+        // 10. Raw Materials
+        var testRaw = await db.RawMaterials.Where(r => r.Name.StartsWith("TEST-")).ToListAsync();
+        db.RawMaterials.RemoveRange(testRaw);
+        result["RawMaterials"] = testRaw.Count;
+
+        await db.SaveChangesAsync();
+        return result;
     }
 }

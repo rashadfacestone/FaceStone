@@ -1606,6 +1606,131 @@ public class ManagementController : ControllerBase
         return Ok(ApiResponse.Ok("تمت المزامنة بنجاح."));
     }
 
+    // ========================================================================
+    // DATABASE MAINTENANCE & DIAGNOSTICS (CEO & Management only)
+    // ========================================================================
+    [HttpGet("db/status")]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetDatabaseStatus()
+    {
+        try
+        {
+            var conn = _context.Database.GetDbConnection();
+            var dbName = conn.Database;
+            var dataSource = conn.DataSource;
+
+            var tables = new List<string>();
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.CommandText = "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' ORDER BY TABLE_NAME";
+                if (conn.State != System.Data.ConnectionState.Open)
+                    await conn.OpenAsync();
+                using var reader = await cmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    tables.Add(reader.GetString(0));
+                }
+            }
+
+            var appliedMigrations = (await _context.Database.GetAppliedMigrationsAsync()).ToList();
+            var pendingMigrations = (await _context.Database.GetPendingMigrationsAsync()).ToList();
+
+            return Ok(ApiResponse<object>.Ok(new
+            {
+                database = dbName,
+                server = dataSource,
+                tableCount = tables.Count,
+                tables = tables,
+                appliedMigrationsCount = appliedMigrations.Count,
+                appliedMigrations = appliedMigrations,
+                pendingMigrationsCount = pendingMigrations.Count,
+                pendingMigrations = pendingMigrations,
+                isSynchronized = !pendingMigrations.Any()
+            }));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get database status.");
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiResponse.Fail("فشل فحص حالة قاعدة البيانات: " + ex.Message));
+        }
+    }
+
+    [HttpPost("db/migrate")]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> RunMigrations()
+    {
+        try
+        {
+            var pending = (await _context.Database.GetPendingMigrationsAsync()).ToList();
+            if (!pending.Any())
+            {
+                return Ok(ApiResponse<object>.Ok(new { message = "قاعدة البيانات محدثة بالفعل ولا توجد هجرات معلقة.", appliedCount = 0 }));
+            }
+
+            await _context.Database.MigrateAsync();
+
+            var tables = new List<string>();
+            var conn = _context.Database.GetDbConnection();
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.CommandText = "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' ORDER BY TABLE_NAME";
+                if (conn.State != System.Data.ConnectionState.Open)
+                    await conn.OpenAsync();
+                using var reader = await cmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    tables.Add(reader.GetString(0));
+                }
+            }
+
+            return Ok(ApiResponse<object>.Ok(new
+            {
+                message = "تم تطبيق الهجرات بنجاح.",
+                appliedMigrations = pending,
+                appliedCount = pending.Count,
+                newTableCount = tables.Count,
+                tables = tables
+            }));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to execute database migrations.");
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiResponse.Fail("فشل تطبيق الهجرات: " + ex.Message));
+        }
+    }
+
+    [HttpPost("db/seed-test-data")]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> SeedTestData()
+    {
+        try
+        {
+            var result = await DbInitializer.SeedSafeTestDataAsync(_context, _logger);
+            return Ok(ApiResponse<object>.Ok(result, "تم إدخال البيانات التجريبية الآمنة بنجاح (TEST-)."));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to seed safe test data.");
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiResponse.Fail("فشل إدخال البيانات التجريبية: " + ex.Message));
+        }
+    }
+
+    [HttpPost("db/cleanup-test-data")]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> CleanupTestData()
+    {
+        try
+        {
+            var result = await DbInitializer.CleanupSafeTestDataAsync(_context, _logger);
+            return Ok(ApiResponse<object>.Ok(result, "تم حذف كافة البيانات التجريبية (TEST-) بنجاح وبقاء البيانات الأصلية كما هي."));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to cleanup safe test data.");
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiResponse.Fail("فشل تنظيف البيانات التجريبية: " + ex.Message));
+        }
+    }
+
     // Helper functions
     private static string GetDepartmentForRole(string? role)
     {
