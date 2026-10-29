@@ -7,6 +7,28 @@ using FaceStone.Web.Data;
 using FaceStone.Web.Hubs;
 using FaceStone.Web.Services;
 // FaceStone Web Application Entry Point
+if (args.Contains("--diagnose-model"))
+{
+    var options = new DbContextOptionsBuilder<FaceStoneDbContext>()
+        .UseSqlServer("Server=.\\SQLEXPRESS;Database=FaceStone;Trusted_Connection=True;TrustServerCertificate=True;")
+        .Options;
+    using var db = new FaceStoneDbContext(options);
+    var entityTypes = db.Model.GetEntityTypes().ToList();
+    Console.WriteLine("=== EF Core Model Diagnostic ===");
+    Console.WriteLine($"Total Entity Types: {entityTypes.Count}");
+    var tables = entityTypes.Select(e => new {
+        EntityName = e.ClrType.Name,
+        TableName = e.GetTableName(),
+        Schema = e.GetSchema() ?? "dbo"
+    }).OrderBy(t => t.TableName).ToList();
+    Console.WriteLine($"Total Distinct Tables: {tables.Select(t => t.TableName).Distinct().Count()}");
+    foreach (var t in tables)
+    {
+        Console.WriteLine($"Entity: {t.EntityName} -> Table: [{t.Schema}].[{t.TableName}]");
+    }
+    return;
+}
+
 var builder = WebApplication.CreateBuilder(args);
 
 // 1. Add Database Context with SQL Server (Active with resilient Azure SQL retry policy)
