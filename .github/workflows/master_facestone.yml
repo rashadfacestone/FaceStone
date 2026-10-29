@@ -1,7 +1,7 @@
 # Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
 # More GitHub Actions for Azure: https://github.com/Azure/actions
 
-name: Build and deploy ASP.Net Core app to Azure Web App - FaceStone
+name: Build and deploy ASP.Net Core app to Azure Web App - facestone
 
 on:
   push:
@@ -23,14 +23,11 @@ jobs:
         with:
           dotnet-version: '8.x'
 
-      - name: Restore dependencies
-        run: dotnet restore FaceStone.sln
-
       - name: Build with dotnet
-        run: dotnet build FaceStone.sln --configuration Release --no-restore
+        run: dotnet build --configuration Release
 
       - name: dotnet publish
-        run: dotnet publish FaceStone.Web.csproj --configuration Release --no-build -o "${{env.DOTNET_ROOT}}/myapp"
+        run: dotnet publish -c Release -o "${{env.DOTNET_ROOT}}/myapp"
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
@@ -54,14 +51,15 @@ jobs:
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_EF4244D571924D4793335CF564027EA7 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_AA7A2A50A4AF4C1D8793D2DD1282FE49 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_72037C202E5E4BAD998587FE5EB3BF70 }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_673EE96EFC384554BCDFC38267C0753B }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_038A7EABE1874D5A842E7AF7E194393F }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_85F42C1362B24230B7E8FAAD4B801486 }}
 
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'FaceStone'
+          app-name: 'facestone'
           slot-name: 'Production'
           package: .
+          
